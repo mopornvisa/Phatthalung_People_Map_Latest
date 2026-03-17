@@ -1,4 +1,4 @@
-{{-- resources/views/welcome.blade.php --}}
+{{-- resources/views/dashboard.blade.php --}}
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -54,7 +54,6 @@
   $teal  = '#0B7F6F';
   $teal2 = '#0B5B6B';
 
-  // ✅ ปี (กรอง)
   $year = $year ?? request('year', 'all');
   $YEAR_OPTIONS = $YEAR_OPTIONS ?? ['all','2564','2565','2566','2567','2568'];
   if (!in_array($year, $YEAR_OPTIONS, true)) $year = 'all';
@@ -62,7 +61,7 @@
 
   $view = $view ?? request('view', 'district');
 
-  $districtList = [
+  $districtList = $districtList ?? [
     'เมืองพัทลุง','กงหรา','เขาชัยสน','ควนขนุน','ตะโหมด','บางแก้ว',
     'ปากพะยูน','ศรีบรรพต','ป่าบอน','ป่าพะยอม','ศรีนครินทร์'
   ];
@@ -83,7 +82,6 @@
     '98+'   => '98 ปีขึ้นไป',
   ];
 
-  // ✅ ต้องส่งมาจาก controller เป็น list ของตำบลตามอำเภอ
   $subdistrictList = $subdistrictList ?? collect([]);
 
   $totalHouseholds = $totalHouseholds ?? 0;
@@ -93,13 +91,14 @@
   $welfareReceived    = $welfareReceived ?? 0;
   $welfareNotReceived = $welfareNotReceived ?? 0;
 
+  $poorHouseholds = $poorHouseholds ?? 0;
+  $capOverallMean = $capOverallMean ?? 0;
+
   $labels   = $labels ?? [];
   $datasets = $datasets ?? [];
 
-  // ✅ ตัวเลขเพศ
   $sexCounts = $sexCounts ?? ['ชาย'=>0,'หญิง'=>0];
 
-  // ✅ baseParams ใช้ให้ทุกลิงก์ติด query เหมือนกัน
   $baseParams = [
     'year'        => $year,
     'district'    => $district,
@@ -116,13 +115,11 @@
   };
 
   $hhHref      = $makeUrl('/household_64');
-  $testHref    = $makeUrl('/test');
+  $healthHref  = $makeUrl('/health');
   $welfareHref = $makeUrl('/welfare');
 
-  // =========================
-  // ✅ Capitals (ทุน 5 ด้าน)
-  // =========================
-  $capYear = (int)($capYear ?? request('cap_year', 2568));
+  $capYear = (int)($capYear ?? ($year === 'all' ? 2568 : $year));
+  $capYearLabel = ($year === 'all') ? '2564–2568' : (string)$capYear;
 
   $capSummary = $capSummary ?? ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
   $capStd     = $capStd     ?? ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
@@ -142,17 +139,11 @@
     (float)($capStd['social']??0)
   ];
 
-  // ✅ SAFE vars
   $sexCountsSafe   = $sexCounts   ?? ['ชาย'=>0,'หญิง'=>0];
   $capRadarSafe    = $capRadar    ?? [0,0,0,0,0];
   $capRadarStdSafe = $capRadarStd ?? [0,0,0,0,0];
 
-  // =========================
-  // ✅ Total Capitals by Year (ทุนรวม 5 ด้านรายปี)
-  // =========================
   $CAP_YEARS = [2564,2565,2566,2567,2568];
-
-  // ✅ controller "ควรส่งมา" แบบนี้: [ปี => ['human'=>..,'physical'=>..,'financial'=>..,'natural'=>..,'social'=>..]]
   $capByYear = $capByYear ?? [];
 
   $capTotalByYear = [];
@@ -169,6 +160,8 @@
 
   $capYearsLabels  = array_map(fn($y)=> (string)$y, $CAP_YEARS);
   $capTotalsSeries = array_values($capTotalByYear);
+
+  $chartAreaLabel = !empty($district) ? 'ตำบล' : 'อำเภอ';
 @endphp
 
 @include('layouts.topbar')
@@ -176,7 +169,7 @@
 <div class="container-fluid px-3 px-lg-4 py-3">
   <div class="row g-3">
 
-    {{-- Sidebar (desktop) --}}
+    {{-- Sidebar --}}
     <div class="col-lg-3 d-none d-lg-block">
       <div class="bg-white bg-opacity-75 border rounded-4 p-3 sidebar shadow-soft">
 
@@ -196,8 +189,8 @@
             <i class="bi bi-speedometer2 me-2"></i>Dashboard
           </a>
 
-          <a class="nav-link {{ request()->is('test') ? 'active' : 'text-dark' }}"
-             href="{{ $testHref }}">
+          <a class="nav-link {{ request()->is('health') ? 'active' : 'text-dark' }}"
+             href="{{ $healthHref }}">
             <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
           </a>
 
@@ -231,7 +224,6 @@
           @endif
         </div>
 
-        {{-- Filters --}}
         <div class="border-top pt-3">
           <div class="d-flex align-items-center justify-content-between mb-2">
             <div class="text-muted small">ตัวกรองข้อมูล</div>
@@ -240,7 +232,6 @@
             </span>
           </div>
 
-          {{-- District --}}
           <div class="dropdown mb-2">
             <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
                     style="background:{{ $teal }};border-color:{{ $teal }};"
@@ -276,7 +267,6 @@
             </ul>
           </div>
 
-          {{-- Subdistrict --}}
           <div class="dropdown mb-2">
             <button class="btn btn-sm btn-outline-success w-100 d-flex align-items-center justify-content-between rounded-4"
                     data-bs-toggle="dropdown" data-bs-auto-close="outside"
@@ -310,7 +300,6 @@
             </ul>
           </div>
 
-          {{-- Sex --}}
           <div class="dropdown mb-2">
             <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
                     style="background:{{ $teal }};border-color:{{ $teal }};"
@@ -338,7 +327,6 @@
             </ul>
           </div>
 
-          {{-- Age --}}
           <div class="dropdown mb-2">
             <button class="btn btn-sm btn-success w-100 d-flex align-items-center justify-content-between rounded-4"
                     style="background:{{ $teal }};border-color:{{ $teal }};"
@@ -361,7 +349,6 @@
             </ul>
           </div>
 
-          {{-- Active badges --}}
           <div class="mt-3 d-flex flex-wrap gap-2">
             <span class="badge rounded-pill text-bg-light border">
               <i class="bi bi-calendar2-week me-1 text-success"></i>ปี {{ $yearLabel }}
@@ -380,21 +367,19 @@
             </span>
           </div>
 
-        </div>{{-- /filters --}}
+        </div>
       </div>
     </div>
 
     {{-- Content --}}
     <div class="col-lg-9">
 
-      {{-- Header --}}
       <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
         <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div>
             <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
               <span>Dashboard สรุปข้อมูลภาพรวม</span>
 
-              {{-- Year dropdown --}}
               <div class="dropdown">
                 <button class="btn btn-sm d-flex align-items-center gap-2"
                         data-bs-toggle="dropdown" data-bs-auto-close="outside"
@@ -434,9 +419,8 @@
         </div>
       </div>
 
-      {{-- KPI cards --}}
       <div class="row g-3 mb-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
@@ -451,7 +435,7 @@
           </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
@@ -466,15 +450,28 @@
           </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-12 col-md-6 col-xl-3">
+          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+            <div class="card-body d-flex align-items-center justify-content-between">
+              <div>
+                <div class="text-muted small">ครัวเรือนยากจน</div>
+                <div class="h4 fw-bold mb-0 text-danger">{{ number_format($poorHouseholds) }}</div>
+                <div class="text-muted small">ทุนเฉลี่ยรวม 5 มิติ {{ number_format($capOverallMean, 2) }}</div>
+              </div>
+              <div class="kpi-icon bg-danger-subtle text-danger">
+                <i class="bi bi-house-heart-fill"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-3">
           <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
                 <div class="text-muted small">สวัสดิการทั้งหมด</div>
                 <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($welfareTotal) }}</div>
-                <div class="text-muted small">
-                  ได้รับ {{ number_format($welfareReceived) }} · ไม่ได้รับ {{ number_format($welfareNotReceived) }}
-                </div>
+              <div class="text-muted small">(คน)</div>
               </div>
               <div class="kpi-icon bg-success-subtle text-success">
                 <i class="bi bi-gift-fill"></i>
@@ -484,13 +481,12 @@
         </div>
       </div>
 
-      {{-- CHARTS --}}
       <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 overflow-hidden mb-3">
         <div class="card-header bg-white bg-opacity-50 border-0 border-bottom py-3">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="fw-semibold" style="color:{{ $teal2 }}">
               <i class="bi bi-graph-up-arrow me-2 text-success"></i>
-              สถิติสุขภาพและโครงสร้างประชากร
+              สรุปข้อมูลสุขภาพและโครงสร้างประชากร
             </div>
             <span class="badge rounded-pill text-bg-light border">
               รวม <b>{{ number_format($totalMembers ?? 0) }}</b> คน
@@ -501,12 +497,11 @@
         <div class="card-body p-3 p-lg-4">
           <div class="row g-4 align-items-stretch">
 
-            {{-- LEFT : HEALTH BAR --}}
             <div class="col-12 col-lg-8">
               <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="small fw-semibold" style="color:{{ $teal2 }}">
-                    <i class="bi bi-bar-chart-fill me-1 text-success"></i>กราฟสุขภาพสมาชิก
+                    <i class="bi bi-heart-pulse-fill me-1 text-success"></i>สถานะสุขภาพสมาชิกแยกตาม{{ $chartAreaLabel }}
                   </div>
                   <div class="small text-muted">
                     {{ $yearLabel }}
@@ -519,14 +514,10 @@
                   <canvas id="healthChart"></canvas>
                 </div>
 
-                <div class="small text-muted mt-2">
-                  <i class="bi bi-info-circle me-1"></i>
-                  “ไม่ระบุ” คือจำนวนที่ไม่ได้อยู่ใน 4 สถานะหลัก
-                </div>
+                
               </div>
             </div>
 
-            {{-- RIGHT : SEX DONUT --}}
             <div class="col-12 col-lg-4">
               <div class="border rounded-4 bg-white p-3 h-100 d-flex flex-column" style="border-color:rgba(0,0,0,.06)!important;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -555,38 +546,33 @@
         </div>
       </div>
 
-      {{-- =========================
-          ✅ SECTION: ทุนทั้ง 5 ด้าน
-         ========================= --}}
       <div class="mt-3">
 
         <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
           <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div>
               <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
-                <span><i class="bi bi-diagram-3-fill me-2 text-success"></i>ทุนทั้ง 5 ด้าน</span>
+                <span><i class="bi bi-diagram-3-fill me-2 text-success"></i>ทุนทั้ง 5 ด้านของครัวเรือนยากจน</span>
                 <span class="chip">
-                  <i class="bi bi-calendar2-week" style="color:{{ $teal }}"></i> ปี {{ $capYear }}
+                  <i class="bi bi-calendar2-week" style="color:{{ $teal }}"></i> ปี {{ $capYearLabel }}
                 </span>
               </div>
               <div class="text-muted small">
-                แสดงค่าเฉลี่ย (Mean) และส่วนเบี่ยงเบนมาตรฐาน (SD)
+                แสดงค่าเฉลี่ย (Mean) และส่วนเบี่ยงเบนมาตรฐาน (SD) ของครัวเรือนยากจน
               </div>
             </div>
           </div>
         </div>
 
-        {{-- KPI: 5 กล่องอยู่บรรทัดเดียวกัน (desktop) --}}
-        <div class="d-flex flex-nowrap justify-content-between gap-3 mb-3">
+        <div class="row g-3 mb-3">
           @foreach([
             'human'     => 'ทุนมนุษย์',
             'physical'  => 'ทุนกายภาพ',
             'financial' => 'ทุนการเงิน',
             'natural'   => 'ทุนธรรมชาติ',
-            'social'    => 'ทุนสังคม',
+            'social'    => 'ทุนทางสังคม',
           ] as $key=>$label)
-
-            <div class="flex-fill">
+            <div class="col-12 col-sm-6 col-lg">
               <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 text-center h-100">
                 <div class="card-body py-3">
                   <div class="small text-muted mb-1">{{ $label }}</div>
@@ -599,11 +585,9 @@
                 </div>
               </div>
             </div>
-
           @endforeach
         </div>
 
-        {{-- ✅ ทุนรวม (5 ด้านรวมกัน) รายปี 2564–2568 --}}
         <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
           <div class="card-body">
 
@@ -613,18 +597,17 @@
               </div>
 
               <span class="badge rounded-pill text-bg-light border">
-                ปีที่เลือก {{ $capYear }}:
+                ปีที่เลือก {{ $capYearLabel }}:
                 <b>{{ number_format($capTotalByYear[$capYear] ?? 0, 2) }}</b>
               </span>
             </div>
 
             <div class="text-muted small mb-3">
-              ทุนรวม = มนุษย์ + กายภาพ + การเงิน + ธรรมชาติ + สังคม (ค่าเฉลี่ยของปีนั้น)
+              ทุนรวม = มนุษย์ + กายภาพ + การเงิน + ธรรมชาติ + ทุนทางสังคม (ค่าเฉลี่ยของปีนั้น)
             </div>
 
             <div class="row g-3 align-items-stretch">
 
-              {{-- กราฟแนวโน้ม --}}
               <div class="col-12 col-lg-7">
                 <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
                   <div class="d-flex align-items-center justify-content-between mb-2">
@@ -640,7 +623,6 @@
                 </div>
               </div>
 
-              {{-- ตารางทุนรวมรายปี --}}
               <div class="col-12 col-lg-5">
                 <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
                   <div class="small fw-semibold mb-2" style="color:{{ $teal2 }}">
@@ -680,13 +662,12 @@
           </div>
         </div>
 
-        {{-- Radar + Table --}}
         <div class="row g-3">
           <div class="col-lg-6">
             <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
               <div class="card-body">
                 <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
-                  <i class="bi bi-pentagon-half me-1 text-success"></i> เรดาร์ทุน 5 ด้าน 
+                  <i class="bi bi-pentagon-half me-1 text-success"></i> เรดาร์ทุน 5 ด้าน
                 </div>
                 <div class="border rounded-4 bg-white p-2" style="border-color:rgba(0,0,0,.06)!important;">
                   <div style="height:320px;">
@@ -701,120 +682,113 @@
           </div>
 
           <div class="col-lg-6">
-  <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-    <div class="card-body">
-
-      {{-- Header --}}
-      <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
-        <i class="bi bi-table me-1 text-success"></i> ตารางสรุป (Average / SD)
-      </div>
-
-      <div class="text-muted small mb-3">
-        ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของทุนแต่ละมิติ
-      </div>
-    <span class="badge rounded-pill text-bg-light border">
-                ปีที่เลือก {{ $capYear }}
-             
-              </span>
-      <div class="table-responsive"
-           style="border-radius:16px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
-
-        <table class="table align-middle mb-0 text-center"
-               style="font-size:14px; table-layout:fixed;">
-
-          {{-- header --}}
-          <thead style="background:rgba(11,127,111,.06);">
-            <tr class="text-muted" style="font-size:12.5px;">
-              <th style="width:50%; padding:12px;">ทุน 5 ด้าน</th>
-              <th style="width:25%; padding:12px;">Mean</th>
-              <th style="width:25%; padding:12px;">SD</th>
-            </tr>
-          </thead>
-
-          <tbody>
-
-          @php
-            $rowsCap = [
-              ['k'=>'human','name'=>'มนุษย์','icon'=>'bi-person-heart','bg'=>'rgba(13,110,253,.08)','ic'=>'#0d6efd'],
-              ['k'=>'physical','name'=>'กายภาพ','icon'=>'bi-house-heart','bg'=>'rgba(25,135,84,.10)','ic'=>'#198754'],
-              ['k'=>'financial','name'=>'เศรษฐกิจ','icon'=>'bi-cash-coin','bg'=>'rgba(255,193,7,.18)','ic'=>'#b45309'],
-              ['k'=>'natural','name'=>'ธรรมชาติ','icon'=>'bi-tree-fill','bg'=>'rgba(32,201,151,.14)','ic'=>'#0f766e'],
-              ['k'=>'social','name'=>'ทางสังคม','icon'=>'bi-people-fill','bg'=>'rgba(111,66,193,.10)','ic'=>'#6f42c1'],
-            ];
-          @endphp
-
-          @foreach($rowsCap as $r)
-
-            @php
-              $mean = (float)($capSummary[$r['k']] ?? 0);
-              $sd   = (float)($capStd[$r['k']] ?? 0);
-            @endphp
-
-            <tr style="height:60px; transition:.15s;"
-                onmouseover="this.style.background='rgba(11,127,111,.05)'"
-                onmouseout="this.style.background='transparent'">
-
-              {{-- name --}}
-              <td class="text-start px-3">
-                <div class="d-flex align-items-center gap-2">
-                  <span style="width:32px;height:32px;border-radius:10px;
-                               display:flex;align-items:center;justify-content:center;
-                               background:{{ $r['bg'] }};">
-                    <i class="bi {{ $r['icon'] }}" style="color:{{ $r['ic'] }}"></i>
-                  </span>
-                  <span class="fw-semibold">{{ $r['name'] }}</span>
+            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+              <div class="card-body">
+                <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
+                  <i class="bi bi-table me-1 text-success"></i> ตารางสรุป (Average / SD)
                 </div>
-              </td>
 
-              {{-- mean --}}
-              <td>
-                <span class="badge rounded-pill font-monospace"
-                      style="min-width:80px;
-                             background:rgba(11,127,111,.12);
-                             color:{{ $teal2 }};
-                             font-weight:700;">
-                  {{ number_format($mean, 2) }}
+                <div class="text-muted small mb-3">
+                  ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของทุนแต่ละมิติ
+                </div>
+
+                <span class="badge rounded-pill text-bg-light border">
+                  ปีที่เลือก {{ $capYearLabel }}
                 </span>
-              </td>
 
-              {{-- sd --}}
-              <td>
-                <span class="badge rounded-pill font-monospace"
-                      style="min-width:80px;
-                             background:rgba(0,0,0,.06);
-                             color:#374151;
-                             font-weight:700;">
-                  {{ number_format($sd, 2) }}
-                </span>
-              </td>
+                <div class="table-responsive mt-3"
+                     style="border-radius:16px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
 
-            </tr>
-          @endforeach
+                  <table class="table align-middle mb-0 text-center"
+                         style="font-size:14px; table-layout:fixed;">
 
-          </tbody>
-        </table>
+                    <thead style="background:rgba(11,127,111,.06);">
+                      <tr class="text-muted" style="font-size:12.5px;">
+                        <th style="width:50%; padding:12px;">ทุน 5 ด้าน</th>
+                        <th style="width:25%; padding:12px;">Mean</th>
+                        <th style="width:25%; padding:12px;">SD</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                    @php
+                      $rowsCap = [
+                        ['k'=>'human','name'=>'ทุนมนุษย์','icon'=>'bi-person-heart','bg'=>'rgba(13,110,253,.08)','ic'=>'#0d6efd'],
+                        ['k'=>'physical','name'=>'ทุนกายภาพ','icon'=>'bi-house-heart','bg'=>'rgba(25,135,84,.10)','ic'=>'#198754'],
+                        ['k'=>'financial','name'=>'ทุนการเงิน','icon'=>'bi-cash-coin','bg'=>'rgba(255,193,7,.18)','ic'=>'#b45309'],
+                        ['k'=>'natural','name'=>'ทุนธรรมชาติ','icon'=>'bi-tree-fill','bg'=>'rgba(32,201,151,.14)','ic'=>'#0f766e'],
+                        ['k'=>'social','name'=>'ทุนทางสังคม','icon'=>'bi-people-fill','bg'=>'rgba(111,66,193,.10)','ic'=>'#6f42c1'],
+                      ];
+                    @endphp
+
+                    @foreach($rowsCap as $r)
+                      @php
+                        $mean = (float)($capSummary[$r['k']] ?? 0);
+                        $sd   = (float)($capStd[$r['k']] ?? 0);
+                      @endphp
+
+                      <tr style="height:60px; transition:.15s;"
+                          onmouseover="this.style.background='rgba(11,127,111,.05)'"
+                          onmouseout="this.style.background='transparent'">
+
+                        <td class="text-start px-3">
+                          <div class="d-flex align-items-center gap-2">
+                            <span style="width:32px;height:32px;border-radius:10px;
+                                         display:flex;align-items:center;justify-content:center;
+                                         background:{{ $r['bg'] }};">
+                              <i class="bi {{ $r['icon'] }}" style="color:{{ $r['ic'] }}"></i>
+                            </span>
+                            <span class="fw-semibold">{{ $r['name'] }}</span>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span class="badge rounded-pill font-monospace"
+                                style="min-width:80px;
+                                       background:rgba(11,127,111,.12);
+                                       color:{{ $teal2 }};
+                                       font-weight:700;">
+                            {{ number_format($mean, 2) }}
+                          </span>
+                        </td>
+
+                        <td>
+                          <span class="badge rounded-pill font-monospace"
+                                style="min-width:80px;
+                                       background:rgba(0,0,0,.06);
+                                       color:#374151;
+                                       font-weight:700;">
+                            {{ number_format($sd, 2) }}
+                          </span>
+                        </td>
+
+                      </tr>
+                    @endforeach
+                    </tbody>
+                  </table>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </div>
-
     </div>
   </div>
 </div>
 
-        </div>
-
-      </div>{{-- /capitals section --}}
-    </div>{{-- /col-lg-9 --}}
-  </div>{{-- /row --}}
-</div>{{-- /container --}}
-
 <script>
-  // =========================
-  // ✅ Data from server (SAFE)
-  // =========================
   const labelsFromServer   = @json($labels ?? []);
   const datasetsFromServer = @json($datasets ?? []);
   const sexCounts          = @json($sexCountsSafe);
 
   const labels = Array.isArray(labelsFromServer) ? [...labelsFromServer] : [];
+  if (labels.length === 0) {
+    labels.push('ไม่มีข้อมูล');
+  }
+
   const datasetsRaw = Array.isArray(datasetsFromServer)
     ? JSON.parse(JSON.stringify(datasetsFromServer))
     : [];
@@ -831,19 +805,21 @@
   };
 
   const palette = {
-    'ปกติ':   '#0B7F6F',
-    'เรื้อรัง': 'rgba(220,53,69,.82)',
-    'พิการ':   'rgba(13,110,253,.82)',
-    'ติดเตียง': 'rgba(255,193,7,.88)',
-    'ไม่ระบุ': 'rgba(108,117,125,.75)',
+    'ปกติ': '#0B7F6F',
+    'เรื้อรัง': '#dc3545',
+    'พิการ': '#0d6efd',
+    'ติดเตียง': '#ffc107',
+    'ไม่ระบุ': '#6c757d',
   };
 
   const healthDatasets = datasetsRaw.map(ds => {
     const short = labelShortMap[ds.label] || ds.label;
     return {
       label: short,
-      data: (ds.data || []).map(v => Number(v || 0)),
-      backgroundColor: palette[short] ?? 'rgba(108,117,125,.75)',
+      data: Array.isArray(ds.data) && ds.data.length
+        ? ds.data.map(v => Number(v || 0))
+        : labels.map(() => 0),
+      backgroundColor: palette[short] ?? '#6c757d',
       borderRadius: 14,
       borderSkipped: false,
       barPercentage: .72,
@@ -851,6 +827,19 @@
       maxBarThickness: 34,
     };
   });
+
+  const finalHealthDatasets = healthDatasets.length
+    ? healthDatasets
+    : [{
+        label: 'ไม่มีข้อมูล',
+        data: labels.map(() => 0),
+        backgroundColor: '#cbd5e1',
+        borderRadius: 14,
+        borderSkipped: false,
+        barPercentage: .72,
+        categoryPercentage: .58,
+        maxBarThickness: 34,
+      }];
 
   const valueLabelPlugin = {
     id: 'valueLabel',
@@ -877,16 +866,13 @@
     }
   };
 
-  // =========================
-  // ✅ Health Chart
-  // =========================
   const healthCanvas = document.getElementById('healthChart');
   if (healthCanvas) {
     if (_healthChart) { _healthChart.destroy(); _healthChart = null; }
 
     _healthChart = new Chart(healthCanvas, {
       type: 'bar',
-      data: { labels, datasets: healthDatasets },
+      data: { labels, datasets: finalHealthDatasets },
       plugins: [valueLabelPlugin],
       options: {
         responsive: true,
@@ -916,23 +902,22 @@
     });
   }
 
-  // =========================
-  // ✅ Sex Chart
-  // =========================
   const sexCanvas = document.getElementById('sexChart');
   if (sexCanvas) {
     if (_sexChart) { _sexChart.destroy(); _sexChart = null; }
 
-    const male = Number(sexCounts['ชาย']||0);
-    const female = Number(sexCounts['หญิง']||0);
+    const male = Number(sexCounts['ชาย'] || 0);
+    const female = Number(sexCounts['หญิง'] || 0);
+    const sexTotal = male + female;
 
     _sexChart = new Chart(sexCanvas, {
       type: 'doughnut',
       data: {
-        labels: ['ชาย','หญิง'],
+        labels: sexTotal > 0 ? ['ชาย','หญิง'] : ['ไม่มีข้อมูล'],
         datasets: [{
-          data: [male, female],
-          borderWidth: 0
+          data: sexTotal > 0 ? [male, female] : [1],
+          borderWidth: 0,
+          backgroundColor: sexTotal > 0 ? ['#0d6efd', '#ff6b9a'] : ['#cbd5e1']
         }]
       },
       options: {
@@ -942,15 +927,18 @@
         animation: false,
         plugins: {
           legend: { position: 'bottom', labels: { usePointStyle:true, boxWidth:10 } },
-          tooltip: { callbacks: { label:(ctx)=>` ${ctx.label}: ${Number(ctx.raw||0).toLocaleString()} คน` } }
+          tooltip: {
+            callbacks: {
+              label:(ctx)=> sexTotal > 0
+                ? ` ${ctx.label}: ${Number(ctx.raw||0).toLocaleString()} คน`
+                : ' ไม่มีข้อมูล'
+            }
+          }
         }
       }
     });
   }
 
-  // =========================
-  // ✅ Capitals Radar (SAFE)
-  // =========================
   const capRadarData = @json($capRadarSafe);
   const capRadarStd  = @json($capRadarStdSafe);
 
@@ -965,7 +953,7 @@
     new Chart(capEl, {
       type: 'radar',
       data: {
-        labels: ['มนุษย์','กายภาพ','การเงิน','ธรรมชาติ','สังคม'],
+        labels: ['ทุนมนุษย์','ทุนกายภาพ','ทุนการเงิน','ทุนธรรมชาติ','ทุนทางสังคม'],
         datasets: [
           { label:'Mean+SD', data: meanPlus,  borderWidth:2, fill:false, pointRadius:2, borderDash:[6,4] },
           { label:'Mean-SD', data: meanMinus, borderWidth:2, fill:false, pointRadius:2, borderDash:[6,4] },
@@ -981,9 +969,6 @@
     });
   }
 
-  // =========================
-  // ✅ Total Capitals Trend (ทุนรวมรายปี)
-  // =========================
   const capYearsLabels  = @json($capYearsLabels ?? []);
   const capTotalsSeries = @json($capTotalsSeries ?? []);
 

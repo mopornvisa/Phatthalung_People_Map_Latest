@@ -5,446 +5,725 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // ======================
-        // ✅ ปีที่ต้องการแสดง (กรอง)
-        // ======================
-        $year = (string) $request->get('year', 'all'); // all | 2564..2568
-        $YEAR_OPTIONS = ['all', '2564', '2565', '2566', '2567', '2568'];
-        if (!in_array($year, $YEAR_OPTIONS, true)) $year = 'all';
+        $conn = DB::connection('sqlsrv');
 
-        $years = ($year === 'all')
-            ? [2564, 2565, 2566, 2567, 2568]
-            : [(int) $year];
-
-        $yearLabel = ($year === 'all') ? '2564–2568' : $year;
+        $mainTable    = '[dbo].[survey_a]';
+        $profileTable = '[dbo].[survey_profile64]';
 
         // ======================
-        // รับค่าจาก query
+        // อ่านคอลัมน์จริง
         // ======================
-        $district    = (string) $request->get('district', '');
-        $subdistrict = (string) $request->get('subdistrict', '');
-        $view        = (string) $request->get('view', 'district');
+        $colsMain = collect($conn->select("
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='survey_a'
+        "))
+        ->pluck('COLUMN_NAME')
+        ->map(fn($c) => strtolower((string)$c))
+        ->values()
+        ->all();
 
-        // ✅ เพศ
-        $human_Sex = (string) $request->get('human_Sex', '');
-        if (!in_array($human_Sex, ['', 'ชาย', 'หญิง'], true)) $human_Sex = '';
+        $colsProfile = collect($conn->select("
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='survey_profile64'
+        "))
+        ->pluck('COLUMN_NAME')
+        ->map(fn($c) => strtolower((string)$c))
+        ->values()
+        ->all();
 
-        // ✅ ช่วงอายุ
-        $age_range = (string) $request->get('age_range', '');
-        $AGE_RANGES = [
-            ''      => 'อายุ: ทั้งหมด',
-            '0-15'  => '0–15 ปี',
-            '16-28' => '16–28 ปี',
-            '29-44' => '29–44 ปี',
-            '45-59' => '45–59 ปี',
-            '60-78' => '60–78 ปี',
-            '79-97' => '79–97 ปี',
-            '98+'   => '98 ปีขึ้นไป',
-        ];
-        if (!array_key_exists($age_range, $AGE_RANGES)) $age_range = '';
+        $hasMainCol = fn(string $c) => in_array(strtolower($c), $colsMain, true);
+        $hasProfCol = fn(string $c) => in_array(strtolower($c), $colsProfile, true);
 
-        // ✅ helper ใส่ช่วงอายุเข้า query (alias h)
-        $applyAgeRange = function ($q) use ($age_range) {
-            if ($age_range === '') return $q;
-
-            $q->whereNotNull('h.human_Age_y');
-            switch ($age_range) {
-                case '0-15':  $q->whereBetween('h.human_Age_y', [0, 15]); break;
-                case '16-28': $q->whereBetween('h.human_Age_y', [16, 28]); break;
-                case '29-44': $q->whereBetween('h.human_Age_y', [29, 44]); break;
-                case '45-59': $q->whereBetween('h.human_Age_y', [45, 59]); break;
-                case '60-78': $q->whereBetween('h.human_Age_y', [60, 78]); break;
-                case '79-97': $q->whereBetween('h.human_Age_y', [79, 97]); break;
-                case '98+':   $q->where('h.human_Age_y', '>=', 98); break;
+        $pickMainCol = function(array $candidates, ?string $fallback = null) use ($hasMainCol) {
+            foreach ($candidates as $c) {
+                if ($hasMainCol($c)) return $c;
             }
+            return $fallback;
+        };
+
+        $pickProfCol = function(array $candidates, ?string $fallback = null) use ($hasProfCol) {
+            foreach ($candidates as $c) {
+                if ($hasProfCol($c)) return $c;
+            }
+            return $fallback;
+        };
+
+        $colRef = function(?string $alias, ?string $col) {
+            return ($alias && $col) ? "{$alias}.[{$col}]" : null;
+        };
+
+        $trim = fn($expr) => "LTRIM(RTRIM($expr))";
+
+        // ======================
+        // mapping survey_a
+        // ======================
+        $COL_HOUSE    = $pickMainCol(['HC'], 'HC');
+        $COL_ORDER    = $pickMainCol(['a1'], null);
+        $COL_AGE      = $pickMainCol(['a3_1'], null);
+        $COL_SEX      = $pickMainCol(['a4'], null);
+        $COL_HEALTH   = $pickMainCol(['a5', 'health'], null);
+        $COL_YEAR     = $pickMainCol(['survey_year', 'year'], null);
+
+        $COL_PROVINCE = $pickMainCol(['province_name_thai'], null);
+        $COL_DISTRICT = $pickMainCol(['district_name_thai'], null);
+        $COL_TAMBON   = $pickMainCol(['tambon_name_thai'], null);
+
+        // welfare
+        $COL_A70 = $pickMainCol(['a7_0'], null);
+        $COL_A71 = $pickMainCol(['a7_1'], null);
+        $COL_A72 = $pickMainCol(['a7_2'], null);
+        $COL_A73 = $pickMainCol(['a7_3'], null);
+        $COL_A74 = $pickMainCol(['a7_4'], null);
+        $COL_A75 = $pickMainCol(['a7_5'], null);
+        $COL_A76 = $pickMainCol(['a7_6'], null);
+
+        // ======================
+        // mapping survey_profile64
+        // ======================
+        $P_COL_HOUSE = $pickProfCol(['HC1'], 'HC1');
+        $P_COL_YEAR  = $pickProfCol(['survey_year', 'year'], null);
+
+        $P_COL_DISTRICT = $pickProfCol(['district_name_thai','district'], null);
+        $P_COL_TAMBON   = $pickProfCol(['tambon_name_thai','subdistrict'], null);
+
+        $P_COL_POOR = $pickProfCol([
+            'poor_flag',
+            'is_poor',
+            'poor',
+            'status_poverty',
+            'poverty_status',
+            'hh_poor',
+            'target_group',
+            'poor_type'
+        ], null);
+
+        $P_CH1 = $pickProfCol(['ch1','ch_1'], null);
+        $P_CH2 = $pickProfCol(['ch2','ch_2'], null);
+        $P_CH3 = $pickProfCol(['ch3','ch_3'], null);
+        $P_CH4 = $pickProfCol(['ch4','ch_4'], null);
+        $P_CH5 = $pickProfCol(['ch5','ch_5'], null);
+
+        $districtRef = $colRef('u', $COL_DISTRICT);
+        $tambonRef   = $colRef('u', $COL_TAMBON);
+
+        // ======================
+        // options / map
+        // ======================
+        $YEAR_OPTIONS = ['all','2564','2565','2566','2567','2568'];
+
+        $healthMap = [
+            1 => 'ปกติ',
+            2 => 'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)',
+            3 => 'พิการพึ่งตนเองได้',
+            4 => 'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้',
+        ];
+
+        $sexMap = [
+            1 => 'ชาย',
+            2 => 'หญิง',
+        ];
+
+        $sexTextToCode = array_flip($sexMap);
+
+        // ======================
+        // filters
+        // ======================
+        $year        = trim((string) $request->get('year', 'all'));
+        $view        = trim((string) $request->get('view', 'district'));
+        $district    = trim((string) $request->get('district', ''));
+        $subdistrict = trim((string) $request->get('subdistrict', ''));
+        $human_Sex   = trim((string) $request->get('human_Sex', ''));
+        $age_range   = trim((string) $request->get('age_range', ''));
+
+        if (!in_array($year, $YEAR_OPTIONS, true)) {
+            $year = 'all';
+        }
+
+        $parseAgeRange = function(string $ageRange): array {
+            $ageRange = trim($ageRange);
+            if ($ageRange === '') return [null, null];
+            if (preg_match('/^(\d+)\-(\d+)$/', $ageRange, $m)) return [(int)$m[1], (int)$m[2]];
+            if (preg_match('/^(\d+)\+$/', $ageRange, $m)) return [(int)$m[1], null];
+            return [null, null];
+        };
+
+        [$ageMin, $ageMax] = $parseAgeRange($age_range);
+
+        // ======================
+        // base query (member-level)
+        // ======================
+        $baseQuery = function() use (
+            $conn, $mainTable, $profileTable,
+            $COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR
+        ) {
+            $q = $conn->table(DB::raw("$mainTable as u"));
+
+            if ($COL_HOUSE && $P_COL_HOUSE) {
+                $q->leftJoin(DB::raw("$profileTable as p"), function($join) use ($COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR) {
+                    $join->on("u.$COL_HOUSE", '=', "p.$P_COL_HOUSE");
+
+                    if ($COL_YEAR && $P_COL_YEAR) {
+                        $join->on("u.$COL_YEAR", '=', "p.$P_COL_YEAR");
+                    }
+                });
+            }
+
             return $q;
         };
 
-        $HEALTH_OPTIONS = [
-            'ปกติ',
-            'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)',
-            'พิการพึ่งตนเองได้',
-            'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้',
-        ];
-
-        // =========================================================
-        // ✅ สร้าง query แบบ “กรองก่อน UNION” (เร็วขึ้นมาก)
-        // =========================================================
-        if ($year === 'all') {
-
-            // household union
-            $surveyUnion = null;
-            foreach ($years as $y) {
-                $q = DB::table("household_surveys_{$y} as s")
-                    ->select(['s.house_Id', 's.survey_District', 's.survey_Subdistrict'])
-                    ->when($district !== '', fn($qq) => $qq->where('s.survey_District', $district))
-                    ->when($subdistrict !== '', fn($qq) => $qq->where('s.survey_Subdistrict', $subdistrict));
-
-                $surveyUnion = $surveyUnion ? $surveyUnion->unionAll($q) : $q;
+        // ======================
+        // helper apply filters (member-level)
+        // ======================
+        $applyCommonFilters = function($q) use (
+            $district, $subdistrict, $year, $human_Sex, $ageMin, $ageMax,
+            $districtRef, $tambonRef, $COL_YEAR, $COL_AGE, $COL_SEX,
+            $colRef, $trim, $sexTextToCode
+        ) {
+            if ($district !== '' && $districtRef) {
+                $q->whereRaw($trim($districtRef)." = ?", [$district]);
             }
 
-            // human union
-            $humanUnion = null;
-            foreach ($years as $y) {
-                $q = DB::table("human_capital_{$y} as h")
-                    ->select(['h.house_Id', 'h.human_Sex', 'h.human_Age_y', 'h.human_Health', 'h.a7_0'])
-                    ->when($human_Sex !== '', fn($qq) => $qq->where('h.human_Sex', $human_Sex));
+            if ($subdistrict !== '' && $tambonRef) {
+                $q->whereRaw($trim($tambonRef)." = ?", [$subdistrict]);
+            }
 
-                if ($age_range !== '') {
-                    $q->whereNotNull('h.human_Age_y');
-                    switch ($age_range) {
-                        case '0-15':  $q->whereBetween('h.human_Age_y', [0, 15]); break;
-                        case '16-28': $q->whereBetween('h.human_Age_y', [16, 28]); break;
-                        case '29-44': $q->whereBetween('h.human_Age_y', [29, 44]); break;
-                        case '45-59': $q->whereBetween('h.human_Age_y', [45, 59]); break;
-                        case '60-78': $q->whereBetween('h.human_Age_y', [60, 78]); break;
-                        case '79-97': $q->whereBetween('h.human_Age_y', [79, 97]); break;
-                        case '98+':   $q->where('h.human_Age_y', '>=', 98); break;
-                    }
+            if ($year !== 'all' && ctype_digit($year) && $COL_YEAR) {
+                $q->whereRaw($colRef('u', $COL_YEAR)." = ?", [(int)$year]);
+            }
+
+            if ($COL_AGE && ($ageMin !== null || $ageMax !== null)) {
+                $ageExpr = $trim($colRef('u', $COL_AGE));
+                if ($ageMin !== null && $ageMax !== null) {
+                    $q->whereRaw("TRY_CONVERT(int, $ageExpr) BETWEEN ? AND ?", [$ageMin, $ageMax]);
+                } elseif ($ageMin !== null) {
+                    $q->whereRaw("TRY_CONVERT(int, $ageExpr) >= ?", [$ageMin]);
+                }
+            }
+
+            if ($human_Sex !== '' && $COL_SEX) {
+                $sexExpr = $trim($colRef('u', $COL_SEX));
+
+                if (isset($sexTextToCode[$human_Sex])) {
+                    $q->whereRaw("TRY_CONVERT(int, $sexExpr) = ?", [$sexTextToCode[$human_Sex]]);
+                } elseif (in_array($human_Sex, ['1', '2'], true)) {
+                    $q->whereRaw("TRY_CONVERT(int, $sexExpr) = ?", [(int)$human_Sex]);
+                } else {
+                    $q->whereRaw("$sexExpr = ?", [$human_Sex]);
+                }
+            }
+
+            return $q;
+        };
+
+        // ======================
+        // helper profile query (household capital)
+        // ======================
+        $profileBaseQuery = function() use ($conn, $profileTable) {
+            return $conn->table(DB::raw("$profileTable as p"));
+        };
+
+        $applyProfileCapitalFilters = function($q) use (
+            $district, $subdistrict, $year,
+            $P_COL_DISTRICT, $P_COL_TAMBON, $P_COL_YEAR, $P_COL_POOR,
+            $trim
+        ) {
+            if ($district !== '' && $P_COL_DISTRICT) {
+                $q->whereRaw($trim("p.[$P_COL_DISTRICT]") . " = ?", [$district]);
+            }
+
+            if ($subdistrict !== '' && $P_COL_TAMBON) {
+                $q->whereRaw($trim("p.[$P_COL_TAMBON]") . " = ?", [$subdistrict]);
+            }
+
+            if ($year !== 'all' && ctype_digit($year) && $P_COL_YEAR) {
+                $q->whereRaw("TRY_CONVERT(int, p.[$P_COL_YEAR]) = ?", [(int)$year]);
+            }
+
+            if ($P_COL_POOR) {
+                $poorExpr = $trim("CAST(p.[$P_COL_POOR] AS NVARCHAR(100))");
+
+                $q->where(function($qq) use ($P_COL_POOR, $poorExpr) {
+                    $qq->whereRaw("TRY_CONVERT(int, p.[$P_COL_POOR]) = 1")
+                       ->orWhereRaw("$poorExpr IN (N'ยากจน', N'จน', N'poor', N'Poor', N'1')");
+                });
+            }
+
+            return $q;
+        };
+
+        // ======================
+        // helper welfare conditions
+        // ======================
+        $isNotReceivedCondition = function() use ($COL_A70, $trim) {
+            if (!$COL_A70) return null;
+
+            $a70 = $trim("u.[$COL_A70]");
+
+            return "(
+                $a70 = N'0'
+                OR $a70 = N'ไม่'
+                OR $a70 = N'ไม่มี'
+                OR $a70 = N'ไม่ได้รับ'
+                OR $a70 = N'ไม่เคยได้รับ'
+                OR TRY_CONVERT(int, $a70) = 0
+            )";
+        };
+
+        $isReceivedCondition = function() use ($COL_A70, $COL_A71, $COL_A72, $COL_A73, $COL_A74, $COL_A75, $COL_A76, $trim) {
+            $receiveCols = array_values(array_filter([$COL_A71, $COL_A72, $COL_A73, $COL_A74, $COL_A75, $COL_A76]));
+
+            $receiveChecks = [];
+            foreach ($receiveCols as $col) {
+                $expr = $trim("u.[$col]");
+                $receiveChecks[] = "(NULLIF($expr, N'') IS NOT NULL AND $expr <> N'0')";
+            }
+
+            if (empty($receiveChecks)) {
+                return null;
+            }
+
+            $a70Blank = "1=1";
+            if ($COL_A70) {
+                $a70 = $trim("u.[$COL_A70]");
+                $a70Blank = "($a70 IS NULL OR $a70 = N'')";
+            }
+
+            return "(" . $a70Blank . " AND (" . implode(' OR ', $receiveChecks) . "))";
+        };
+
+        // ======================
+        // dropdowns
+        // ======================
+        $districtList = Cache::remember('dashboard_district_survey_a', 3600, function () use ($baseQuery, $districtRef, $trim) {
+            if (!$districtRef) return [];
+
+            return $baseQuery()
+                ->selectRaw($trim($districtRef)." as district")
+                ->whereRaw("$districtRef IS NOT NULL")
+                ->whereRaw($trim($districtRef)." <> N''")
+                ->distinct()
+                ->orderBy('district')
+                ->pluck('district')
+                ->toArray();
+        });
+
+        $subdistrictList = collect();
+        if ($district !== '' && $tambonRef) {
+            $subdistrictList = Cache::remember('dashboard_tambon_'.md5($district), 3600, function () use (
+                $baseQuery, $district, $districtRef, $tambonRef, $trim
+            ) {
+                $q = $baseQuery()
+                    ->selectRaw($trim($tambonRef)." as tambon")
+                    ->whereRaw("$tambonRef IS NOT NULL")
+                    ->whereRaw($trim($tambonRef)." <> N''");
+
+                if ($district !== '' && $districtRef) {
+                    $q->whereRaw($trim($districtRef)." = ?", [$district]);
                 }
 
-                $humanUnion = $humanUnion ? $humanUnion->unionAll($q) : $q;
-            }
-
-            $surveySub = DB::query()->fromSub($surveyUnion, 's');
-            $humanSub  = DB::query()->fromSub($humanUnion, 'h');
-
-            $houseQ = DB::query()->fromSub($surveySub, 's');
-
-            $joinHumansBase = DB::query()
-                ->fromSub($humanSub, 'h')
-                ->joinSub($surveySub, 's', 's.house_Id', '=', 'h.house_Id');
-
-        } else {
-
-            $y = (int) $year;
-
-            $houseQ = DB::table("household_surveys_{$y} as s")
-                ->when($district !== '', fn ($q) => $q->where('s.survey_District', $district))
-                ->when($subdistrict !== '', fn ($q) => $q->where('s.survey_Subdistrict', $subdistrict));
-
-            $joinHumansBase = DB::table("human_capital_{$y} as h")
-                ->join("household_surveys_{$y} as s", 's.house_Id', '=', 'h.house_Id')
-                ->when($district !== '', fn ($q) => $q->where('s.survey_District', $district))
-                ->when($subdistrict !== '', fn ($q) => $q->where('s.survey_Subdistrict', $subdistrict))
-                ->when($human_Sex !== '', fn ($q) => $q->where('h.human_Sex', $human_Sex));
-
-            $applyAgeRange($joinHumansBase);
+                return $q->distinct()->orderBy('tambon')->pluck('tambon');
+            });
         }
 
-        // =========================================================
-        // 🔥 CACHE
-        // =========================================================
-        $cacheTtl = 1800;   // 30 นาที
-        $listTtl  = 21600;  // 6 ชม.
-
-        $baseKey = 'dash:' . md5(json_encode([
-            'year'        => $year,
-            'district'    => $district,
-            'subdistrict' => $subdistrict,
-            'sex'         => $human_Sex,
-            'age'         => $age_range,
-        ], JSON_UNESCAPED_UNICODE));
+        // ======================
+        // main filtered query
+        // ======================
+        $q = $baseQuery();
+        $q = $applyCommonFilters($q);
 
         // ======================
-        // ✅ stats
+        // KPI
         // ======================
-        $stats = Cache::remember($baseKey . ':stats', $cacheTtl, function () use ($joinHumansBase, $HEALTH_OPTIONS) {
-            $r = (clone $joinHumansBase)->selectRaw("
-                COUNT(*) as total_members,
-                SUM(CASE WHEN COALESCE(h.a7_0,'') = 'ใช่' THEN 1 ELSE 0 END) as welfare_not,
-                SUM(CASE WHEN h.human_Sex = 'ชาย' THEN 1 ELSE 0 END) as male,
-                SUM(CASE WHEN h.human_Sex = 'หญิง' THEN 1 ELSE 0 END) as female,
-                SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h0,
-                SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h1,
-                SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h2,
-                SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h3
-            ", $HEALTH_OPTIONS)->first();
+        $totalMembers = (clone $q)->count();
 
-            $total = (int) ($r->total_members ?? 0);
-            $not   = (int) ($r->welfare_not ?? 0);
+        $totalHouseholds = $COL_HOUSE
+            ? (clone $q)->distinct()->count("u.$COL_HOUSE")
+            : 0;
 
-            return [
-                'totalMembers' => $total,
-                'welfareNot'   => $not,
-                'welfareYes'   => max(0, $total - $not),
-                'sex' => [
-                    'ชาย'  => (int) ($r->male ?? 0),
-                    'หญิง' => (int) ($r->female ?? 0),
-                ],
-            ];
-        });
+        // ======================
+        // เพศ
+        // ======================
+        if ($COL_SEX) {
+            $sexExpr = $trim("u.[$COL_SEX]");
+            $sexRaw = (clone $q)->selectRaw("
+                SUM(CASE WHEN TRY_CONVERT(int, $sexExpr) = 1 THEN 1 ELSE 0 END) AS male,
+                SUM(CASE WHEN TRY_CONVERT(int, $sexExpr) = 2 THEN 1 ELSE 0 END) AS female
+            ")->first();
+        } else {
+            $sexRaw = (object)['male' => 0, 'female' => 0];
+        }
 
-        // ✅ household count
-        $totalHouseholds = Cache::remember($baseKey . ':totalHouseholds', $cacheTtl, function () use ($houseQ) {
-            return (clone $houseQ)->distinct()->count('s.house_Id');
-        });
+        $sexCounts = [
+            'ชาย'  => (int)($sexRaw->male ?? 0),
+            'หญิง' => (int)($sexRaw->female ?? 0),
+        ];
 
-        // ✅ ครัวเรือนต่ออำเภอ
-        $householdsByDistrict = Cache::remember($baseKey . ':householdsByDistrict', $cacheTtl, function () use ($houseQ) {
-            return (clone $houseQ)
-                ->selectRaw('s.survey_District as label, COUNT(DISTINCT s.house_Id) as total')
-                ->whereNotNull('s.survey_District')
-                ->where('s.survey_District', '!=', '')
-                ->groupBy('s.survey_District')
-                ->orderByDesc('total')
-                ->get();
-        });
+        // ======================
+        // สุขภาพ summary
+        // ======================
+        if ($COL_HEALTH) {
+            $healthExpr = $trim("u.[$COL_HEALTH]");
+            $healthRaw = (clone $q)->selectRaw("
+                SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 1 THEN 1 ELSE 0 END) AS h0,
+                SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 2 THEN 1 ELSE 0 END) AS h1,
+                SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 3 THEN 1 ELSE 0 END) AS h2,
+                SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 4 THEN 1 ELSE 0 END) AS h3
+            ")->first();
+        } else {
+            $healthRaw = (object)['h0' => 0, 'h1' => 0, 'h2' => 0, 'h3' => 0];
+        }
 
-        // ✅ รายการตำบล
-        $subdistrictList = Cache::remember($baseKey . ':subdistrictList', $listTtl, function () use ($houseQ) {
-            return (clone $houseQ)
-                ->select('s.survey_Subdistrict')
-                ->whereNotNull('s.survey_Subdistrict')
-                ->where('s.survey_Subdistrict', '!=', '')
-                ->distinct()
-                ->orderBy('s.survey_Subdistrict')
-                ->pluck('s.survey_Subdistrict');
-        });
+        $healthCounts = [
+            'ปกติ'                             => (int)($healthRaw->h0 ?? 0),
+            'ป่วยเรื้อรังที่ไม่ติดเตียง'        => (int)($healthRaw->h1 ?? 0),
+            'พิการพึ่งตนเองได้'                => (int)($healthRaw->h2 ?? 0),
+            'ผู้ป่วยติดเตียง/พึ่งตัวเองไม่ได้' => (int)($healthRaw->h3 ?? 0),
+        ];
 
-        // ค่าที่ใช้ใน Blade
-        $totalMembers       = $stats['totalMembers'];
-        $welfareNotReceived = $stats['welfareNot'];
-        $welfareReceived    = $stats['welfareYes'];
-        $welfareTotal       = $totalMembers;
-        $sexCounts          = $stats['sex'];
+        // ======================
+        // สวัสดิการ (นับ "จำนวนคน")
+        // received  = a7_0 ว่าง/NULL และ a7_1-a7_6 มีค่า
+        // not_received = a7_0 = 0/ไม่/ไม่มี/ไม่ได้รับ
+        // ======================
+        $welfareTotal = $totalMembers;
+        $welfareReceived = 0;
+        $welfareNotReceived = 0;
+
+        $receivedCond = $isReceivedCondition();
+        $notReceivedCond = $isNotReceivedCondition();
+
+        if ($receivedCond) {
+            $welfareReceived = (clone $q)
+                ->whereRaw($receivedCond)
+                ->count();
+        }
+
+        if ($notReceivedCond) {
+            $welfareNotReceived = (clone $q)
+                ->whereRaw($notReceivedCond)
+                ->count();
+        }
+
+        if ($welfareReceived > $welfareTotal) {
+            $welfareReceived = $welfareTotal;
+        }
+        if ($welfareNotReceived > $welfareTotal) {
+            $welfareNotReceived = $welfareTotal;
+        }
 
         // ======================
         // กราฟสุขภาพ
         // ======================
-        if ($view === 'subdistrict' && $district === '') $view = 'district';
+        $labels = [];
+        $datasets = [];
 
-        $groupField = ($view === 'subdistrict')
-            ? 's.survey_Subdistrict'
-            : 's.survey_District';
+        if ($COL_HEALTH && ($COL_DISTRICT || $COL_TAMBON)) {
+            $healthExpr = $trim("u.[$COL_HEALTH]");
 
-        $graphKey = $baseKey . ':graph:' . $view;
-        $MAX_GROUPS = 30;
+            $chartQ = $baseQuery();
+            $chartQ = $applyCommonFilters($chartQ);
 
-        $raw = Cache::remember($graphKey, $cacheTtl, function () use ($joinHumansBase, $groupField, $HEALTH_OPTIONS, $MAX_GROUPS) {
-            $qq = (clone $joinHumansBase)->selectRaw("$groupField as label");
-
-            if ($groupField === 's.survey_Subdistrict') {
-                $qq->addSelect(DB::raw("s.survey_District as district_label"));
-            }
-
-            $qq->selectRaw("COUNT(*) as total_members")
-               ->selectRaw("SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h0", [$HEALTH_OPTIONS[0]])
-               ->selectRaw("SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h1", [$HEALTH_OPTIONS[1]])
-               ->selectRaw("SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h2", [$HEALTH_OPTIONS[2]])
-               ->selectRaw("SUM(CASE WHEN h.human_Health = ? THEN 1 ELSE 0 END) as h3", [$HEALTH_OPTIONS[3]])
-               ->whereNotNull($groupField)
-               ->where($groupField, '!=', '');
-
-            if ($groupField === 's.survey_Subdistrict') {
-                $qq->groupBy('label', 'district_label');
+            if ($district !== '' && $COL_TAMBON) {
+                $groupExpr = $trim("u.[$COL_TAMBON]");
+            } elseif ($COL_DISTRICT) {
+                $groupExpr = $trim("u.[$COL_DISTRICT]");
             } else {
-                $qq->groupBy('label');
+                $groupExpr = null;
             }
 
-            return $qq->orderByDesc('total_members')->limit($MAX_GROUPS)->get();
-        });
+            if ($groupExpr) {
+                $healthByArea = $chartQ
+                    ->selectRaw("
+                        $groupExpr AS label,
+                        SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 1 THEN 1 ELSE 0 END) AS normal_total,
+                        SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 2 THEN 1 ELSE 0 END) AS chronic_total,
+                        SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 3 THEN 1 ELSE 0 END) AS disabled_total,
+                        SUM(CASE WHEN TRY_CONVERT(int, $healthExpr) = 4 THEN 1 ELSE 0 END) AS bedridden_total,
+                        SUM(CASE
+                            WHEN u.[$COL_HEALTH] IS NULL
+                              OR $healthExpr = N''
+                              OR TRY_CONVERT(int, $healthExpr) NOT IN (1,2,3,4)
+                              OR $healthExpr = N'0'
+                            THEN 1 ELSE 0
+                        END) AS unknown_total
+                    ")
+                    ->whereRaw("$groupExpr IS NOT NULL")
+                    ->whereRaw("$groupExpr <> N''")
+                    ->groupByRaw($groupExpr)
+                    ->orderBy('label')
+                    ->get();
 
-        $labels = $raw->pluck('label')->values();
+                $labels = $healthByArea->pluck('label')->map(fn($v) => (string)$v)->values()->all();
 
-        $labelDistrictMap = $raw->mapWithKeys(function ($r) {
-            return [$r->label => ($r->district_label ?? '')];
-        });
-
-        $h0 = $raw->pluck('h0')->map(fn ($v) => (int) $v)->values();
-        $h1 = $raw->pluck('h1')->map(fn ($v) => (int) $v)->values();
-        $h2 = $raw->pluck('h2')->map(fn ($v) => (int) $v)->values();
-        $h3 = $raw->pluck('h3')->map(fn ($v) => (int) $v)->values();
-
-        $notSpecifiedArr = $raw->map(function ($r) {
-            $total = (int) ($r->total_members ?? 0);
-            $known = (int) ($r->h0 ?? 0) + (int) ($r->h1 ?? 0) + (int) ($r->h2 ?? 0) + (int) ($r->h3 ?? 0);
-            return max(0, $total - $known);
-        })->values();
-
-        $datasets = [
-            ['label' => $HEALTH_OPTIONS[0], 'data' => $h0],
-            ['label' => $HEALTH_OPTIONS[1], 'data' => $h1],
-            ['label' => $HEALTH_OPTIONS[2], 'data' => $h2],
-            ['label' => $HEALTH_OPTIONS[3], 'data' => $h3],
-        ];
-
-        if ($notSpecifiedArr->sum() > 0) {
-            $datasets[] = ['label' => 'ไม่ระบุ', 'data' => $notSpecifiedArr];
+                $datasets = [
+                    [
+                        'label' => 'ปกติ',
+                        'data'  => $healthByArea->pluck('normal_total')->map(fn($v) => (int)$v)->values()->all(),
+                    ],
+                    [
+                        'label' => 'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)',
+                        'data'  => $healthByArea->pluck('chronic_total')->map(fn($v) => (int)$v)->values()->all(),
+                    ],
+                    [
+                        'label' => 'พิการพึ่งตนเองได้',
+                        'data'  => $healthByArea->pluck('disabled_total')->map(fn($v) => (int)$v)->values()->all(),
+                    ],
+                    [
+                        'label' => 'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้',
+                        'data'  => $healthByArea->pluck('bedridden_total')->map(fn($v) => (int)$v)->values()->all(),
+                    ],
+                    [
+                        'label' => 'ไม่ระบุ',
+                        'data'  => $healthByArea->pluck('unknown_total')->map(fn($v) => (int)$v)->values()->all(),
+                    ],
+                ];
+            }
         }
 
-        // =========================================================
-        // ✅ Capitals ปีที่เลือก (Mean/SD/Radar)
-        // =========================================================
+        // ======================
+        // householdsByDistrict
+        // ======================
+        if ($COL_DISTRICT && $COL_HOUSE) {
+            $hhQ = $baseQuery();
+            $hhQ = $applyCommonFilters($hhQ);
+
+            $householdsByDistrict = $hhQ
+                ->selectRaw("
+                    ".$trim("u.[$COL_DISTRICT]")." AS label,
+                    COUNT(DISTINCT u.[$COL_HOUSE]) AS total
+                ")
+                ->whereRaw("u.[$COL_DISTRICT] IS NOT NULL")
+                ->whereRaw($trim("u.[$COL_DISTRICT]")." <> N''")
+                ->groupByRaw($trim("u.[$COL_DISTRICT]"))
+                ->orderByDesc('total')
+                ->get();
+        } else {
+            $householdsByDistrict = collect();
+        }
+
+        // ======================
+        // ทุน 5 ด้าน ของ "ครัวเรือนยากจน"
+        // ======================
+        $capSummary = [
+            'human'     => 0,
+            'physical'  => 0,
+            'financial' => 0,
+            'natural'   => 0,
+            'social'    => 0,
+        ];
+
+        $capStd = [
+            'human'     => 0,
+            'physical'  => 0,
+            'financial' => 0,
+            'natural'   => 0,
+            'social'    => 0,
+        ];
+
+        $capRadar = [0,0,0,0,0];
+        $capRadarStd = [0,0,0,0,0];
         $capYear = ($year === 'all') ? 2568 : (int)$year;
-        $capYears = [2564,2565,2566,2567,2568];
-        if (!in_array($capYear, $capYears, true)) $capYear = 2568;
+        $capByYear = [];
+        $poorHouseholds = 0;
+        $capOverallMean = 0;
 
-        $capKey = $baseKey . ':capitals:' . $capYear;
+        if ($P_CH1 && $P_CH2 && $P_CH3 && $P_CH4 && $P_CH5) {
+            $capQ = $profileBaseQuery();
+            $capQ = $applyProfileCapitalFilters($capQ);
 
-        [$capSummary, $capStd, $capRadar, $capRadarStd] = Cache::remember(
-            $capKey,
-            $cacheTtl,
-            function () use ($capYear, $district, $subdistrict) {
+            if ($P_COL_HOUSE && $P_COL_YEAR) {
+                $sub = $capQ->selectRaw("
+                    p.[$P_COL_HOUSE] AS hc,
+                    TRY_CONVERT(int, p.[$P_COL_YEAR]) AS survey_year,
+                    AVG(TRY_CAST(p.[$P_CH1] AS float)) AS ch1,
+                    AVG(TRY_CAST(p.[$P_CH2] AS float)) AS ch2,
+                    AVG(TRY_CAST(p.[$P_CH3] AS float)) AS ch3,
+                    AVG(TRY_CAST(p.[$P_CH4] AS float)) AS ch4,
+                    AVG(TRY_CAST(p.[$P_CH5] AS float)) AS ch5
+                ")
+                ->groupByRaw("p.[$P_COL_HOUSE], TRY_CONVERT(int, p.[$P_COL_YEAR])");
 
-                $table = "total_capital_data_{$capYear}";
+                $capAgg = $conn->query()
+                    ->fromSub($sub, 'x')
+                    ->selectRaw("
+                        COUNT(*) AS poor_households,
+                        AVG(ch1) AS human,
+                        AVG(ch2) AS physical,
+                        AVG(ch3) AS financial,
+                        AVG(ch4) AS natural,
+                        AVG(ch5) AS social,
 
-                $pick = function(string $table, array $cands): ?string {
-                    foreach ($cands as $c) {
-                        try {
-                            if (Schema::hasColumn($table, $c)) return $c;
-                        } catch (\Throwable $e) {}
+                        STDEV(ch1) AS human_sd,
+                        STDEV(ch2) AS physical_sd,
+                        STDEV(ch3) AS financial_sd,
+                        STDEV(ch4) AS natural_sd,
+                        STDEV(ch5) AS social_sd,
+
+                        AVG((ISNULL(ch1,0)+ISNULL(ch2,0)+ISNULL(ch3,0)+ISNULL(ch4,0)+ISNULL(ch5,0))/5.0) AS overall_mean
+                    ")
+                    ->first();
+            } else {
+                $capAgg = $capQ->selectRaw("
+                    COUNT(*) AS poor_households,
+                    AVG(TRY_CAST(p.[$P_CH1] AS float)) AS human,
+                    AVG(TRY_CAST(p.[$P_CH2] AS float)) AS physical,
+                    AVG(TRY_CAST(p.[$P_CH3] AS float)) AS financial,
+                    AVG(TRY_CAST(p.[$P_CH4] AS float)) AS natural,
+                    AVG(TRY_CAST(p.[$P_CH5] AS float)) AS social,
+
+                    STDEV(TRY_CAST(p.[$P_CH1] AS float)) AS human_sd,
+                    STDEV(TRY_CAST(p.[$P_CH2] AS float)) AS physical_sd,
+                    STDEV(TRY_CAST(p.[$P_CH3] AS float)) AS financial_sd,
+                    STDEV(TRY_CAST(p.[$P_CH4] AS float)) AS natural_sd,
+                    STDEV(TRY_CAST(p.[$P_CH5] AS float)) AS social_sd,
+
+                    AVG((
+                        ISNULL(TRY_CAST(p.[$P_CH1] AS float),0) +
+                        ISNULL(TRY_CAST(p.[$P_CH2] AS float),0) +
+                        ISNULL(TRY_CAST(p.[$P_CH3] AS float),0) +
+                        ISNULL(TRY_CAST(p.[$P_CH4] AS float),0) +
+                        ISNULL(TRY_CAST(p.[$P_CH5] AS float),0)
+                    ) / 5.0) AS overall_mean
+                ")->first();
+            }
+
+            $poorHouseholds = (int)($capAgg->poor_households ?? 0);
+
+            $capSummary = [
+                'human'     => round((float)($capAgg->human ?? 0), 2),
+                'physical'  => round((float)($capAgg->physical ?? 0), 2),
+                'financial' => round((float)($capAgg->financial ?? 0), 2),
+                'natural'   => round((float)($capAgg->natural ?? 0), 2),
+                'social'    => round((float)($capAgg->social ?? 0), 2),
+            ];
+
+            $capStd = [
+                'human'     => round((float)($capAgg->human_sd ?? 0), 2),
+                'physical'  => round((float)($capAgg->physical_sd ?? 0), 2),
+                'financial' => round((float)($capAgg->financial_sd ?? 0), 2),
+                'natural'   => round((float)($capAgg->natural_sd ?? 0), 2),
+                'social'    => round((float)($capAgg->social_sd ?? 0), 2),
+            ];
+
+            $capOverallMean = round((float)($capAgg->overall_mean ?? 0), 2);
+
+            $capRadar = [
+                $capSummary['human'],
+                $capSummary['physical'],
+                $capSummary['financial'],
+                $capSummary['natural'],
+                $capSummary['social'],
+            ];
+
+            $capRadarStd = [
+                $capStd['human'],
+                $capStd['physical'],
+                $capStd['financial'],
+                $capStd['natural'],
+                $capStd['social'],
+            ];
+
+            if ($P_COL_YEAR) {
+                foreach ([2564,2565,2566,2567,2568] as $yy) {
+                    $yearQ = $profileBaseQuery();
+
+                    if ($district !== '' && $P_COL_DISTRICT) {
+                        $yearQ->whereRaw($trim("p.[$P_COL_DISTRICT]") . " = ?", [$district]);
                     }
-                    return null;
-                };
 
-                $districtCol = $pick($table, ['district', 'survey_District', 'District']);
-                $subdistCol  = $pick($table, ['subdistrict', 'survey_Subdistrict', 'Subdistrict']);
+                    if ($subdistrict !== '' && $P_COL_TAMBON) {
+                        $yearQ->whereRaw($trim("p.[$P_COL_TAMBON]") . " = ?", [$subdistrict]);
+                    }
 
-                $qb = DB::table($table);
+                    if ($P_COL_POOR) {
+                        $poorExpr = $trim("CAST(p.[$P_COL_POOR] AS NVARCHAR(100))");
 
-                if ($district !== '' && $districtCol) {
-                    $qb->where($districtCol, $district);
+                        $yearQ->where(function($qq) use ($P_COL_POOR, $poorExpr) {
+                            $qq->whereRaw("TRY_CONVERT(int, p.[$P_COL_POOR]) = 1")
+                               ->orWhereRaw("$poorExpr IN (N'ยากจน', N'จน', N'poor', N'Poor', N'1')");
+                        });
+                    }
+
+                    $yearQ->whereRaw("TRY_CONVERT(int, p.[$P_COL_YEAR]) = ?", [$yy]);
+
+                    if ($P_COL_HOUSE && $P_COL_YEAR) {
+                        $subYear = $yearQ->selectRaw("
+                            p.[$P_COL_HOUSE] AS hc,
+                            TRY_CONVERT(int, p.[$P_COL_YEAR]) AS survey_year,
+                            AVG(TRY_CAST(p.[$P_CH1] AS float)) AS ch1,
+                            AVG(TRY_CAST(p.[$P_CH2] AS float)) AS ch2,
+                            AVG(TRY_CAST(p.[$P_CH3] AS float)) AS ch3,
+                            AVG(TRY_CAST(p.[$P_CH4] AS float)) AS ch4,
+                            AVG(TRY_CAST(p.[$P_CH5] AS float)) AS ch5
+                        ")
+                        ->groupByRaw("p.[$P_COL_HOUSE], TRY_CONVERT(int, p.[$P_COL_YEAR])");
+
+                        $row = $conn->query()
+                            ->fromSub($subYear, 'x')
+                            ->selectRaw("
+                                AVG(ch1) AS human,
+                                AVG(ch2) AS physical,
+                                AVG(ch3) AS financial,
+                                AVG(ch4) AS natural,
+                                AVG(ch5) AS social
+                            ")
+                            ->first();
+                    } else {
+                        $row = $yearQ->selectRaw("
+                            AVG(TRY_CAST(p.[$P_CH1] AS float)) AS human,
+                            AVG(TRY_CAST(p.[$P_CH2] AS float)) AS physical,
+                            AVG(TRY_CAST(p.[$P_CH3] AS float)) AS financial,
+                            AVG(TRY_CAST(p.[$P_CH4] AS float)) AS natural,
+                            AVG(TRY_CAST(p.[$P_CH5] AS float)) AS social
+                        ")->first();
+                    }
+
+                    $capByYear[$yy] = [
+                        'human'     => round((float)($row->human ?? 0), 2),
+                        'physical'  => round((float)($row->physical ?? 0), 2),
+                        'financial' => round((float)($row->financial ?? 0), 2),
+                        'natural'   => round((float)($row->natural ?? 0), 2),
+                        'social'    => round((float)($row->social ?? 0), 2),
+                    ];
                 }
-                if ($subdistrict !== '' && $subdistCol) {
-                    $qb->where($subdistCol, $subdistrict);
-                }
-
-                $avg = (clone $qb)->selectRaw("
-                    AVG(COALESCE(human_Total,0))     as human,
-                    AVG(COALESCE(physical_Total,0))  as physical,
-                    AVG(COALESCE(financial_Total,0)) as financial,
-                    AVG(COALESCE(natural_Total,0))   as natural_capital,
-                    AVG(COALESCE(social_Total,0))    as social
-                ")->first();
-
-                $sd = (clone $qb)->selectRaw("
-                    STDDEV_POP(COALESCE(human_Total,0))     as human,
-                    STDDEV_POP(COALESCE(physical_Total,0))  as physical,
-                    STDDEV_POP(COALESCE(financial_Total,0)) as financial,
-                    STDDEV_POP(COALESCE(natural_Total,0))   as natural_capital,
-                    STDDEV_POP(COALESCE(social_Total,0))    as social
-                ")->first();
-
-                $summary = [
-                    'human'     => (float)($avg->human ?? 0),
-                    'physical'  => (float)($avg->physical ?? 0),
-                    'financial' => (float)($avg->financial ?? 0),
-                    'natural'   => (float)($avg->natural_capital ?? 0),
-                    'social'    => (float)($avg->social ?? 0),
-                ];
-
-                $std = [
-                    'human'     => (float)($sd->human ?? 0),
-                    'physical'  => (float)($sd->physical ?? 0),
-                    'financial' => (float)($sd->financial ?? 0),
-                    'natural'   => (float)($sd->natural_capital ?? 0),
-                    'social'    => (float)($sd->social ?? 0),
-                ];
-
-                $radar = [
-                    $summary['human'],
-                    $summary['physical'],
-                    $summary['financial'],
-                    $summary['natural'],
-                    $summary['social'],
-                ];
-
-                $radarStd = [
-                    $std['human'],
-                    $std['physical'],
-                    $std['financial'],
-                    $std['natural'],
-                    $std['social'],
-                ];
-
-                return [$summary, $std, $radar, $radarStd];
             }
-        );
+        }
 
-        // =========================================================
-        // ✅ NEW: capByYear (ค่าเฉลี่ยทุน 5 ด้าน "รายปี" 2564–2568)
-        // =========================================================
-        $capYearsAll = [2564,2565,2566,2567,2568];
-        $capByYearKey = $baseKey . ':capByYear';
-
-        $capByYear = Cache::remember($capByYearKey, $cacheTtl, function () use ($capYearsAll, $district, $subdistrict) {
-
-            $pick = function(string $table, array $cands): ?string {
-                foreach ($cands as $c) {
-                    try {
-                        if (Schema::hasColumn($table, $c)) return $c;
-                    } catch (\Throwable $e) {}
-                }
-                return null;
-            };
-
-            $out = [];
-
-            foreach ($capYearsAll as $y) {
-                $table = "total_capital_data_{$y}";
-
-                if (!Schema::hasTable($table)) {
-                    $out[$y] = ['human'=>0,'physical'=>0,'financial'=>0,'natural'=>0,'social'=>0];
-                    continue;
-                }
-
-                $districtCol = $pick($table, ['district', 'survey_District', 'District']);
-                $subdistCol  = $pick($table, ['subdistrict', 'survey_Subdistrict', 'Subdistrict']);
-
-                $qb = DB::table($table);
-
-                if ($district !== '' && $districtCol) {
-                    $qb->where($districtCol, $district);
-                }
-                if ($subdistrict !== '' && $subdistCol) {
-                    $qb->where($subdistCol, $subdistrict);
-                }
-
-                $avg = (clone $qb)->selectRaw("
-                    AVG(COALESCE(human_Total,0))     as human,
-                    AVG(COALESCE(physical_Total,0))  as physical,
-                    AVG(COALESCE(financial_Total,0)) as financial,
-                    AVG(COALESCE(natural_Total,0))   as natural_capital,
-                    AVG(COALESCE(social_Total,0))    as social
-                ")->first();
-
-                $out[$y] = [
-                    'human'     => (float)($avg->human ?? 0),
-                    'physical'  => (float)($avg->physical ?? 0),
-                    'financial' => (float)($avg->financial ?? 0),
-                    'natural'   => (float)($avg->natural_capital ?? 0),
-                    'social'    => (float)($avg->social ?? 0),
-                ];
-            }
-
-            return $out;
-        });
-
-        // ======================
-        // ✅ ส่งไป Blade
-        // ======================
-        return view('welcome', compact(
-            'year','yearLabel','YEAR_OPTIONS',
-            'district','subdistrict','view',
-            'human_Sex','age_range','AGE_RANGES',
-            'totalHouseholds','totalMembers',
-            'householdsByDistrict','subdistrictList',
-            'labels','labelDistrictMap','datasets',
-            'welfareTotal','welfareReceived','welfareNotReceived',
+        return view('dashboard', compact(
+            'year',
+            'view',
+            'district',
+            'subdistrict',
+            'human_Sex',
+            'age_range',
+            'YEAR_OPTIONS',
+            'districtList',
+            'subdistrictList',
+            'totalHouseholds',
+            'totalMembers',
+            'labels',
+            'datasets',
             'sexCounts',
-
-            // capitals
-            'capYear','capSummary','capStd','capRadar','capRadarStd',
-
-            // NEW
-            'capByYear'
+            'healthCounts',
+            'welfareTotal',
+            'welfareReceived',
+            'welfareNotReceived',
+            'householdsByDistrict',
+            'capSummary',
+            'capStd',
+            'capRadar',
+            'capRadarStd',
+            'capYear',
+            'capByYear',
+            'poorHouseholds',
+            'capOverallMean'
         ));
     }
 }

@@ -5,345 +5,521 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\WelfareExport;
 
 class WelfareController extends Controller
 {
     public function index(Request $request)
     {
-        $actionUrl = route('welfare.index');
+        $data = $this->getWelfareBaseData($request, false);
+
+        return view('welfare', [
+            'actionUrl'       => route('welfare.index'),
+            'baseQueryParams' => $data['baseQueryParams'],
+
+            'province'        => $data['province'],
+            'provinceList'    => $data['provinceList'],
+            'district'        => $data['district'],
+            'subdistrict'     => $data['subdistrict'],
+            'districtList'    => $data['districtList'],
+            'subdistrictList' => $data['subdistrictList'],
+
+            'welfare'         => $data['welfare'],
+            'welfare_type'    => $data['welfare_type'],
+            'welfare_match'   => $data['welfare_match'],
+
+            'house_id'        => $data['house_id'],
+            'fname'           => $data['fname'],
+            'lname'           => $data['lname'],
+            'cid'             => $data['cid'],
+            'survey_year'     => $data['survey_year'],
+            'agey'            => $data['agey'],
+            'age_range'       => $data['age_range'],
+            'sex'             => $data['sex'],
+
+            'counts'          => $data['counts'],
+            'rows'            => $data['rows'],
+        ]);
+    }
+
+    public function export(Request $request)
+{
+    @ini_set('max_execution_time', 300);
+    @ini_set('memory_limit', '1024M');
+    @set_time_limit(300);
+
+    $data = $this->getWelfareBaseData($request, true);
+
+    $filename = 'welfare_export_' . now()->format('Ymd_His') . '.xlsx';
+
+    return Excel::download(new WelfareExport($data['exportQuery']), $filename);
+}
+
+    private function getWelfareBaseData(Request $request, bool $forExport = false): array
+    {
+        $conn         = DB::connection('sqlsrv');
+        $mainTable    = '[dbo].[survey_a]';
+        $profileTable = '[dbo].[survey_profile64]';
 
         // ======================
-        // FILTERS
+        // อ่านคอลัมน์จริง
         // ======================
-        $district     = (string) $request->get('district', '');
-        $subdistrict  = (string) $request->get('subdistrict', '');
+        $colsMain = collect($conn->select("
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='survey_a'
+        "))
+        ->pluck('COLUMN_NAME')
+        ->map(fn($c) => strtolower((string)$c))
+        ->values()
+        ->all();
 
-        $welfare      = (string) $request->get('welfare', ''); // '' | received | not_received
-        $welfare_type = (array)  $request->input('welfare_type', []);
+        $colsProfile = collect($conn->select("
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME='survey_profile64'
+        "))
+        ->pluck('COLUMN_NAME')
+        ->map(fn($c) => strtolower((string)$c))
+        ->values()
+        ->all();
 
-        if (!in_array($welfare, ['', 'received', 'not_received'], true)) {
-            $welfare = '';
-        }
+        $hasMainCol = fn(string $c) => in_array(strtolower($c), $colsMain, true);
+        $hasProfCol = fn(string $c) => in_array(strtolower($c), $colsProfile, true);
 
-        // ✅ OR / AND
-        $welfare_match = (string) $request->get('welfare_match', 'any'); // any(OR) | all(AND)
-        if (!in_array($welfare_match, ['any','all'], true)) {
-            $welfare_match = 'any';
-        }
+        $pickMainCol = function(array $candidates, ?string $fallback = null) use ($hasMainCol) {
+            foreach ($candidates as $c) {
+                if ($hasMainCol($c)) return $c;
+            }
+            return $fallback;
+        };
 
-        $house_id = trim((string) $request->get('house_id', ''));
-        $title    = trim((string) $request->get('title', ''));
-        $fname    = trim((string) $request->get('fname', ''));
-        $lname    = trim((string) $request->get('lname', ''));
-        $cid      = trim((string) $request->get('cid', ''));
+        $pickProfCol = function(array $candidates, ?string $fallback = null) use ($hasProfCol) {
+            foreach ($candidates as $c) {
+                if ($hasProfCol($c)) return $c;
+            }
+            return $fallback;
+        };
 
-        $survey_year = trim((string) $request->get('survey_year', ''));   // 2564..2568 หรือ ''
-        $agey        = trim((string) $request->get('agey', ''));          // fallback
-        $age_range   = (string) $request->get('age_range', '');
+        $colRef = function(?string $alias, ?string $col) {
+            return ($alias && $col) ? "{$alias}.[{$col}]" : null;
+        };
+
+        $trim = fn($expr) => "LTRIM(RTRIM($expr))";
+
+        // ======================
+        // mapping survey_a
+        // ======================
+        $COL_HOUSE    = $pickMainCol(['HC'], 'HC');
+        $COL_ORDER    = $pickMainCol(['a1'], null);
+        $COL_FNAME    = $pickMainCol(['a2_2'], null);
+        $COL_LNAME    = $pickMainCol(['a2_3'], null);
+        $COL_CID      = $pickMainCol(['popid'], null);
+        $COL_AGE      = $pickMainCol(['a3_1'], null);
+        $COL_SEX      = $pickMainCol(['a4'], null);
+        $COL_YEAR     = $pickMainCol(['survey_year', 'year'], null);
+
+        $COL_PROVINCE = $pickMainCol(['province_name_thai'], null);
+        $COL_DISTRICT = $pickMainCol(['district_name_thai'], null);
+        $COL_TAMBON   = $pickMainCol(['tambon_name_thai'], null);
+
+        $COL_HOUSE_NO     = $pickMainCol(['MBNO', 'house_number'], null);
+        $COL_VILLAGE_NO   = $pickMainCol(['MB', 'village_no'], null);
+        $COL_VILLAGE_NAME = $pickMainCol(['MM', 'village_name'], null);
+        $COL_POSTCODE     = $pickMainCol(['postcode', 'POSTCODE'], null);
+
+        // ======================
+        // mapping survey_profile64
+        // ======================
+        $P_COL_HOUSE    = $pickProfCol(['HC1'], 'HC1');
+        $P_COL_TEL      = $pickProfCol(['TEL'], null);
+        $P_COL_LATX     = $pickProfCol(['latx'], null);
+        $P_COL_LNGY     = $pickProfCol(['lngy'], null);
+        $P_COL_YEAR     = $pickProfCol(['survey_year', 'year'], null);
+
+        $P_COL_HOUSE_NO     = $pickProfCol(['MBNO', 'house_number'], null);
+        $P_COL_VILLAGE_NO   = $pickProfCol(['MB', 'village_no'], null);
+        $P_COL_VILLAGE_NAME = $pickProfCol(['MM', 'village_name'], null);
+        $P_COL_POSTCODE     = $pickProfCol(['postcode', 'POSTCODE'], null);
+
+        $provinceRef = $colRef('u', $COL_PROVINCE);
+        $districtRef = $colRef('u', $COL_DISTRICT);
+        $tambonRef   = $colRef('u', $COL_TAMBON);
+
+        // ======================
+        // filters
+        // ======================
+        $province    = trim((string) $request->get('province', ''));
+        $district    = trim((string) $request->get('district', ''));
+        $subdistrict = trim((string) $request->get('subdistrict', ''));
+
+        $welfare      = (string) $request->get('welfare', '');
+        $welfare_type = (array) $request->input('welfare_type', []);
+        if (!in_array($welfare, ['', 'received', 'not_received'], true)) $welfare = '';
+
+        $welfare_match = (string) $request->get('welfare_match', 'any');
+        if (!in_array($welfare_match, ['any','all'], true)) $welfare_match = 'any';
+
+        $house_id    = trim((string) $request->get('house_id', ''));
+        $fname       = trim((string) $request->get('fname', ''));
+        $lname       = trim((string) $request->get('lname', ''));
+        $cid         = trim((string) $request->get('cid', ''));
+        $survey_year = trim((string) $request->get('survey_year', ''));
+        $agey        = trim((string) $request->get('agey', ''));
+        $age_range   = trim((string) $request->get('age_range', ''));
         $sex         = trim((string) $request->get('sex', ''));
 
-        // ✅ ถ้าไม่ได้เลือก "received" ให้เคลียร์ประเภท
-        if ($welfare !== 'received') {
-            $welfare_type = [];
-        }
+        if ($welfare !== 'received') $welfare_type = [];
 
-        // ✅ helper: แปลง age_range เป็น [min,max] หรือ [min,null]
         $parseAgeRange = function(string $ageRange): array {
             $ageRange = trim($ageRange);
             if ($ageRange === '') return [null, null];
-
-            if (preg_match('/^(\d+)\-(\d+)$/', $ageRange, $m)) {
-                return [(int)$m[1], (int)$m[2]];
-            }
-            if (preg_match('/^(\d+)\+$/', $ageRange, $m)) {
-                return [(int)$m[1], null];
-            }
+            if (preg_match('/^(\d+)\-(\d+)$/', $ageRange, $m)) return [(int)$m[1], (int)$m[2]];
+            if (preg_match('/^(\d+)\+$/', $ageRange, $m)) return [(int)$m[1], null];
             return [null, null];
         };
 
         // ======================
-        // ✅ YEARS + UNION SUBQUERY (2564-2568)
-        // ======================
-        $ALL_YEARS = [2564,2565,2566,2567,2568];
-        $years = $ALL_YEARS;
-
-        if ($survey_year !== '' && ctype_digit($survey_year) && in_array((int)$survey_year, $ALL_YEARS, true)) {
-            $years = [(int)$survey_year];
-        }
-
-        // ======================
-        // ✅ UNION: household + human (ทำให้ทุกปีเป็นชุดเดียว)
-        // ======================
-        $union = null;
-
-        foreach ($years as $y) {
-            $hh = "household_surveys_{$y}";
-            $hm = "human_capital_{$y}";
-
-            $qY = DB::table("$hm as h")
-                ->join("$hh as s", 's.house_Id', '=', 'h.house_Id')
-                ->selectRaw("
-                    ? as survey_Year,
-                    h.house_Id,
-
-                    -- household
-                    s.survey_District,
-                    s.survey_Subdistrict,
-                    s.survey_Informer_phone,
-                    s.latitude,
-                    s.longitude,
-                    s.house_Number,
-                    s.village_No,
-                    s.village_Name,
-                    s.survey_Postcode,
-
-                    -- human
-                    h.human_Member_title,
-                    h.human_Member_fname,
-                    h.human_Member_lname,
-                    h.human_Member_cid,
-                    h.human_Order,
-                    h.human_Age_y,
-                    h.human_Sex,
-                    h.human_Health,
-
-                    -- welfare columns
-                    h.a7_0, h.a7_1, h.a7_2, h.a7_3, h.a7_4, h.a7_5, h.a7_6
-                ", [$y])
-                ->whereNotNull('h.house_Id')
-                ->where('h.house_Id','!=','');
-
-            $union = $union ? $union->unionAll($qY) : $qY;
-        }
-
-        // subquery u (รวมทุกปีแล้ว)
-        $u = DB::query()->fromSub($union, 'u');
-
-        // ======================
-        // DROPDOWN (CACHE) ✅ ดึงจาก u (ทุกปี)
-        // ======================
-        $districtList = Cache::remember(
-            'welfare_district_union_'.md5(json_encode([$years])),
-            3600,
-            function () use ($union) {
-                return DB::query()
-                    ->fromSub($union, 'u')
-                    ->whereNotNull('u.survey_District')->where('u.survey_District','!=','')
-                    ->distinct()->orderBy('u.survey_District')
-                    ->pluck('u.survey_District');
-            }
-        );
-
-        $subdistrictList = Cache::remember(
-            'welfare_subdistrict_union_'.md5(json_encode([$years,$district])),
-            3600,
-            function () use ($union, $district) {
-                return DB::query()
-                    ->fromSub($union, 'u')
-                    ->when($district !== '', fn($q) => $q->where('u.survey_District', $district))
-                    ->whereNotNull('u.survey_Subdistrict')->where('u.survey_Subdistrict','!=','')
-                    ->distinct()->orderBy('u.survey_Subdistrict')
-                    ->pluck('u.survey_Subdistrict');
-            }
-        );
-
-        // ======================
-        // HELPERS (ใช้กับ u.*)
+        // welfare cols
         // ======================
         $allowedCols = ['a7_1','a7_2','a7_3','a7_4','a7_5','a7_6'];
         $picked      = array_values(array_intersect($welfare_type, $allowedCols));
 
-        $anyReceivedRaw = function(array $cols) {
-            return '(' . implode(' OR ', array_map(
-                fn($c) => "TRIM(u.$c) = 'ได้รับ'",
-                $cols
-            )) . ')';
-        };
+        $a70Ref   = $colRef('u', 'a7_0');
+        $a70ExprT = $a70Ref ? $trim($a70Ref) : "NULL";
 
-        $noneReceivedRaw = function(array $cols) {
-            return '(' . implode(' AND ', array_map(
-                fn($c) => "(NULLIF(TRIM(u.$c),'') IS NULL OR TRIM(u.$c) <> 'ได้รับ')",
-                $cols
-            )) . ')';
-        };
-
-        $receivedCondition = function(array $cols, string $mode) {
-            if (empty($cols)) return null;
-
-            $conds = array_map(
-                fn($c) => "TRIM(u.$c) = 'ได้รับ'",
-                $cols
-            );
-
+        $hasNumericValueCondition = function(array $cols, string $mode) use ($trim, $hasMainCol) {
+            $conds = [];
+            foreach ($cols as $c) {
+                if (!$hasMainCol($c)) continue;
+                $expr = $trim("u.[$c]");
+                $conds[] = "(NULLIF($expr, N'') IS NOT NULL AND $expr <> N'0')";
+            }
+            if (empty($conds)) return null;
             return '(' . implode($mode === 'all' ? ' AND ' : ' OR ', $conds) . ')';
         };
 
         // ======================
-        // MAIN QUERY (ROWS) จาก u
+        // base query
         // ======================
-        $q = DB::query()->fromSub($union, 'u');
+        $baseQuery = function() use (
+            $conn, $mainTable, $profileTable,
+            $COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR
+        ) {
+            $q = $conn->table(DB::raw("$mainTable as u"));
 
-        // พื้นที่/ปี (ปีใน u คือ survey_Year ที่เรายัดมาแล้ว)
-        if ($district !== '')    $q->where('u.survey_District', $district);
-        if ($subdistrict !== '') $q->where('u.survey_Subdistrict', $subdistrict);
+            if ($COL_HOUSE && $P_COL_HOUSE) {
+                $q->leftJoin(DB::raw("$profileTable as p"), function($join) use ($COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR) {
+                    $join->on("u.$COL_HOUSE", '=', "p.$P_COL_HOUSE");
 
-        // อายุ/เพศ
-        $ageRaw = "TRIM(u.human_Age_y)";
-        $sexRaw = "TRIM(u.human_Sex)";
-        $a70    = "TRIM(u.a7_0)";
-        $a70Empty = "NULLIF($a70,'') IS NULL";
+                    if ($COL_YEAR && $P_COL_YEAR) {
+                        $join->on("u.$COL_YEAR", '=', "p.$P_COL_YEAR");
+                    }
+                });
+            }
+
+            return $q;
+        };
+
+        $baseQueryParams = array_filter([
+            'welfare'       => $welfare,
+            'welfare_match' => $welfare_match,
+            'welfare_type'  => $welfare_type,
+            'house_id'      => $house_id,
+            'fname'         => $fname,
+            'lname'         => $lname,
+            'cid'           => $cid,
+            'survey_year'   => $survey_year,
+            'age_range'     => $age_range,
+            'sex'           => $sex,
+        ], fn($v) => $v !== '' && $v !== [] && $v !== null);
+
+        // ======================
+        // dropdowns เฉพาะหน้าแสดงผล
+        // ======================
+        $provinceList = collect();
+        $districtList = collect();
+        $subdistrictList = collect();
+
+        if (!$forExport) {
+            $provinceList = Cache::remember('welfare_province_survey_a', 3600, function () use ($baseQuery, $provinceRef, $trim) {
+                if (!$provinceRef) return collect();
+
+                return $baseQuery()
+                    ->selectRaw($trim($provinceRef)." as province")
+                    ->whereRaw("$provinceRef IS NOT NULL")
+                    ->whereRaw($trim($provinceRef)." <> N''")
+                    ->distinct()
+                    ->orderBy('province')
+                    ->pluck('province');
+            });
+
+            $districtList = Cache::remember('welfare_district_survey_a_'.md5($province), 3600, function () use ($baseQuery, $province, $provinceRef, $districtRef, $trim) {
+                if (!$districtRef) return collect();
+
+                $q = $baseQuery()
+                    ->selectRaw($trim($districtRef)." as district")
+                    ->whereRaw("$districtRef IS NOT NULL")
+                    ->whereRaw($trim($districtRef)." <> N''");
+
+                if ($province !== '' && $provinceRef) {
+                    $q->whereRaw($trim($provinceRef)." = ?", [$province]);
+                }
+
+                return $q->distinct()->orderBy('district')->pluck('district');
+            });
+
+            $subdistrictList = Cache::remember('welfare_tambon_survey_a_'.md5($province.'|'.$district), 3600, function () use (
+                $baseQuery, $province, $district, $provinceRef, $districtRef, $tambonRef, $trim
+            ) {
+                if (!$tambonRef) return collect();
+
+                $q = $baseQuery()
+                    ->selectRaw($trim($tambonRef)." as tambon")
+                    ->whereRaw("$tambonRef IS NOT NULL")
+                    ->whereRaw($trim($tambonRef)." <> N''");
+
+                if ($province !== '' && $provinceRef) {
+                    $q->whereRaw($trim($provinceRef)." = ?", [$province]);
+                }
+                if ($district !== '' && $districtRef) {
+                    $q->whereRaw($trim($districtRef)." = ?", [$district]);
+                }
+
+                return $q->distinct()->orderBy('tambon')->pluck('tambon');
+            });
+        }
+
+        // ======================
+        // main query
+        // ======================
+        $q = $baseQuery();
+
+        $this->applyWelfareFilters(
+            $q,
+            $province, $district, $subdistrict,
+            $survey_year, $house_id, $fname, $lname, $cid,
+            $agey, $age_range, $sex,
+            $picked, $welfare, $welfare_match,
+            $parseAgeRange, $trim, $hasNumericValueCondition,
+            $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
+            $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
+        );
+
+        $selects = [];
+
+        if ($COL_HOUSE)    $selects[] = "u.[{$COL_HOUSE}] as HC";
+        if ($COL_ORDER)    $selects[] = "u.[{$COL_ORDER}] as a1";
+        if ($COL_FNAME)    $selects[] = "u.[{$COL_FNAME}] as a2_2";
+        if ($COL_LNAME)    $selects[] = "u.[{$COL_LNAME}] as a2_3";
+        if ($COL_CID)      $selects[] = "u.[{$COL_CID}] as popid";
+        if ($COL_PROVINCE) $selects[] = "u.[{$COL_PROVINCE}] as province_name_thai";
+        if ($COL_DISTRICT) $selects[] = "u.[{$COL_DISTRICT}] as district_name_thai";
+        if ($COL_TAMBON)   $selects[] = "u.[{$COL_TAMBON}] as tambon_name_thai";
+        if ($COL_YEAR)     $selects[] = "u.[{$COL_YEAR}] as survey_year";
+        if ($COL_AGE)      $selects[] = "u.[{$COL_AGE}] as a3_1";
+        if ($COL_SEX)      $selects[] = "u.[{$COL_SEX}] as a4";
+
+        if ($COL_HOUSE_NO) {
+            $selects[] = "u.[{$COL_HOUSE_NO}] as house_number";
+        } elseif ($P_COL_HOUSE_NO) {
+            $selects[] = "p.[{$P_COL_HOUSE_NO}] as house_number";
+        }
+
+        if ($COL_VILLAGE_NO) {
+            $selects[] = "u.[{$COL_VILLAGE_NO}] as village_no";
+        } elseif ($P_COL_VILLAGE_NO) {
+            $selects[] = "p.[{$P_COL_VILLAGE_NO}] as village_no";
+        }
+
+        if ($COL_VILLAGE_NAME) {
+            $selects[] = "u.[{$COL_VILLAGE_NAME}] as village_name";
+        } elseif ($P_COL_VILLAGE_NAME) {
+            $selects[] = "p.[{$P_COL_VILLAGE_NAME}] as village_name";
+        }
+
+        if ($COL_POSTCODE) {
+            $selects[] = "u.[{$COL_POSTCODE}] as postcode";
+        } elseif ($P_COL_POSTCODE) {
+            $selects[] = "p.[{$P_COL_POSTCODE}] as postcode";
+        }
+
+        if ($P_COL_TEL)  $selects[] = "p.[{$P_COL_TEL}] as TEL";
+        if ($P_COL_LATX) $selects[] = "p.[{$P_COL_LATX}] as latx";
+        if ($P_COL_LNGY) $selects[] = "p.[{$P_COL_LNGY}] as lngy";
+
+        foreach (['a7_0','a7_1','a7_2','a7_3','a7_4','a7_5','a7_6'] as $wcol) {
+            if ($hasMainCol($wcol)) {
+                $selects[] = "u.[$wcol] as $wcol";
+            }
+        }
+
+        $q->selectRaw(implode(",\n", $selects));
+
+        if ($COL_YEAR)     $q->orderBy("u.$COL_YEAR");
+        if ($COL_PROVINCE) $q->orderBy("u.$COL_PROVINCE");
+        if ($COL_DISTRICT) $q->orderBy("u.$COL_DISTRICT");
+        if ($COL_TAMBON)   $q->orderBy("u.$COL_TAMBON");
+        if ($COL_HOUSE)    $q->orderBy("u.$COL_HOUSE");
+
+        $exportQuery = clone $q;
+
+        $rows = $forExport
+            ? collect()
+            : $q->paginate(15)->appends($request->query());
+
+        // ======================
+        // counts เฉพาะหน้าแสดงผล
+        // ======================
+        $counts = ['received' => 0, 'not_received' => 0];
+
+        if (!$forExport) {
+            $countKey = 'welfare_counts_survey_a_'.md5(json_encode([
+                $province,$district,$subdistrict,$survey_year,
+                $house_id,$fname,$lname,$cid,$agey,$age_range,$sex,
+                $picked,$welfare_match
+            ], JSON_UNESCAPED_UNICODE));
+
+            $counts = Cache::remember($countKey, 300, function () use (
+                $baseQuery,
+                $province,$district,$subdistrict,$survey_year,
+                $house_id,$fname,$lname,$cid,$agey,$age_range,$sex,
+                $picked,$welfare_match,
+                $parseAgeRange,$trim,$hasNumericValueCondition,
+                $COL_HOUSE,$COL_FNAME,$COL_LNAME,$COL_CID,$COL_YEAR,$COL_AGE,$COL_SEX,
+                $a70ExprT,$provinceRef,$districtRef,$tambonRef,$colRef
+            ) {
+                $base = $baseQuery();
+
+                $this->applyWelfareFilters(
+                    $base,
+                    $province, $district, $subdistrict,
+                    $survey_year, $house_id, $fname, $lname, $cid,
+                    $agey, $age_range, $sex,
+                    [], '', 'any',
+                    $parseAgeRange, $trim, $hasNumericValueCondition,
+                    $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
+                    $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
+                );
+
+                $receivedBase = (clone $base)->where(function($qq) use ($a70ExprT) {
+                    $qq->whereRaw("$a70ExprT IS NULL")
+                       ->orWhereRaw("$a70ExprT = N''");
+                });
+
+                if (!empty($picked)) {
+                    $cond = $hasNumericValueCondition($picked, $welfare_match);
+                    if ($cond) $receivedBase->whereRaw($cond);
+                }
+
+                $notReceivedBase = (clone $base)->whereRaw("$a70ExprT = N'0'");
+
+                return [
+                    'received'     => $receivedBase->count(),
+                    'not_received' => $notReceivedBase->count(),
+                ];
+            });
+        }
+
+        return [
+            'baseQueryParams' => $baseQueryParams,
+
+            'province'        => $province,
+            'provinceList'    => $provinceList,
+            'district'        => $district,
+            'subdistrict'     => $subdistrict,
+            'districtList'    => $districtList,
+            'subdistrictList' => $subdistrictList,
+
+            'welfare'         => $welfare,
+            'welfare_type'    => $welfare_type,
+            'welfare_match'   => $welfare_match,
+
+            'house_id'        => $house_id,
+            'fname'           => $fname,
+            'lname'           => $lname,
+            'cid'             => $cid,
+            'survey_year'     => $survey_year,
+            'agey'            => $agey,
+            'age_range'       => $age_range,
+            'sex'             => $sex,
+
+            'counts'          => $counts,
+            'rows'            => $rows,
+            'exportQuery'     => $exportQuery,
+        ];
+    }
+
+    private function applyWelfareFilters(
+        $q,
+        $province, $district, $subdistrict,
+        $survey_year, $house_id, $fname, $lname, $cid,
+        $agey, $age_range, $sex,
+        $picked, $welfare, $welfare_match,
+        $parseAgeRange, $trim, $hasNumericValueCondition,
+        $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
+        $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
+    ) {
+        if ($province !== '' && $provinceRef) {
+            $q->whereRaw($trim($provinceRef)." = ?", [$province]);
+        }
+        if ($district !== '' && $districtRef) {
+            $q->whereRaw($trim($districtRef)." = ?", [$district]);
+        }
+        if ($subdistrict !== '' && $tambonRef) {
+            $q->whereRaw($trim($tambonRef)." = ?", [$subdistrict]);
+        }
+
+        if ($survey_year !== '' && ctype_digit($survey_year) && $COL_YEAR) {
+            $q->whereRaw($colRef('u', $COL_YEAR)." = ?", [(int)$survey_year]);
+        }
 
         [$ageMin, $ageMax] = $parseAgeRange($age_range);
-
-        if ($ageMin !== null && $ageMax !== null) {
-            $q->whereRaw("CAST($ageRaw AS UNSIGNED) BETWEEN ? AND ?", [$ageMin, $ageMax]);
-        } elseif ($ageMin !== null && $ageMax === null) {
-            $q->whereRaw("CAST($ageRaw AS UNSIGNED) >= ?", [$ageMin]);
-        } elseif ($agey !== '') {
-            ctype_digit($agey)
-                ? $q->whereRaw("$ageRaw = ?", [$agey])
-                : $q->whereRaw("$ageRaw LIKE ?", ["%{$agey}%"]);
-        }
-
-        if ($sex !== '') $q->whereRaw("$sexRaw = ?", [$sex]);
-
-        // ค้นหาชื่อ/บ้าน/เลขบัตร
-        if ($house_id !== '') $q->where('u.house_Id','like',"%{$house_id}%");
-        if ($title    !== '') $q->where('u.human_Member_title','like',"%{$title}%");
-        if ($fname    !== '') $q->where('u.human_Member_fname','like',"%{$fname}%");
-        if ($lname    !== '') $q->where('u.human_Member_lname','like',"%{$lname}%");
-        if ($cid      !== '') $q->where('u.human_Member_cid','like',"%{$cid}%");
-
-        // ✅ กรอง welfare (คง logic เดิม)
-        if ($welfare === 'received') {
-
-            $q->where(function($qq) use ($a70, $a70Empty, $allowedCols, $anyReceivedRaw) {
-                $qq->whereRaw("$a70 NOT IN ('ใช่','ไม่ได้รับ') AND NULLIF($a70,'') IS NOT NULL")
-                   ->orWhereRaw("$a70Empty AND ".$anyReceivedRaw($allowedCols));
-            });
-
-            if (!empty($picked)) {
-                $cond = $receivedCondition($picked, $welfare_match);
-                if ($cond) $q->whereRaw($cond);
-            }
-
-        } elseif ($welfare === 'not_received') {
-
-            $q->where(function($qq) use ($a70, $a70Empty, $allowedCols, $noneReceivedRaw) {
-                $qq->whereRaw("$a70 IN ('ใช่','ไม่ได้รับ')")
-                   ->orWhereRaw("$a70Empty AND ".$noneReceivedRaw($allowedCols));
-            });
-        }
-
-        // ✅ select ให้เหมือนเดิม (ให้ Blade ใช้ชื่อเดิมได้)
-        $q->select([
-            'u.house_Id',
-            'u.human_Member_title',
-            'u.human_Member_fname',
-            'u.human_Member_lname',
-            'u.human_Member_cid',
-            'u.human_Order',
-
-            'u.survey_District',
-            'u.survey_Subdistrict',
-            'u.survey_Year',
-
-            'u.survey_Informer_phone',
-            'u.latitude',
-            'u.longitude',
-
-            'u.house_Number',
-            'u.village_No',
-            'u.village_Name',
-            'u.survey_Postcode',
-
-            'u.human_Age_y',
-            'u.human_Sex',
-
-            'u.a7_0',
-            'u.a7_1','u.a7_2','u.a7_3','u.a7_4','u.a7_5','u.a7_6',
-        ]);
-
-        $rows = $q->orderBy('u.survey_Year')          // ✅ เพิ่มเรียงปี
-                  ->orderBy('u.survey_District')
-                  ->orderBy('u.survey_Subdistrict')
-                  ->orderBy('u.house_Id')
-                  ->paginate(15)
-                  ->appends($request->query());
-
-        // ======================
-        // COUNTS (CACHE) ✅ ใช้ union เดียวกัน
-        // ======================
-        $countKey = 'welfare_counts_union_'.md5(json_encode([
-            $years,
-            $district,$subdistrict,
-            $house_id,$title,$fname,$lname,$cid,
-            $agey,$age_range,$sex,
-            $picked,$welfare_match
-        ]));
-
-        $counts = Cache::remember($countKey, 300, function () use (
-            $union,$district,$subdistrict,
-            $house_id,$title,$fname,$lname,$cid,$agey,$age_range,$sex,
-            $a70,$a70Empty,$allowedCols,$anyReceivedRaw,$noneReceivedRaw,
-            $picked,$welfare_match,$receivedCondition,
-            $ageRaw,$sexRaw,$parseAgeRange
-        ) {
-            $base = DB::query()->fromSub($union, 'u')
-                ->when($district !== '', fn($q)=>$q->where('u.survey_District',$district))
-                ->when($subdistrict !== '', fn($q)=>$q->where('u.survey_Subdistrict',$subdistrict));
-
-            if ($house_id !== '') $base->where('u.house_Id','like',"%{$house_id}%");
-            if ($title    !== '') $base->where('u.human_Member_title','like',"%{$title}%");
-            if ($fname    !== '') $base->where('u.human_Member_fname','like',"%{$fname}%");
-            if ($lname    !== '') $base->where('u.human_Member_lname','like',"%{$lname}%");
-            if ($cid      !== '') $base->where('u.human_Member_cid','like',"%{$cid}%");
-
-            // อายุ/เพศ
-            [$ageMin, $ageMax] = $parseAgeRange($age_range);
-
+        if ($COL_AGE) {
+            $ageExpr = $trim($colRef('u', $COL_AGE));
             if ($ageMin !== null && $ageMax !== null) {
-                $base->whereRaw("CAST($ageRaw AS UNSIGNED) BETWEEN ? AND ?", [$ageMin, $ageMax]);
+                $q->whereRaw("TRY_CONVERT(int, $ageExpr) BETWEEN ? AND ?", [$ageMin, $ageMax]);
             } elseif ($ageMin !== null && $ageMax === null) {
-                $base->whereRaw("CAST($ageRaw AS UNSIGNED) >= ?", [$ageMin]);
+                $q->whereRaw("TRY_CONVERT(int, $ageExpr) >= ?", [$ageMin]);
             } elseif ($agey !== '') {
                 ctype_digit($agey)
-                    ? $base->whereRaw("$ageRaw = ?", [$agey])
-                    : $base->whereRaw("$ageRaw LIKE ?", ["%{$agey}%"]);
+                    ? $q->whereRaw("$ageExpr = ?", [$agey])
+                    : $q->whereRaw("$ageExpr LIKE ?", ["%{$agey}%"]);
             }
+        }
 
-            if ($sex !== '') $base->whereRaw("$sexRaw = ?", [$sex]);
+        if ($sex !== '' && $COL_SEX) {
+            $q->whereRaw($trim($colRef('u', $COL_SEX))." = ?", [$sex]);
+        }
 
-            $receivedBase = (clone $base)
-                ->where(function($qq) use ($a70,$a70Empty,$allowedCols,$anyReceivedRaw){
-                    $qq->whereRaw("$a70 NOT IN ('ใช่','ไม่ได้รับ') AND NULLIF($a70,'') IS NOT NULL")
-                       ->orWhereRaw("$a70Empty AND ".$anyReceivedRaw($allowedCols));
-                });
+        if ($house_id !== '' && $COL_HOUSE) {
+            $q->whereRaw($colRef('u', $COL_HOUSE)." LIKE ?", ["%{$house_id}%"]);
+        }
+        if ($fname !== '' && $COL_FNAME) {
+            $q->whereRaw($colRef('u', $COL_FNAME)." LIKE ?", ["%{$fname}%"]);
+        }
+        if ($lname !== '' && $COL_LNAME) {
+            $q->whereRaw($colRef('u', $COL_LNAME)." LIKE ?", ["%{$lname}%"]);
+        }
+        if ($cid !== '' && $COL_CID) {
+            $q->whereRaw($colRef('u', $COL_CID)." LIKE ?", ["%{$cid}%"]);
+        }
+
+        if ($welfare === 'received') {
+            $q->where(function($qq) use ($a70ExprT) {
+                $qq->whereRaw("$a70ExprT IS NULL")
+                   ->orWhereRaw("$a70ExprT = N''");
+            });
 
             if (!empty($picked)) {
-                $cond = $receivedCondition($picked, $welfare_match);
-                if ($cond) $receivedBase->whereRaw($cond);
+                $cond = $hasNumericValueCondition($picked, $welfare_match);
+                if ($cond) $q->whereRaw($cond);
             }
+        } elseif ($welfare === 'not_received') {
+            $q->whereRaw("$a70ExprT = N'0'");
+        }
 
-            $notReceivedBase = (clone $base)
-                ->where(function($qq) use ($a70,$a70Empty,$allowedCols,$noneReceivedRaw){
-                    $qq->whereRaw("$a70 IN ('ใช่','ไม่ได้รับ')")
-                       ->orWhereRaw("$a70Empty AND ".$noneReceivedRaw($allowedCols));
-                });
-
-            return [
-                'received'     => $receivedBase->count(),
-                'not_received' => $notReceivedBase->count(),
-            ];
-        });
-
-        return view('welfare', compact(
-            'actionUrl',
-            'district','subdistrict','districtList','subdistrictList',
-            'welfare','welfare_type','welfare_match',
-            'house_id','title','fname','lname','cid',
-            'survey_year','agey','age_range','sex',
-            'counts','rows'
-        ));
+        return $q;
     }
 }

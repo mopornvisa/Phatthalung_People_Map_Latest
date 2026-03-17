@@ -11,6 +11,7 @@
 
   <style>
     body{ font-family:'Prompt',system-ui,sans-serif; }
+
     .pagination{ gap:6px; }
     .page-link{
       border-radius:999px!important;
@@ -19,29 +20,101 @@
       color:#0B7F6F;
       font-size:13px;
     }
-    .page-link:hover{ background:rgba(11,127,111,.08); border-color:#0B7F6F; color:#0B7F6F; }
-    .page-item.active .page-link{ background:#0B7F6F; border-color:#0B7F6F; color:#fff; }
-    .page-item.disabled .page-link{ color:#9aa7b2; background:#fff; }
+    .page-link:hover{
+      background:rgba(11,127,111,.08);
+      border-color:#0B7F6F;
+      color:#0B7F6F;
+    }
+    .page-item.active .page-link{
+      background:#0B7F6F;
+      border-color:#0B7F6F;
+      color:#fff;
+    }
+    .page-item.disabled .page-link{
+      color:#9aa7b2;
+      background:#fff;
+    }
 
-    .dd-scroll{ max-height:320px; overflow:auto; }
+    .dd-scroll{
+      max-height:320px;
+      overflow:auto;
+    }
+
+    .shadow-soft{
+      box-shadow:0 12px 28px rgba(2,6,23,.08)!important;
+    }
+
+    .table-responsive{
+      overflow-x:auto !important;
+      overflow-y:visible !important;
+      position:relative;
+    }
+
+    thead tr:first-child th{
+      background:#F1F5F9;
+      vertical-align:middle !important;
+    }
 
     thead .filter-row th{
-      background:#fff;
+      background:#fff !important;
       position:sticky;
       top:42px;
-      z-index:5;
-      vertical-align:top;
+      z-index:20;
+      vertical-align:top !important;
+      padding:.35rem .5rem !important;
+      height:56px;
     }
-    thead .filter-row .form-select,
-    thead .filter-row .form-control{ position:relative; z-index:10; }
 
-    .shadow-soft{ box-shadow: 0 12px 28px rgba(2,6,23,.08)!important; }
+    .filter-cell{
+      display:flex;
+      align-items:flex-start;
+      min-height:38px;
+      margin:0;
+    }
+
+    .filter-cell > .form-select,
+    .filter-cell > .form-control,
+    .filter-cell > .dropdown{
+      width:100%;
+      margin:0 !important;
+    }
+
+    .filter-cell .form-select,
+    .filter-cell .form-control,
+    .filter-cell .dropdown-toggle{
+      height:38px !important;
+      min-height:38px !important;
+      margin:0 !important;
+      position:relative;
+      z-index:21;
+    }
+
+    .welfare-filter-dropdown{
+      position:relative;
+      width:100%;
+    }
+
+    .welfare-filter-dropdown .dropdown-toggle{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      width:100%;
+      white-space:nowrap;
+    }
+
+    .welfare-filter-dropdown .dropdown-menu{
+      z-index:5000 !important;
+      min-width:380px;
+      max-width:min(90vw, 380px);
+    }
   </style>
 </head>
 
 <body class="m-0"
   style="min-height:100vh;background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%);">
+
 @include('layouts.topbar')
+
 @php
   $teal  = '#0B7F6F';
   $teal2 = '#0B5B6B';
@@ -54,15 +127,12 @@
   $districtList = $districtList ?? collect([]);
   $subdistrictList = $subdistrictList ?? collect([]);
 
-  // received | not_received | ''
   $welfare = $welfare ?? '';
 
-  // any=OR | all=AND
   $welfare_match = $welfare_match ?? request('welfare_match','any');
   if (!in_array($welfare_match, ['any','all'], true)) $welfare_match = 'any';
 
   $house_id = $house_id ?? '';
-  $title = $title ?? '';
   $fname = $fname ?? '';
   $lname = $lname ?? '';
   $cid = $cid ?? '';
@@ -80,27 +150,36 @@
   $notReceivedCount = (int)($counts['not_received'] ?? 0);
 
   $types = [
-  'a7_1' => 'เด็กแรกเกิด',
-  'a7_2' => 'เบี้ยผู้สูงอายุ/คนชรา',
-  'a7_3' => 'เบี้ยคนพิการ',
-  'a7_4' => 'ประกันสังคม (ม.33)',
-  'a7_5' => 'ประกันตนเอง (ม.40)',
-  'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
-  'unknown' => 'ไม่ระบุ', // ✅ เพิ่ม
-];
-
-
-  $welfareLabel =
-    $welfare === 'received' ? 'ได้รับ' :
-    ($welfare === 'not_received' ? 'ไม่ได้รับ' : 'ทั้งหมด');
+    'a7_1' => 'เด็กแรกเกิด',
+    'a7_2' => 'เบี้ยผู้สูงอายุ/คนชรา',
+    'a7_3' => 'เบี้ยคนพิการ',
+    'a7_4' => 'ประกันสังคม (ม.33)',
+    'a7_5' => 'ประกันตนเอง (ม.40)',
+    'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
+    'unknown' => 'ไม่ระบุ',
+  ];
 
   $typeCount = count($welfare_type);
-  $matchLabel = $welfare_match === 'all' ? 'AND ได้รับ ครบทุกประเภท' : 'ได้รับ อย่างน้อย 1 ประเภท';
+  $matchLabel = $welfare_match === 'all'
+    ? 'AND ได้รับ ครบทุกประเภท'
+    : 'ได้รับ อย่างน้อย 1 ประเภท';
+
+  $baseQueryParams = array_filter([
+    'welfare'=>$welfare,
+    'welfare_match'=>$welfare_match,
+    'welfare_type'=>$welfare_type,
+    'house_id'=>$house_id,
+    'fname'=>$fname,
+    'lname'=>$lname,
+    'cid'=>$cid,
+    'survey_year'=>$survey_year,
+    'age_range'=>$age_range,
+    'sex'=>$sex,
+  ]);
 @endphp
 
 <div class="container my-4">
 
-  {{-- Header + Dropdown --}}
   <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
     <div>
       <a href="{{ url('/') }}" class="text-decoration-none d-inline-flex align-items-center gap-2">
@@ -112,8 +191,12 @@
 
     <div class="d-flex align-items-center gap-2 flex-wrap">
 
-      {{-- Dropdown อำเภอ --}}
       <div class="dropdown">
+        <a class="btn btn-sm shadow-sm"
+   style="background:#16a34a;color:#fff;border-radius:999px;"
+   href="{{ route('welfare.export', request()->query()) }}">
+  <i class="bi bi-file-earmark-excel-fill me-1"></i> Export Excel
+</a>
         <button class="btn btn-sm dropdown-toggle shadow-sm"
                 data-bs-toggle="dropdown"
                 style="background:{{ $teal }}; color:#fff; border-radius:10px;">
@@ -124,13 +207,10 @@
         <ul class="dropdown-menu rounded-4 border-0 shadow dd-scroll" style="min-width:260px;">
           <li>
             <a class="dropdown-item text-danger"
-               href="{{ $actionUrl }}?{{ http_build_query(array_filter([
-                 'welfare'=>$welfare,
-                 'welfare_match'=>$welfare_match,
-                 'welfare_type'=>$welfare_type,
-                 'house_id'=>$house_id,'title'=>$title,'fname'=>$fname,'lname'=>$lname,'cid'=>$cid,
-                 'survey_year'=>$survey_year,'age_range'=>$age_range,'sex'=>$sex,
-               ])) }}">
+               href="{{ $actionUrl }}?{{ http_build_query(array_filter(array_merge($baseQueryParams, [
+                 'district'=>'',
+                 'subdistrict'=>'',
+               ]))) }}">
               ล้างตัวกรองอำเภอ
             </a>
           </li>
@@ -139,14 +219,10 @@
           @foreach($districtList as $d)
             <li>
               <a class="dropdown-item"
-                 href="{{ $actionUrl }}?{{ http_build_query(array_filter([
+                 href="{{ $actionUrl }}?{{ http_build_query(array_filter(array_merge($baseQueryParams, [
                    'district'=>$d,
-                   'welfare'=>$welfare,
-                   'welfare_match'=>$welfare_match,
-                   'welfare_type'=>$welfare_type,
-                   'house_id'=>$house_id,'title'=>$title,'fname'=>$fname,'lname'=>$lname,'cid'=>$cid,
-                   'survey_year'=>$survey_year,'age_range'=>$age_range,'sex'=>$sex,
-                 ])) }}">
+                   'subdistrict'=>'',
+                 ]))) }}">
                 อ.{{ $d }}
               </a>
             </li>
@@ -154,7 +230,6 @@
         </ul>
       </div>
 
-      {{-- Dropdown ตำบล --}}
       <div class="dropdown">
         <button class="btn btn-sm dropdown-toggle shadow-sm"
                 data-bs-toggle="dropdown"
@@ -167,14 +242,10 @@
         <ul class="dropdown-menu rounded-4 border-0 shadow dd-scroll" style="min-width:260px;">
           <li>
             <a class="dropdown-item text-danger"
-               href="{{ $actionUrl }}?{{ http_build_query(array_filter([
+               href="{{ $actionUrl }}?{{ http_build_query(array_filter(array_merge($baseQueryParams, [
                  'district'=>$district,
-                 'welfare'=>$welfare,
-                 'welfare_match'=>$welfare_match,
-                 'welfare_type'=>$welfare_type,
-                 'house_id'=>$house_id,'title'=>$title,'fname'=>$fname,'lname'=>$lname,'cid'=>$cid,
-                 'survey_year'=>$survey_year,'age_range'=>$age_range,'sex'=>$sex,
-               ])) }}">
+                 'subdistrict'=>'',
+               ]))) }}">
               ล้างตัวกรองตำบล
             </a>
           </li>
@@ -183,14 +254,10 @@
           @foreach($subdistrictList as $sd)
             <li>
               <a class="dropdown-item"
-                 href="{{ $actionUrl }}?{{ http_build_query(array_filter([
-                   'district'=>$district,'subdistrict'=>$sd,
-                   'welfare'=>$welfare,
-                   'welfare_match'=>$welfare_match,
-                   'welfare_type'=>$welfare_type,
-                   'house_id'=>$house_id,'title'=>$title,'fname'=>$fname,'lname'=>$lname,'cid'=>$cid,
-                   'survey_year'=>$survey_year,'age_range'=>$age_range,'sex'=>$sex,
-                 ])) }}">
+                 href="{{ $actionUrl }}?{{ http_build_query(array_filter(array_merge($baseQueryParams, [
+                   'district'=>$district,
+                   'subdistrict'=>$sd,
+                 ]))) }}">
                 ต.{{ $sd }}
               </a>
             </li>
@@ -207,7 +274,6 @@
     </div>
   </div>
 
-  {{-- Cards --}}
   <div class="row g-4 mb-3">
     <div class="col-md-6">
       <div class="card border-0 shadow rounded-4 p-3 bg-white bg-opacity-90 h-100">
@@ -236,7 +302,6 @@
     </div>
   </div>
 
-  {{-- ตาราง --}}
   <div class="card border-0 shadow-lg rounded-4 bg-white bg-opacity-90">
     <div class="card-body pb-0">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
@@ -284,179 +349,185 @@
               <th style="min-width:150px;color:{{ $teal2 }};">เพศ</th>
               <th style="min-width:160px;color:{{ $teal2 }};">สวัสดิการ</th>
               <th style="min-width:340px;color:{{ $teal2 }};">ประเภทสวัสดิการ</th>
+              
               <th style="min-width:140px;color:{{ $teal2 }};">รายละเอียด</th>
             </tr>
 
-            {{-- ✅ FIX: filter-row ต้องมี 9 <th> ให้ครบ --}}
             <tr class="filter-row">
               <th>
-                <select class="form-select form-select-sm" name="survey_year">
-                  <option value="">ปีที่สำรวจ (ทั้งหมด)</option>
-                  @foreach([2564,2565,2566,2567,2568] as $y)
-                    <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
-                  @endforeach
-                </select>
+                <div class="filter-cell">
+                  <select class="form-select form-select-sm" name="survey_year">
+                    <option value="">ปีที่สำรวจ (ทั้งหมด)</option>
+                    @foreach([2564,2565,2566,2567,2568] as $y)
+                      <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
+                    @endforeach
+                  </select>
+                </div>
               </th>
 
               <th>
-                <input class="form-control form-control-sm" style="max-width:120px"
-                       name="house_id" value="{{ $house_id }}" placeholder="รหัสบ้าน">
+                <div class="filter-cell">
+                  <input class="form-control form-control-sm" style="max-width:120px"
+                         name="house_id" value="{{ $house_id }}" placeholder="รหัสบ้าน">
+                </div>
               </th>
 
               <th>
-                <input class="form-control form-control-sm" style="max-width:140px"
-                       name="fname" value="{{ $fname }}" placeholder="ชื่อ">
+                <div class="filter-cell">
+                  <input class="form-control form-control-sm" style="max-width:140px"
+                         name="fname" value="{{ $fname }}" placeholder="ชื่อ">
+                </div>
               </th>
 
               <th>
-                <input class="form-control form-control-sm" style="max-width:140px"
-                       name="lname" value="{{ $lname }}" placeholder="สกุล">
+                <div class="filter-cell">
+                  <input class="form-control form-control-sm" style="max-width:140px"
+                         name="lname" value="{{ $lname }}" placeholder="นามสกุล">
+                </div>
               </th>
 
               <th>
-                <select class="form-select form-select-sm" name="age_range">
-                  <option value="">ช่วงอายุ (ทั้งหมด)</option>
-                  <option value="0-15"  @selected($age_range==='0-15')>0 – 15 ปี</option>
-                  <option value="16-28" @selected($age_range==='16-28')>16 – 28 ปี</option>
-                  <option value="29-44" @selected($age_range==='29-44')>29 – 44 ปี</option>
-                  <option value="45-59" @selected($age_range==='45-59')>45 – 59 ปี</option>
-                  <option value="60-78" @selected($age_range==='60-78')>60 – 78 ปี</option>
-                  <option value="79-97" @selected($age_range==='79-97')>79 – 97 ปี</option>
-                  <option value="98+"   @selected($age_range==='98+')>98 ปีขึ้นไป</option>
-                </select>
+                <div class="filter-cell">
+                  <select class="form-select form-select-sm" name="age_range">
+                    <option value="">ช่วงอายุ (ทั้งหมด)</option>
+                    <option value="0-15"  @selected($age_range==='0-15')>0 – 15 ปี</option>
+                    <option value="16-28" @selected($age_range==='16-28')>16 – 28 ปี</option>
+                    <option value="29-44" @selected($age_range==='29-44')>29 – 44 ปี</option>
+                    <option value="45-59" @selected($age_range==='45-59')>45 – 59 ปี</option>
+                    <option value="60-78" @selected($age_range==='60-78')>60 – 78 ปี</option>
+                    <option value="79-97" @selected($age_range==='79-97')>79 – 97 ปี</option>
+                    <option value="98+"   @selected($age_range==='98+')>98 ปีขึ้นไป</option>
+                  </select>
+                </div>
               </th>
 
               <th>
-                <select class="form-select form-select-sm" name="sex">
-                  <option value="">เพศ (ทั้งหมด)</option>
-                  <option value="ชาย"  @selected($sex === 'ชาย')>ชาย</option>
-                  <option value="หญิง" @selected($sex === 'หญิง')>หญิง</option>
-                </select>
+                <div class="filter-cell">
+                  <select class="form-select form-select-sm" name="sex">
+                    <option value="">เพศ (ทั้งหมด)</option>
+                    <option value="1" @selected($sex === '1')>ชาย</option>
+                    <option value="2" @selected($sex === '2')>หญิง</option>
+                  </select>
+                </div>
               </th>
 
-              {{-- ตัวกรองสวัสดิการ --}}
-<th>
-  <div class="dropdown">
-    <button class="btn btn-sm dropdown-toggle w-100"
-            type="button"
-            data-bs-toggle="dropdown"
-            data-bs-auto-close="outside"
-            data-bs-boundary="viewport"
-            aria-expanded="false"
-            style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
-      <i class="bi bi-funnel-fill text-success me-1"></i>
-      ตัวกรองข้อมูลสวัสดิการ
-    </button>
+              <th>
+                <div class="filter-cell">
+                  <div class="dropdown welfare-filter-dropdown">
+                    <button class="btn btn-sm dropdown-toggle w-100"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false"
+                            style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
+                      <span>
+                        <i class="bi bi-funnel-fill text-success me-1"></i>
+                        ตัวกรองข้อมูลสวัสดิการ
+                      </span>
+                    </button>
 
-    <div class="dropdown-menu p-3 border-0 shadow rounded-4"
-         style="width:380px; max-width:90vw; z-index:2000;">
+                    <div class="dropdown-menu p-3 border-0 shadow rounded-4">
+                      <div class="overflow-auto overflow-x-hidden" style="max-height:60vh;">
 
-      <div class="overflow-auto overflow-x-hidden" style="max-height:60vh;">
+                        <div class="fw-semibold text-secondary mb-2">
+                          ขั้นตอนที่ 1 : เลือกสถานะสวัสดิการ
+                        </div>
 
-        <div class="fw-semibold text-secondary mb-2">
-          ขั้นตอนที่ 1 : เลือกสถานะสวัสดิการ
-        </div>
+                        <div class="d-flex gap-2 mb-3 flex-wrap">
+                          <button type="button"
+                                  class="btn btn-sm {{ $welfare==='' ? 'btn-success' : 'btn-outline-success' }}"
+                                  onclick="setWelfare('', true)">
+                            ทั้งหมด
+                          </button>
 
-        <div class="d-flex gap-2 mb-3 flex-wrap">
-          <button type="button"
-                  class="btn btn-sm {{ $welfare==='' ? 'btn-success' : 'btn-outline-success' }}"
-                  onclick="setWelfare('', true)">
-            ทั้งหมด
-          </button>
+                          <button type="button"
+                                  class="btn btn-sm {{ $welfare==='received' ? 'btn-success' : 'btn-outline-success' }}"
+                                  onclick="setWelfare('received', true)">
+                            ได้รับสวัสดิการ
+                          </button>
 
-          <button type="button"
-                  class="btn btn-sm {{ $welfare==='received' ? 'btn-success' : 'btn-outline-success' }}"
-                  onclick="setWelfare('received', true)">
-            ได้รับสวัสดิการ
-          </button>
+                          <button type="button"
+                                  class="btn btn-sm {{ $welfare==='not_received' ? 'btn-secondary' : 'btn-outline-secondary' }}"
+                                  onclick="setWelfare('not_received', true)">
+                            ไม่ได้รับสวัสดิการ
+                          </button>
+                        </div>
 
-          <button type="button"
-                  class="btn btn-sm {{ $welfare==='not_received' ? 'btn-secondary' : 'btn-outline-secondary' }}"
-                  onclick="setWelfare('not_received', true)">
-            ไม่ได้รับสวัสดิการ
-          </button>
-        </div>
+                        <div id="welfareTypeSection">
+                          <div class="fw-semibold text-secondary mb-2">
+                            ขั้นตอนที่ 2 : เลือกประเภทสวัสดิการ
+                          </div>
 
-        {{-- ✅ ซ่อน/โชว์ ขั้นตอนที่ 2-3 ด้วย wrapper --}}
-        <div id="welfareTypeSection">
+                          <div class="row g-2 mb-3">
+                            @foreach($types as $key=>$label)
+                              <div class="col-6">
+                                <label class="form-check w-100">
+                                  <input class="form-check-input"
+                                         type="checkbox"
+                                         name="welfare_type[]"
+                                         value="{{ $key }}"
+                                         @checked(in_array($key, $welfare_type))
+                                         onchange="handleUnknownToggle(this); ensureReceived()">
 
-          <div class="fw-semibold text-secondary mb-2">
-            ขั้นตอนที่ 2 : เลือกประเภทสวัสดิการ
-          </div>
+                                  <span class="badge rounded-pill w-100 text-start d-block text-truncate
+                                    {{ in_array($key,$welfare_type) ? 'bg-success-subtle text-success' : 'bg-light text-dark border' }}"
+                                    style="padding:.6rem .75rem;" title="{{ $label }}">
+                                    {{ $label }}
+                                  </span>
+                                </label>
+                              </div>
+                            @endforeach
+                          </div>
 
-          <div class="row g-2 mb-3">
-            @foreach($types as $key=>$label)
-              <div class="col-6">
-                <label class="form-check w-100">
-                  <input class="form-check-input"
-                  type="checkbox"
-                         name="welfare_type[]"
-                         value="{{ $key }}"
-                         @checked(in_array($key, $welfare_type))
-                         onchange="handleUnknownToggle(this); ensureReceived()">
+                          @if($typeCount > 1)
+                            <div class="fw-semibold text-secondary mb-2">
+                              ขั้นตอนที่ 3 : เงื่อนไขการแสดงผล
+                            </div>
 
-                  <span class="badge rounded-pill w-100 text-start d-block text-truncate
-                    {{ in_array($key,$welfare_type) ? 'bg-success-subtle text-success' : 'bg-light text-dark border' }}"
-                    style="padding:.6rem .75rem;" title="{{ $label }}">
-                    {{ $label }}
-                  </span>
-                </label>
-              </div>
-            @endforeach
-          </div>
+                            <div class="vstack gap-2 mb-3 small">
+                              <label class="border rounded-3 p-2 d-flex gap-2">
+                                <input type="radio" class="form-check-input mt-1"
+                                       name="welfare_match_ui"
+                                       value="any"
+                                       @checked($welfare_match==='any')
+                                       onclick="setMatch('any')">
+                                <div>ได้รับ <strong>อย่างน้อย 1 ประเภท</strong></div>
+                              </label>
 
-          @if($typeCount > 1)
-            <div class="fw-semibold text-secondary mb-2">
-              ขั้นตอนที่ 3 : เงื่อนไขการแสดงผล
-            </div>
+                              <label class="border rounded-3 p-2 d-flex gap-2">
+                                <input type="radio" class="form-check-input mt-1"
+                                       name="welfare_match_ui"
+                                       value="all"
+                                       @checked($welfare_match==='all')
+                                       onclick="setMatch('all')">
+                                <div>ได้รับ <strong>ครบทุกประเภท</strong></div>
+                              </label>
+                            </div>
+                          @endif
+                        </div>
+                      </div>
 
-            <div class="vstack gap-2 mb-3 small">
-              <label class="border rounded-3 p-2 d-flex gap-2">
-                <input type="radio" class="form-check-input mt-1"
-                       name="welfare_match_ui"
-                       value="any"
-                       @checked($welfare_match==='any')
-                       onclick="setMatch('any')">
-                <div>ได้รับ <strong>อย่างน้อย 1 ประเภท</strong></div>
-              </label>
+                      <div class="d-flex gap-2 pt-2 border-top">
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary w-100"
+                                onclick="clearWelfareTypes()">
+                          ล้างการเลือก
+                        </button>
+                        <button type="submit"
+                                class="btn btn-sm btn-success w-100">
+                          แสดงผลข้อมูล
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </th>
 
-              <label class="border rounded-3 p-2 d-flex gap-2">
-                <input type="radio" class="form-check-input mt-1"
-                       name="welfare_match_ui"
-                       value="all"
-                       @checked($welfare_match==='all')
-                       onclick="setMatch('all')">
-                <div>ได้รับ <strong>ครบทุกประเภท</strong></div>
-              </label>
-            </div>
-          @endif
-
-        </div> {{-- /#welfareTypeSection --}}
-
-      </div>
-
-      <div class="d-flex gap-2 pt-2 border-top">
-        <button type="button"
-                class="btn btn-sm btn-outline-secondary w-100"
-                onclick="clearWelfareTypes()">
-          ล้างการเลือก
-        </button>
-        <button type="submit"
-                class="btn btn-sm btn-success w-100">
-          แสดงผลข้อมูล
-        </button>
-      </div>
-
-    </div>
-  </div>
-</th>
-
-                          
-              {{-- ✅ FIX: ช่อง filter ของ "ประเภทสวัสดิการ" --}}
-              <th></th>
-
-              {{-- ✅ FIX: ช่อง filter ของ "รายละเอียด" --}}
-              <th></th>
+              <th><div class="filter-cell"></div></th>
+              <th><div class="filter-cell"></div></th>
+              <th><div class="filter-cell"></div></th>
+              <th><div class="filter-cell"></div></th>
+              <th><div class="filter-cell"></div></th>
             </tr>
           </thead>
 
@@ -464,7 +535,7 @@
             @forelse($rows as $r)
               @php
                 $a70 = trim((string)($r->a7_0 ?? ''));
-                $isNotReceivedRow = in_array($a70, ['ใช่','ไม่ได้รับ'], true);
+                $isNotReceivedRow = ($a70 === '0');
 
                 $statusLabel = $isNotReceivedRow ? 'ไม่ได้รับ' : 'ได้รับ';
                 $statusClass = $isNotReceivedRow
@@ -480,68 +551,67 @@
                   'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
                 ];
 
-                $isYes = fn($v) => trim((string)$v) === 'ได้รับ';
+                $isYes = function($v){
+                  $v = trim((string)$v);
+                  return $v !== '' && $v !== '0';
+                };
 
                 $receivedList = [];
-                    $hasAnyYes = false;
 
-                    if(!$isNotReceivedRow){
-                      $selectedCols = array_values(array_intersect($welfare_type, array_keys($wMap)));
-                      $showCols = !empty($selectedCols) ? $selectedCols : array_keys($wMap);
+                if (!$isNotReceivedRow) {
+                  $selectedCols = array_values(array_intersect($welfare_type, array_keys($wMap)));
+                  $showCols = !empty($selectedCols) ? $selectedCols : array_keys($wMap);
 
-                      foreach($showCols as $col){
-                        if(isset($r->$col) && $isYes($r->$col)){
-                          $hasAnyYes = true;
-                          $receivedList[] = $wMap[$col] ?? $col;
-                        }
-                      }
-
-                      // ✅ ไม่มีสวัสดิการใดเป็น "ได้รับ" เลย
-                      if(!$hasAnyYes){
-                        $receivedList = ['ไม่ระบุ'];
-                      }
+                  foreach ($showCols as $col) {
+                    if (isset($r->$col) && $isYes($r->$col)) {
+                      $receivedList[] = $wMap[$col];
                     }
+                  }
 
+                  if (count($receivedList) === 0) {
+                    $receivedList = ['ไม่ระบุ'];
+                  }
+                }
+
+                $sexLabel = match((string)($r->a4 ?? '')) {
+                  '1' => 'ชาย',
+                  '2' => 'หญิง',
+                  default => '-',
+                };
               @endphp
 
               <tr
-                data-house="{{ $r->house_Id ?? '' }}"
-                data-year="{{ $r->survey_Year ?? '' }}"
-
-                {{-- ที่อยู่ --}}
-                data-house_number="{{ $r->house_Number ?? '' }}"
-                data-village_no="{{ $r->village_No ?? '' }}"
-                data-village_name="{{ $r->village_Name ?? '' }}"
-                data-postcode="{{ $r->survey_Postcode ?? '' }}"
-
-                data-subdistrict="{{ $r->survey_Subdistrict ?? '' }}"
-                data-district="{{ $r->survey_District ?? '' }}"
-
-                {{-- พิกัด --}}
-                data-lat="{{ $r->latitude ?? '' }}"
-                data-lng="{{ $r->longitude ?? '' }}"
-
-                {{-- บุคคล --}}
-                data-order="{{ $r->human_Order ?? '' }}"
-                data-title="{{ $r->human_Member_title ?? '' }}"
-                data-fname="{{ $r->human_Member_fname ?? '' }}"
-                data-lname="{{ $r->human_Member_lname ?? '' }}"
-                data-agey="{{ $r->human_Age_y ?? '' }}"
-                data-sex="{{ $r->human_Sex ?? '' }}"
-                data-cid="{{ $r->human_Member_cid ?? '' }}"
-
-                {{-- เบอร์โทร --}}
-                data-phone="{{ $r->survey_Informer_phone ?? '' }}"
-
-                data-health="{{ $r->human_Health ?? '' }}"
+                data-order="{{ $r->a1 ?? '' }}"
+                data-house="{{ $r->HC ?? '' }}"
+                data-year="{{ $r->survey_year ?? '' }}"
+                data-house_number="{{ $r->house_number ?? '' }}"
+                data-village_no="{{ $r->village_no ?? '' }}"
+                data-village_name="{{ $r->village_name ?? '' }}"
+                data-postcode="{{ $r->postcode ?? '' }}"
+                data-subdistrict="{{ $r->tambon_name_thai ?? '' }}"
+                data-district="{{ $r->district_name_thai ?? '' }}"
+                data-lat="{{ $r->latx ?? '' }}"
+                data-lng="{{ $r->lngy ?? '' }}"
+                data-title=""
+                data-fname="{{ $r->a2_2 ?? '' }}"
+                data-lname="{{ $r->a2_3 ?? '' }}"
+                data-agey="{{ $r->a3_1 ?? '' }}"
+                data-sex="{{ match((string)($r->a4 ?? '')) {
+                  '1' => 'ชาย',
+                  '2' => 'หญิง',
+                  default => '',
+                } }}"
+                data-cid="{{ $r->popid ?? '' }}"
+                data-phone="{{ $r->TEL ?? '' }}"
+                data-health=""
                 data-welfare='@json(array_values(array_unique($receivedList ?? [])))'
               >
-                <td class="ps-3 fw-semibold">{{ $r->survey_Year ?? '-' }}</td>
-                <td class="fw-semibold">{{ $r->house_Id ?? '-' }}</td>
-                <td>{{ $r->human_Member_fname ?? '-' }}</td>
-                <td>{{ $r->human_Member_lname ?? '-' }}</td>
-                <td>{{ $r->human_Age_y ?? '-' }}</td>
-                <td>{{ $r->human_Sex ?? '-' }}</td>
+                <td class="ps-3 fw-semibold">{{ $r->survey_year ?? '-' }}</td>
+                <td class="fw-semibold">{{ $r->HC ?? '-' }}</td>
+                <td>{{ $r->a2_2 ?? '-' }}</td>
+                <td>{{ $r->a2_3 ?? '-' }}</td>
+                <td>{{ $r->a3_1 ?? '-' }}</td>
+                <td>{{ $sexLabel }}</td>
 
                 <td>
                   <span class="badge rounded-pill px-3 py-2 {{ $statusClass }}">
@@ -553,17 +623,15 @@
                   @if($isNotReceivedRow)
                     <span class="badge rounded-pill bg-secondary-subtle text-secondary border">-</span>
                   @else
-                    @if(count($receivedList) === 0)
-                      <span class="badge rounded-pill bg-secondary-subtle text-secondary border">ไม่ระบุ</span>
-                    @else
-                      <div class="d-flex flex-wrap gap-1">
-                        @foreach(array_unique($receivedList) as $item)
-                          <span class="badge rounded-pill bg-light text-dark border">{{ $item }}</span>
-                        @endforeach
-                      </div>
-                    @endif
+                    <div class="d-flex flex-wrap gap-1">
+                      @foreach(array_unique($receivedList) as $item)
+                        <span class="badge rounded-pill bg-light text-dark border">{{ $item }}</span>
+                      @endforeach
+                    </div>
                   @endif
                 </td>
+
+               
 
                 <td class="text-end pe-3" style="width:1%;white-space:nowrap;">
                   <button type="button"
@@ -575,10 +643,10 @@
                     <span>ดูรายละเอียด</span>
                   </button>
                 </td>
-              </tr> {{-- ✅ FIX: ปิดแถวให้ครบ --}}
+              </tr>
             @empty
               <tr>
-                <td colspan="9" class="text-center text-muted py-4">ไม่พบข้อมูล</td>
+                <td colspan="12" class="text-center text-muted py-4">ไม่พบข้อมูล</td>
               </tr>
             @endforelse
           </tbody>
@@ -586,7 +654,6 @@
       </div>
     </form>
 
-    {{-- Pagination --}}
     @if($rows instanceof \Illuminate\Pagination\LengthAwarePaginator)
       <div class="py-3">
         <div class="text-center text-muted small mb-2">
@@ -601,10 +668,7 @@
   </div>
 </div>
 
- {{-- =========================
-     MODAL
- ========================= --}}
- <div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content rounded-4 shadow">
 
@@ -635,7 +699,6 @@
 
               <div class="card-body pt-2">
                 <div class="row g-2 small">
-
                   <div class="col-6">
                     <div class="border rounded-3 p-2 bg-white h-100">
                       <div class="text-secondary small">รหัสบ้าน</div>
@@ -678,7 +741,6 @@
                       <div class="fw-semibold font-monospace" id="m_lng"></div>
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
@@ -706,11 +768,12 @@
 
                       <div class="col-8 col-md-9">
                         <div class="border rounded-3 p-2 bg-white h-100">
-                          <div class="text-secondary small">คำนำหน้า / ชื่อ - สกุล</div>
+                          <div class="text-secondary small">ชื่อ - สกุล</div>
                           <div class="fw-bold fs-6">
-                            <span id="m_title" class="me-1"></span>
                             <span id="m_fname"></span>
-                            <span id="m_lname" class="ms-1"></span>
+                            <span id="m_lname_wrap" class="ms-1">
+                              <span id="m_lname"></span>
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -750,12 +813,9 @@
                         <div class="text-secondary small">เบอร์ติดต่อ</div>
                         <div class="fw-semibold font-monospace" id="m_phone"></div>
                       </div>
-
-                      
                     </div>
                   </div>
 
-                  {{-- ✅ สวัสดิการ --}}
                   <div class="col-12">
                     <div class="border rounded-3 p-2 bg-success-subtle">
                       <div class="text-secondary small">สวัสดิการ</div>
@@ -805,48 +865,67 @@
 
     </div>
   </div>
- </div>
+</div>
 
- <script>
-  // ✅ ทำให้ dropdown ใน table-responsive ไม่โดน overflow ตัด
-  function initDropdownFixed() {
-    document.querySelectorAll('[data-bs-toggle="dropdown"]').forEach((el) => {
-      if (el.dataset.ddFixedInit === '1') return;
-      el.dataset.ddFixedInit = '1';
+<script>
+  function initWelfareDropdown() {
+    document.querySelectorAll('.welfare-filter-dropdown > [data-bs-toggle="dropdown"]').forEach((el) => {
+      if (el.dataset.ddInit === '1') return;
+      el.dataset.ddInit = '1';
 
       new bootstrap.Dropdown(el, {
-        popperConfig: {
-          strategy: 'fixed',
-          modifiers: [
-            { name: 'preventOverflow', options: { boundary: 'viewport' } },
-            { name: 'flip', options: { boundary: 'viewport' } }
-          ]
+        autoClose: 'outside',
+        popperConfig(defaultBsPopperConfig) {
+          return {
+            ...defaultBsPopperConfig,
+            placement: 'bottom-start',
+            strategy: 'fixed',
+            modifiers: [
+              ...(defaultBsPopperConfig.modifiers || []),
+              {
+                name: 'offset',
+                options: { offset: [0, 8] }
+              },
+              {
+                name: 'preventOverflow',
+                options: {
+                  boundary: 'viewport',
+                  padding: 8
+                }
+              },
+              {
+                name: 'flip',
+                options: {
+                  boundary: 'viewport',
+                  fallbackPlacements: ['top-start', 'right-start']
+                }
+              }
+            ]
+          };
         }
       });
     });
   }
- function handleUnknownToggle(changed){
-  const unknown = document.querySelector('input[name="welfare_type[]"][value="unknown"]');
-  if(!unknown) return;
 
-  const others = Array.from(document.querySelectorAll('input[name="welfare_type[]"]'))
-    .filter(x => x.value !== 'unknown');
+  function handleUnknownToggle(changed){
+    const unknown = document.querySelector('input[name="welfare_type[]"][value="unknown"]');
+    if(!unknown) return;
 
-  // ถ้าเพิ่งติ๊ก "ไม่ระบุ" -> ปิดตัวอื่น + บังคับ match = any
-  if(changed === unknown && unknown.checked){
-    others.forEach(x => x.checked = false);
-    setMatch('any');
-    ensureReceived();
-    return;
+    const others = Array.from(document.querySelectorAll('input[name="welfare_type[]"]'))
+      .filter(x => x.value !== 'unknown');
+
+    if(changed === unknown && unknown.checked){
+      others.forEach(x => x.checked = false);
+      setMatch('any');
+      ensureReceived();
+      return;
+    }
+
+    if(changed !== unknown && changed.checked){
+      unknown.checked = false;
+    }
   }
 
-  // ถ้าติ๊กตัวอื่น -> ปิด "ไม่ระบุ"
-  if(changed !== unknown && changed?.checked){
-    unknown.checked = false;
-  }
- }
-
-  // ✅ ซ่อน/โชว์ ขั้นตอนที่ 2-3
   function toggleWelfareTypeSection(){
     const welfare = document.getElementById('welfareHidden')?.value || '';
     const sec = document.getElementById('welfareTypeSection');
@@ -854,19 +933,12 @@
 
     if (welfare === 'not_received') {
       sec.classList.add('d-none');
-
-      // ล้างประเภท + match เพื่อไม่ให้ค้าง
       clearWelfareTypes();
       setMatch('any');
     } else {
       sec.classList.remove('d-none');
     }
   }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    initDropdownFixed();
-    toggleWelfareTypeSection(); // ✅ ให้ซ่อนถูกตั้งแต่โหลดหน้า
-  });
 
   function setMatch(val){
     const m = document.getElementById('welfareMatchHidden');
@@ -882,7 +954,7 @@
       setMatch('any');
     }
 
-    toggleWelfareTypeSection(); // ✅ เพิ่ม
+    toggleWelfareTypeSection();
 
     if(autoSubmit){
       document.getElementById('filterForm').submit();
@@ -896,51 +968,55 @@
     const m = document.getElementById('welfareMatchHidden');
     if(m && !m.value) m.value = 'any';
 
-    toggleWelfareTypeSection(); // ✅ เพิ่ม (ถ้าติ๊กประเภท ให้แน่ใจว่า step2-3 โชว์)
+    toggleWelfareTypeSection();
   }
 
   function clearWelfareTypes(){
-  document.querySelectorAll('input[name="welfare_type[]"]').forEach(cb => cb.checked = false);
- }
+    document.querySelectorAll('input[name="welfare_type[]"]').forEach(cb => cb.checked = false);
+  }
 
-
-  // ✅ เติมข้อมูลเข้า modal
   function openDetail(tr){
     if(!tr) return;
     const get = (k) => (tr.dataset[k] ?? '').toString().trim();
+    const safe = (v, dash = '-') => (v && v.trim() !== '' ? v : dash);
 
-    // บ้าน/พื้นที่
-    document.getElementById('m_house').textContent = get('house') || '-';
-    document.getElementById('m_year').textContent  = get('year') || '-';
-    document.getElementById('m_house_number').textContent = get('house_number') || '-';
-    document.getElementById('m_village_no').textContent   = get('village_no') || '-';
-    document.getElementById('m_village_name').textContent = get('village_name') || '-';
-    document.getElementById('m_subdistrict').textContent  = get('subdistrict') || '-';
-    document.getElementById('m_district').textContent     = get('district') || '-';
-    document.getElementById('m_postcode').textContent     = get('postcode') || '';
-    document.getElementById('m_lat').textContent = get('lat') || '-';
-    document.getElementById('m_lng').textContent = get('lng') || '-';
+    document.getElementById('m_house').textContent = safe(get('house'));
+    document.getElementById('m_year').textContent  = safe(get('year'));
+    document.getElementById('m_house_number').textContent = safe(get('house_number'));
+    document.getElementById('m_village_no').textContent   = safe(get('village_no'));
+    document.getElementById('m_village_name').textContent = safe(get('village_name'), '');
+    document.getElementById('m_subdistrict').textContent  = safe(get('subdistrict'));
+    document.getElementById('m_district').textContent     = safe(get('district'));
+    document.getElementById('m_postcode').textContent     = safe(get('postcode'), '');
+    document.getElementById('m_lat').textContent = safe(get('lat'));
+    document.getElementById('m_lng').textContent = safe(get('lng'));
 
-    // บุคคล
-    document.getElementById('m_order').textContent = get('order') || '-';
-    document.getElementById('m_title').textContent = get('title') || '';
-    document.getElementById('m_fname').textContent = get('fname') || '-';
-    document.getElementById('m_lname').textContent = get('lname') || '-';
-    document.getElementById('m_agey').textContent  = get('agey') || '-';
-    document.getElementById('m_sex').textContent   = get('sex') || '-';
-    document.getElementById('m_cid').textContent   = get('cid') || '-';
-    document.getElementById('m_phone').textContent = get('phone') || '-';
+    document.getElementById('m_order').textContent = safe(get('order'));
+    document.getElementById('m_fname').textContent = safe(get('fname'));
+    document.getElementById('m_agey').textContent  = safe(get('agey'));
+    document.getElementById('m_sex').textContent   = safe(get('sex'));
+    document.getElementById('m_cid').textContent   = safe(get('cid'));
+    document.getElementById('m_phone').textContent = safe(get('phone'));
 
-  
+    const lname = get('lname');
+    const lnameWrap = document.getElementById('m_lname_wrap');
+    const lnameEl = document.getElementById('m_lname');
 
-    // สวัสดิการ (badge)
+    if(lname){
+      lnameEl.textContent = lname;
+      lnameWrap.classList.remove('d-none');
+    }else{
+      lnameEl.textContent = '';
+      lnameWrap.classList.add('d-none');
+    }
+
     const welfareEl = document.getElementById('m_welfare');
     if (welfareEl) {
       let list = [];
       try { list = JSON.parse(get('welfare') || '[]'); } catch (e) { list = []; }
 
       if (!Array.isArray(list) || list.length === 0) {
-        welfareEl.innerHTML = `<span class="badge rounded-pill bg-light text-dark border">ไม่ระบุ</span>`;
+        welfareEl.innerHTML = '<span class="badge rounded-pill bg-light text-dark border">ไม่ระบุ</span>';
       } else {
         welfareEl.innerHTML = list
           .map(x => `<span class="badge rounded-pill bg-light text-dark border me-1 mb-1">${String(x)}</span>`)
@@ -948,10 +1024,9 @@
       }
     }
 
-    // แผนที่
     const lat = get('lat'), lng = get('lng');
     const mapWrap = document.getElementById('m_map_wrap');
-    const mapEmpty= document.getElementById('m_map_empty');
+    const mapEmpty = document.getElementById('m_map_empty');
     const mapIframe = document.getElementById('m_map_iframe');
     const mapLink = document.getElementById('m_map_link');
 
@@ -970,7 +1045,12 @@
       if(mapLink) mapLink.classList.add('d-none');
     }
   }
- </script>
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initWelfareDropdown();
+    toggleWelfareTypeSection();
+  });
+</script>
 
 </body>
 </html>
