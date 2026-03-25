@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class HelpRecord extends Model
 {
+    protected $connection = 'mysql_help';
     protected $table = 'help_records';
 
     protected $fillable = [

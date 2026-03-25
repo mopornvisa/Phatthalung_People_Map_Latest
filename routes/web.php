@@ -8,6 +8,9 @@ use App\Http\Controllers\SqlsrvTestController;
 use App\Http\Controllers\Household64Controller;
 use App\Http\Controllers\WelfareController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\HousingPhysicalController;
+use App\Http\Controllers\HelpRecordController;
+use App\Http\Controllers\CardioIncidenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,18 +33,49 @@ Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])->name('sqlsrv
 Route::get('/household_64', [Household64Controller::class, 'index'])->name('household_64');
 
 // Welfare
-
 Route::get('/welfare', [WelfareController::class, 'index'])->name('welfare.index');
 Route::get('/welfare/export', [WelfareController::class, 'export'])->name('welfare.export');
 
+// ======================
 // Health
+// ======================
 Route::get('/health', [HealthController::class, 'index'])->name('health.index');
 Route::get('/health/export', [HealthController::class, 'export'])->name('health.export');
 
-// Housing dashboard
-Route::get('/housing', function () {
-    return redirect()->route('household_64');
-})->name('housing.dashboard');
+// หน้าเมนูสถานะสุขภาพ
+Route::get('/health-status', function () {
+    return view('health.health-status');
+})->name('health.status');
+
+// อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด
+Route::get('/health/cardio-incidence', [CardioIncidenceController::class, 'index'])
+    ->name('health.cardio_incidence');
+
+
+Route::get('/health/mortality-cause', function () {
+    return 'หน้าสาเหตุการป่วย/ตาย';
+})->name('health.mortality_cause');
+
+Route::get('/health/occupation-environment', function () {
+    return 'หน้าโรคจากการประกอบอาชีพและสิ่งแวดล้อม';
+})->name('health.occupation_environment');
+
+Route::get('/health/air-pollution', function () {
+    return 'หน้าการป่วยด้วยโรคจากมลพิษทางอากาศ';
+})->name('health.air_pollution');
+
+// ======================
+// Housing
+// ======================
+Route::get('/housing', [HousingPhysicalController::class, 'dashboard'])->name('housing.dashboard');
+Route::get('/housing/map', [HousingPhysicalController::class, 'map'])->name('housing.map');
+Route::get('/housing/cases', [HousingPhysicalController::class, 'cases'])->name('housing.cases');
+Route::get('/housing/house/{houseId}', [HousingPhysicalController::class, 'show'])->name('housing.show');
+
+// Help records (housing)
+Route::get('/housing/house/{houseId}/help/create', [HelpRecordController::class, 'create'])->name('help.create');
+Route::post('/housing/house/{houseId}/help', [HelpRecordController::class, 'store'])->name('help.store');
+Route::get('/help-records', [HelpRecordController::class, 'index'])->name('help_records.index');
 
 // Register
 Route::get('/register', function () {

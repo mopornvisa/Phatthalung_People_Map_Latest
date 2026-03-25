@@ -4,259 +4,34 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Pagination\LengthAwarePaginator;
-use App\Models\HelpRecord; // ✅ เพิ่ม
+use App\Models\HelpRecord;
 
 class HousingPhysicalController extends Controller
 {
-    private array $YEARS = [2564,2565,2566,2567,2568];
-
-    private function pickCol(string $table, array $candidates): ?string
-    {
-        foreach ($candidates as $c) {
-            $c = trim($c);
-            if ($c !== '' && Schema::hasColumn($table, $c)) return $c;
-        }
-        return null;
-    }
-
-    /**
-     * UNION ALL หลายปี แล้ว wrap เป็น subquery alias u
-     * คืนค่า: [ $q, $meta ]
-     */
-    private function baseQuery(Request $request): array
-    {
-        $district    = (string) $request->get('district', '');
-        $subdistrict = (string) $request->get('subdistrict', '');
-        $surveyYear  = (string) $request->get('survey_year', '');
-
-        $years = $this->YEARS;
-        if ($surveyYear !== '' && in_array((int)$surveyYear, $this->YEARS, true)) {
-            $years = [(int)$surveyYear];
-        }
-
-        $queries = [];
-
-        foreach ($years as $y) {
-            $hTable = "household_surveys_{$y}";
-            $pTable = "physical_capital_{$y}";
-
-            if (!Schema::hasTable($hTable) || !Schema::hasTable($pTable)) continue;
-
-            // ===== household columns =====
-            $districtCol    = $this->pickCol($hTable, ['survey_District','district','amphoe','amphoe_name','district_name','amp','amp_name']);
-            $subdistrictCol = $this->pickCol($hTable, ['survey_Subdistrict','subdistrict','tambon','tambon_name','subdistrict_name','tam','tam_name']);
-
-            $yearCol     = $this->pickCol($hTable, ['survey_Year','survey_year','year']);
-            $phoneCol    = $this->pickCol($hTable, ['survey_Informer_phone','survey_informer_phone','phone']);
-            $postcodeCol = $this->pickCol($hTable, ['survey_Postcode','survey_postcode','postcode']);
-
-            $houseNoCol     = $this->pickCol($hTable, ['house_Number','house_number','house_no']);
-            $villageNoCol   = $this->pickCol($hTable, ['village_No','village_no','moo','moo_no']);
-            $villageNameCol = $this->pickCol($hTable, ['village_Name','village_name','village']);
-
-            $provinceCol = $this->pickCol($hTable, ['survey_Province','province','province_name']);
-
-            $latCol = $this->pickCol($hTable, ['latitude','lat','Latitude']);
-            $lngCol = $this->pickCol($hTable, ['longitude','lng','lon','long','Longitude']);
-
-            $bookCol   = $this->pickCol($hTable, ['survey_Has_agri_book','has_agri_book','agri_book']);
-            $agriNoCol = $this->pickCol($hTable, ['survey_Agri_household_no','agri_household_no']);
-            $titleCol  = $this->pickCol($hTable, ['survey_Householder_title','householder_title']);
-            $fnameCol  = $this->pickCol($hTable, ['survey_Householder_fname','householder_fname']);
-            $lnameCol  = $this->pickCol($hTable, ['survey_Householder_lname','householder_lname']);
-            $cidCol    = $this->pickCol($hTable, ['survey_Householder_cid','householder_cid']);
-
-            // ===== physical columns =====
-            $houseConditionCol = $this->pickCol($pTable, [
-                'phys_House_condition',
-                'physical_House_condition',
-                'physical_Housing_condition',
-                'physical_Living_conditions',
-                'physical_living_conditions',
-                'physical_Living_condition',
-                'physical_House_status',
-                'physical_Living_status',
-            ]);
-
-            $sanitationCol = $this->pickCol($pTable, [
-                'physical_Housing_sanitation','physical_housing_sanitation',
-                'physical_Sanitation','physical_Toilet','physical_toilet',
-            ]);
-
-            $roadAccessCol = $this->pickCol($pTable, [
-                'physical_Road_access_type','physical_road_access_type',
-                'physical_Road_access','physical_road_access',
-            ]);
-
-            $drainageCol = $this->pickCol($pTable, [
-                'physical_Drainage','physical_drainage','drainage'
-            ]);
-
-            $electricCol = $this->pickCol($pTable, ['phys_Electricity','physical_Electric','physical_electric','electric']);
-            $mobileCol   = $this->pickCol($pTable, ['phys_Mobilephone','physical_Mobilephone','physical_mobilephone','mobilephone','mobile_phone','phone']);
-
-            $homeRouteCol = $this->pickCol($pTable, ['phys_Home_route','physical_Home_route','home_route','homeRoute']);
-            $other121Col  = $this->pickCol($pTable, ['phys_Other121','physical_Other121','physical_other121','other121','other_121']);
-
-            $altEnergyCol = $this->pickCol($pTable, ['phys_Alternative_energy','physical_Alternative_energy','alternative_energy','alt_energy']);
-            $waterCol     = $this->pickCol($pTable, ['physical_Water','physical_water','water']);
-
-            $waterSupplyCol  = $this->pickCol($pTable, ['phys_Water_supply']);
-            $waterSourcesCol = $this->pickCol($pTable, ['phys_Water_sources']);
-            $buyWaterCol     = $this->pickCol($pTable, ['phys_Buy_water']);
-
-            $wasteCol = $this->pickCol($pTable, ['physical_Waste','physical_waste','waste']);
-
-            $qy = DB::table("$pTable as p")
-                ->leftJoin("$hTable as h", 'h.house_Id', '=', 'p.house_Id')
-                ->select([
-                    DB::raw((int)$y . " as data_year"),
-
-                    // ✅ ใช้ชื่อเดียวกันเสมอ (ห้ามมี house_id ซ้ำ)
-                    'p.house_Id as house_Id',
-
-                    // household (ชื่อหลักที่ใช้ใน view)
-                    DB::raw(($districtCol ? "h.`$districtCol`" : "NULL") . " as survey_District"),
-                    DB::raw(($subdistrictCol ? "h.`$subdistrictCol`" : "NULL") . " as survey_Subdistrict"),
-                    DB::raw(($yearCol ? "h.`$yearCol`" : (int)$y) . " as survey_Year"),
-
-                    DB::raw(($provinceCol ? "h.`$provinceCol`" : "NULL") . " as survey_Province"),
-                    DB::raw(($postcodeCol ? "h.`$postcodeCol`" : "NULL") . " as survey_Postcode"),
-                    DB::raw(($phoneCol ? "h.`$phoneCol`" : "NULL") . " as survey_Informer_phone"),
-
-                    DB::raw(($houseNoCol ? "h.`$houseNoCol`" : "NULL") . " as house_Number"),
-                    DB::raw(($villageNoCol ? "h.`$villageNoCol`" : "NULL") . " as village_No"),
-                    DB::raw(($villageNameCol ? "h.`$villageNameCol`" : "NULL") . " as village_Name"),
-
-                    DB::raw(($latCol ? "h.`$latCol`" : "NULL") . " as latitude"),
-                    DB::raw(($lngCol ? "h.`$lngCol`" : "NULL") . " as longitude"),
-
-                    DB::raw(($bookCol ? "h.`$bookCol`" : "NULL") . " as survey_Has_agri_book"),
-                    DB::raw(($agriNoCol ? "h.`$agriNoCol`" : "NULL") . " as survey_Agri_household_no"),
-                    DB::raw(($titleCol ? "h.`$titleCol`" : "NULL") . " as survey_Householder_title"),
-                    DB::raw(($fnameCol ? "h.`$fnameCol`" : "NULL") . " as survey_Householder_fname"),
-                    DB::raw(($lnameCol ? "h.`$lnameCol`" : "NULL") . " as survey_Householder_lname"),
-                    DB::raw(($cidCol ? "h.`$cidCol`" : "NULL") . " as survey_Householder_cid"),
-
-                    // physical
-                    DB::raw(($houseConditionCol ? "p.`$houseConditionCol`" : "NULL") . " as house_condition"),
-                    DB::raw(($sanitationCol ? "p.`$sanitationCol`" : "NULL") . " as sanitation"),
-                    DB::raw(($roadAccessCol ? "p.`$roadAccessCol`" : "NULL") . " as road_access"),
-                    DB::raw(($drainageCol ? "p.`$drainageCol`" : "NULL") . " as drainage"),
-                    DB::raw(($electricCol ? "p.`$electricCol`" : "NULL") . " as electric"),
-                    DB::raw(($mobileCol ? "p.`$mobileCol`" : "NULL") . " as mobile"),
-                    DB::raw(($homeRouteCol ? "p.`$homeRouteCol`" : "NULL") . " as home_route"),
-                    DB::raw(($other121Col ? "p.`$other121Col`" : "NULL") . " as other121"),
-                    DB::raw(($altEnergyCol ? "p.`$altEnergyCol`" : "NULL") . " as alternative_energy"),
-                    DB::raw(($waterCol ? "p.`$waterCol`" : "NULL") . " as water"),
-                    DB::raw(($waterSupplyCol ? "p.`$waterSupplyCol`" : "NULL") . " as water_supply"),
-                    DB::raw(($waterSourcesCol ? "p.`$waterSourcesCol`" : "NULL") . " as water_sources"),
-                    DB::raw(($buyWaterCol ? "p.`$buyWaterCol`" : "NULL") . " as buy_water"),
-                    DB::raw(($wasteCol ? "p.`$wasteCol`" : "NULL") . " as waste"),
-                ]);
-
-            if ($district !== '' && $districtCol)       $qy->where("h.$districtCol", $district);
-            if ($subdistrict !== '' && $subdistrictCol) $qy->where("h.$subdistrictCol", $subdistrict);
-
-            $queries[] = $qy;
-        }
-
-        if (empty($queries)) {
-            $empty = DB::query()->fromRaw("(select null as house_Id) as u")->whereRaw("1=0");
-            return [$empty, ['years'=>$years]];
-        }
-
-        $union = array_shift($queries);
-        foreach ($queries as $qq) $union->unionAll($qq);
-
-        $q = DB::query()->fromSub($union, 'u');
-
-        return [$q, ['years'=>$years]];
-    }
-
-    private function score(array $r): int
-    {
-        $score = 0;
-
-        if (($r['house_condition'] ?? '') === 'ทรุดโทรม') $score += 30;
-
-        if (($r['sanitation'] ?? '') === 'ไม่มี') $score += 20;
-        if (($r['sanitation'] ?? '') === 'ไม่มาตรฐาน') $score += 12;
-
-        if (($r['drainage'] ?? '') === 'ไม่มี') $score += 15;
-
-        if (($r['electric'] ?? '') === 'ต่อพ่วง') $score += 10;
-        if (($r['electric'] ?? '') === 'ไม่มี') $score += 15;
-
-        if (($r['water'] ?? '') === 'ไม่เพียงพอ') $score += 10;
-        if (($r['road_access'] ?? '') === 'ยาก') $score += 10;
-        if (($r['waste'] ?? '') === 'ไม่เหมาะสม') $score += 10;
-
-        return min(100, $score);
-    }
-
-    private function level(int $score): array
-    {
-        if ($score >= 75) return ['label'=>'ด่วนมาก','badge'=>'bg-danger'];
-        if ($score >= 50) return ['label'=>'ด่วน','badge'=>'bg-warning text-dark'];
-        if ($score >= 25) return ['label'=>'เฝ้าระวัง','badge'=>'bg-info text-dark'];
-        return ['label'=>'ปกติ','badge'=>'bg-success'];
-    }
-
-    /**
-     * ✅ ทำให้ key ที่ view ใช้ "มีเสมอ" ทุกหน้า (กัน Undefined array key)
-     */
-    private function normalizeRow(array $r): array
-    {
-        $r['house_id']     = $r['house_id']     ?? ($r['house_Id'] ?? null);
-        $r['district']     = $r['district']     ?? ($r['survey_District'] ?? null);
-        $r['subdistrict']  = $r['subdistrict']  ?? ($r['survey_Subdistrict'] ?? null);
-        $r['village_no']   = $r['village_no']   ?? ($r['village_No'] ?? null);
-        $r['village_name'] = $r['village_name'] ?? ($r['village_Name'] ?? null);
-        $r['lat']          = $r['lat']          ?? ($r['latitude'] ?? null);
-        $r['lng']          = $r['lng']          ?? ($r['longitude'] ?? null);
-        return $r;
-    }
-
-    private function enrichCollection($rows)
-    {
-        return collect($rows)->map(function($r){
-            $r = $this->normalizeRow((array)$r);
-
-            $s = $this->score($r);
-            $lvl = $this->level($s);
-
-            $r['score'] = $s;
-            $r['level'] = $lvl['label'];
-            $r['badge'] = $lvl['badge'];
-
-            return $r;
-        });
-    }
-
     public function dashboard(Request $request)
     {
-        [$q] = $this->baseQuery($request);
+        [$q, $meta] = $this->baseQuery($request);
 
-        $houseId = trim((string) $request->get('house_id', ''));
-        if ($houseId !== '') {
-            $q->where('u.house_Id', 'like', "%{$houseId}%");
+        $houseId  = trim((string) $request->get('house_id', ''));
+        $houseCol = $meta['COL_HOUSE'];
+
+        if ($houseId !== '' && $houseCol) {
+            $q->whereRaw("LTRIM(RTRIM(u.[$houseCol])) LIKE ?", ["%{$houseId}%"]);
         }
 
-        $raw  = $q->limit(100000)->get();
+        $raw  = $q->limit(3000)->get();
         $coll = $this->enrichCollection($raw)->sortByDesc('score')->values();
 
         $kpi = [
-            'total'      => $coll->count(),
-            'urgent'     => $coll->where('score', '>=', 75)->count(),
-            'poor_house' => $coll->where('house_condition', 'ทรุดโทรม')->count(),
-            'no_toilet'  => $coll->where('sanitation', 'ไม่มี')->count(),
-            'no_drain'   => $coll->where('drainage', 'ไม่มี')->count(),
-            'bad_waste'  => $coll->where('waste', 'ไม่เหมาะสม')->count(),
-            'elec_risk'  => $coll->filter(fn($x)=>in_array(($x['electric'] ?? ''), ['ต่อพ่วง','ไม่มี'], true))->count(),
-            'water_short'=> $coll->where('water', 'ไม่เพียงพอ')->count(),
+            'total'       => $coll->count(),
+            'urgent'      => $coll->where('score', '>=', 75)->count(),
+            'poor_house'  => $coll->where('house_condition', 'ทรุดโทรม')->count(),
+            'no_toilet'   => $coll->where('sanitation', 'ไม่มี')->count(),
+            'no_drain'    => $coll->where('drainage', 'ไม่มี')->count(),
+            'bad_waste'   => $coll->where('waste', 'ไม่เหมาะสม')->count(),
+            'elec_risk'   => $coll->filter(fn($x) => in_array(($x['electric'] ?? ''), ['ต่อพ่วง', 'ไม่มี'], true))->count(),
+            'water_short' => $coll->where('water', 'ไม่เพียงพอ')->count(),
         ];
 
         $perPage = 10;
@@ -274,32 +49,46 @@ class HousingPhysicalController extends Controller
             ]
         );
 
-        // ✅ สร้าง map: house_Id => status (สถานะล่าสุด)
-        $houseIds = collect($items)->pluck('house_Id')->filter()->unique()->values()->all();
+        $houseIds = collect($items)
+            ->pluck('house_Id')
+            ->filter()
+            ->map(fn($x) => trim((string) $x))
+            ->unique()
+            ->values()
+            ->all();
 
-        $helpStatusMap = HelpRecord::whereIn('house_Id', $houseIds)
-            ->orderByDesc('action_date')
-            ->orderByDesc('id')
-            ->get()
-            ->groupBy('house_Id')
-            ->map(fn($g) => optional($g->first())->status)
-            ->toArray();
+        $helpStatusMap = [];
+        if (!empty($houseIds)) {
+            $helpStatusMap = HelpRecord::whereIn('house_Id', $houseIds)
+                ->orderByDesc('action_date')
+                ->orderByDesc('id')
+                ->get()
+                ->groupBy(fn($r) => trim((string) $r->house_Id))
+                ->map(fn($g) => optional($g->first())->status)
+                ->toArray();
+        }
 
         return view('housing.dashboard', [
-            'kpi'     => $kpi,
-            'rows'    => $rows,
-            'houseId' => $houseId,
-            'helpStatusMap' => $helpStatusMap, // ✅ ส่งไป blade
+            'kpi'           => $kpi,
+            'rows'          => $rows,
+            'houseId'       => $houseId,
+            'helpStatusMap' => $helpStatusMap,
         ]);
     }
 
     public function map(Request $request)
     {
-        [$q] = $this->baseQuery($request);
+        [$q, $meta] = $this->baseQuery($request);
 
-        $q->whereNotNull('u.latitude')->whereNotNull('u.longitude');
+        if (!empty($meta['P_COL_LAT'])) {
+            $q->whereNotNull(DB::raw("p.[{$meta['P_COL_LAT']}]"));
+        }
 
-        $pins = $q->limit(50000)->get();
+        if (!empty($meta['P_COL_LNG'])) {
+            $q->whereNotNull(DB::raw("p.[{$meta['P_COL_LNG']}]"));
+        }
+
+        $pins = $q->limit(3000)->get();
         $pins = $this->enrichCollection($pins)->values()->all();
 
         return view('housing.map', compact('pins'));
@@ -307,80 +96,408 @@ class HousingPhysicalController extends Controller
 
     public function cases(Request $request)
     {
-        $levelFilter = (string) $request->get('level', '');
+        $levelFilter = trim((string) $request->get('level', ''));
 
         [$q, $meta] = $this->baseQuery($request);
 
-        $rows = $q->limit(100000)->get();
+        $rows = $q->limit(3000)->get();
         $rows = $this->enrichCollection($rows)->values()->all();
 
         if ($levelFilter !== '') {
-            $rows = array_values(array_filter($rows, fn($x)=>($x['level'] ?? '') === $levelFilter));
+            $rows = array_values(array_filter($rows, fn($x) => ($x['level'] ?? '') === $levelFilter));
         }
 
-        usort($rows, fn($a,$b)=>($b['score'] ?? 0) <=> ($a['score'] ?? 0));
+        usort($rows, fn($a, $b) => ($b['score'] ?? 0) <=> ($a['score'] ?? 0));
+
+        $conn = $meta['conn'];
 
         $districts = [];
         $subdistricts = [];
 
-        foreach (($meta['years'] ?? $this->YEARS) as $y) {
-            $hTable = "household_surveys_{$y}";
-            if (!Schema::hasTable($hTable)) continue;
-
-            $dCol = $this->pickCol($hTable, ['survey_District','district','amphoe','amphoe_name','district_name','amp','amp_name']);
-            $sCol = $this->pickCol($hTable, ['survey_Subdistrict','subdistrict','tambon','tambon_name','subdistrict_name','tam','tam_name']);
-
-            if ($dCol) $districts = array_merge($districts, DB::table($hTable)->whereNotNull($dCol)->distinct()->pluck($dCol)->toArray());
-            if ($sCol) $subdistricts = array_merge($subdistricts, DB::table($hTable)->whereNotNull($sCol)->distinct()->pluck($sCol)->toArray());
+        if ($meta['P_COL_DISTRICT']) {
+            $districts = $conn->table(DB::raw('[dbo].[survey_profile64] as p'))
+                ->selectRaw("LTRIM(RTRIM(p.[{$meta['P_COL_DISTRICT']}])) as district")
+                ->whereRaw("p.[{$meta['P_COL_DISTRICT']}] IS NOT NULL")
+                ->whereRaw("LTRIM(RTRIM(p.[{$meta['P_COL_DISTRICT']}])) <> N''")
+                ->distinct()
+                ->orderBy('district')
+                ->pluck('district')
+                ->toArray();
         }
 
-        $districts = array_values(array_unique(array_filter($districts, fn($x)=>$x!==null && $x!=='')));
-        sort($districts);
-
-        $subdistricts = array_values(array_unique(array_filter($subdistricts, fn($x)=>$x!==null && $x!=='')));
-        sort($subdistricts);
+        if ($meta['P_COL_TAMBON']) {
+            $subdistricts = $conn->table(DB::raw('[dbo].[survey_profile64] as p'))
+                ->selectRaw("LTRIM(RTRIM(p.[{$meta['P_COL_TAMBON']}])) as subdistrict")
+                ->whereRaw("p.[{$meta['P_COL_TAMBON']}] IS NOT NULL")
+                ->whereRaw("LTRIM(RTRIM(p.[{$meta['P_COL_TAMBON']}])) <> N''")
+                ->distinct()
+                ->orderBy('subdistrict')
+                ->pluck('subdistrict')
+                ->toArray();
+        }
 
         return view('housing.cases', [
-            'filtered' => $rows,
-            'districts' => $districts,
+            'filtered'     => $rows,
+            'districts'    => $districts,
             'subdistricts' => $subdistricts,
-            'district' => (string)$request->get('district',''),
-            'subdistrict' => (string)$request->get('subdistrict',''),
-            'level' => $levelFilter,
+            'district'     => (string) $request->get('district', ''),
+            'subdistrict'  => (string) $request->get('subdistrict', ''),
+            'level'        => $levelFilter,
         ]);
     }
 
     public function show(string $houseId)
     {
-        [$q] = $this->baseQuery(request());
+        [$q, $meta] = $this->baseQuery(request());
 
-        $row = $q->where('u.house_Id', $houseId)->first();
+        $houseCol = $meta['COL_HOUSE'];
+
+        if (!$houseCol) {
+            abort(404, 'ไม่พบคอลัมน์รหัสครัวเรือน');
+        }
+
+        $houseId = trim($houseId);
+
+        $row = $q->whereRaw("LTRIM(RTRIM(u.[$houseCol])) = ?", [$houseId])->first();
         abort_if(!$row, 404);
 
-        // ✅ normalize ให้ view ใช้ key ได้ชัวร์
-        $house = $this->normalizeRow((array)$row);
-        $house['house_id'] = $house['house_id'] ?? $houseId; // กันสุดท้าย
+        $house = $this->normalizeRow((array) $row);
+        $house['house_id'] = $house['house_id'] ?? $houseId;
 
         $score = $this->score($house);
-        $lvl = $this->level($score);
+        $lvl   = $this->level($score);
 
-        // ✅ ดึงสถานะล่าสุดจาก help_records
         $latestHelp = HelpRecord::where('house_Id', $houseId)
             ->orderByDesc('action_date')
             ->orderByDesc('id')
             ->first();
-
-        $helpStatus = $latestHelp->status ?? null;
 
         return view('housing.show', [
             'house'      => $house,
             'score'      => $score,
             'level'      => $lvl['label'],
             'badge'      => $lvl['badge'],
-
-            // ✅ ส่ง status ไปใช้ใน blade
-            'helpStatus' => $helpStatus,
+            'helpStatus' => $latestHelp->status ?? null,
             'latestHelp' => $latestHelp,
         ]);
+    }
+
+    private function baseQuery(Request $request): array
+    {
+        $conn = DB::connection('sqlsrv');
+
+        $colsMain = $this->tableColsMap($conn, 'survey_a');
+        $colsProf = $this->tableColsMap($conn, 'survey_profile64');
+
+        if (empty($colsMain)) {
+            abort(404, 'ไม่พบตาราง survey_a');
+        }
+
+        if (empty($colsProf)) {
+            abort(404, 'ไม่พบตาราง survey_profile64');
+        }
+
+        // ========= survey_a =========
+        $COL_HOUSE    = $this->firstCol($colsMain, ['HC']);
+        $COL_YEAR     = $this->firstCol($colsMain, ['survey_year', 'year']);
+        $COL_DISTRICT = $this->firstCol($colsMain, ['district_name_thai', 'district']);
+        $COL_TAMBON   = $this->firstCol($colsMain, ['tambon_name_thai', 'subdistrict']);
+        $COL_PROVINCE = $this->firstCol($colsMain, ['province_name_thai', 'province']);
+
+        // ========= survey_profile64 =========
+        $P_COL_HOUSE    = $this->firstCol($colsProf, ['HC1', 'HC']);
+        $P_COL_YEAR     = $this->firstCol($colsProf, ['survey_year', 'year']);
+        $P_COL_DISTRICT = $this->firstCol($colsProf, ['district_name_thai', 'district']);
+        $P_COL_TAMBON   = $this->firstCol($colsProf, ['tambon_name_thai', 'subdistrict']);
+        $P_COL_PROVINCE = $this->firstCol($colsProf, ['province_name_thai', 'province']);
+
+        $P_COL_POSTCODE = $this->firstCol($colsProf, ['POSTCODE', 'postcode']);
+        $P_COL_PHONE    = $this->firstCol($colsProf, ['TEL', 'PHONE', 'phone']);
+        $P_COL_HOUSE_NO = $this->firstCol($colsProf, ['HOUSE_NO', 'HOUSE_NUMBER', 'house_no']);
+        $P_COL_MOO      = $this->firstCol($colsProf, ['MBNO', 'MOO', 'village_no']);
+        $P_COL_VILLAGE  = $this->firstCol($colsProf, ['MB', 'VILLAGE_NAME', 'village_name']);
+        $P_COL_LAT      = $this->firstCol($colsProf, ['LAT', 'LATX', 'latitude', 'lat']);
+        $P_COL_LNG      = $this->firstCol($colsProf, ['LNG', 'LNGY', 'longitude', 'lng']);
+        $P_COL_TITLE    = $this->firstCol($colsProf, ['PREFIX', 'TITLE', 'householder_title']);
+        $P_COL_FNAME    = $this->firstCol($colsProf, ['PERSON', 'FNAME', 'NAME', 'householder_fname']);
+        $P_COL_LNAME    = $this->firstCol($colsProf, ['LNAME', 'LAST_NAME', 'SURNAME', 'householder_lname']);
+        $P_COL_CID      = $this->firstCol($colsProf, ['POPID', 'CID', 'CITIZEN_ID', 'householder_cid']);
+
+        // ========= physical / housing =========
+        $P_COL_HOUSE_CONDITION = $this->firstCol($colsProf, [
+            'phys_house_condition',
+            'physical_house_condition',
+            'house_condition',
+            'housing_condition'
+        ]);
+
+        $P_COL_SANITATION = $this->firstCol($colsProf, [
+            'physical_housing_sanitation',
+            'sanitation',
+            'toilet'
+        ]);
+
+        $P_COL_ROAD_ACCESS = $this->firstCol($colsProf, [
+            'physical_road_access_type',
+            'road_access_type',
+            'road_access'
+        ]);
+
+        $P_COL_DRAINAGE = $this->firstCol($colsProf, [
+            'physical_drainage',
+            'drainage'
+        ]);
+
+        $P_COL_ELECTRIC = $this->firstCol($colsProf, [
+            'phys_electricity',
+            'electricity',
+            'electric'
+        ]);
+
+        $P_COL_MOBILE = $this->firstCol($colsProf, [
+            'phys_mobilephone',
+            'mobilephone',
+            'mobile_phone'
+        ]);
+
+        $P_COL_HOME_ROUTE = $this->firstCol($colsProf, [
+            'phys_home_route',
+            'home_route'
+        ]);
+
+        $P_COL_OTHER121 = $this->firstCol($colsProf, [
+            'phys_other121',
+            'other121'
+        ]);
+
+        $P_COL_ALT_ENERGY = $this->firstCol($colsProf, [
+            'phys_alternative_energy',
+            'alternative_energy'
+        ]);
+
+        $P_COL_WATER = $this->firstCol($colsProf, [
+            'physical_water',
+            'water'
+        ]);
+
+        $P_COL_WATER_SUPPLY = $this->firstCol($colsProf, [
+            'phys_water_supply',
+            'water_supply'
+        ]);
+
+        $P_COL_WATER_SOURCES = $this->firstCol($colsProf, [
+            'phys_water_sources',
+            'water_sources'
+        ]);
+
+        $P_COL_BUY_WATER = $this->firstCol($colsProf, [
+            'phys_buy_water',
+            'buy_water'
+        ]);
+
+        $P_COL_WASTE = $this->firstCol($colsProf, [
+            'physical_waste',
+            'waste'
+        ]);
+
+        $district    = trim((string) $request->get('district', ''));
+        $subdistrict = trim((string) $request->get('subdistrict', ''));
+        $surveyYear  = trim((string) $request->get('survey_year', ''));
+
+        $q = $conn->table(DB::raw('[dbo].[survey_a] as u'));
+
+        // FIX: join house_id และ year แบบ trim/convert ให้สะอาด
+        if ($COL_HOUSE && $P_COL_HOUSE) {
+            $q->leftJoin(DB::raw('[dbo].[survey_profile64] as p'), function ($join) use ($COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR) {
+                $join->on(
+                    DB::raw("LTRIM(RTRIM(CONVERT(nvarchar(50), u.[$COL_HOUSE])))"),
+                    '=',
+                    DB::raw("LTRIM(RTRIM(CONVERT(nvarchar(50), p.[$P_COL_HOUSE])))")
+                );
+
+                if ($COL_YEAR && $P_COL_YEAR) {
+                    $join->on(
+                        DB::raw("TRY_CONVERT(int, NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), u.[$COL_YEAR]))), ''))"),
+                        '=',
+                        DB::raw("TRY_CONVERT(int, NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), p.[$P_COL_YEAR]))), ''))")
+                    );
+                }
+            });
+        }
+
+        $districtRef = $P_COL_DISTRICT ? "p.[$P_COL_DISTRICT]" : ($COL_DISTRICT ? "u.[$COL_DISTRICT]" : null);
+        $tambonRef   = $P_COL_TAMBON   ? "p.[$P_COL_TAMBON]"   : ($COL_TAMBON ? "u.[$COL_TAMBON]" : null);
+        $provinceRef = $P_COL_PROVINCE ? "p.[$P_COL_PROVINCE]" : ($COL_PROVINCE ? "u.[$COL_PROVINCE]" : null);
+
+        if ($district !== '' && $districtRef) {
+            $q->whereRaw("LTRIM(RTRIM($districtRef)) = ?", [$district]);
+        }
+
+        if ($subdistrict !== '' && $tambonRef) {
+            $q->whereRaw("LTRIM(RTRIM($tambonRef)) = ?", [$subdistrict]);
+        }
+
+        // FIX: ใช้ COALESCE ระหว่าง p.year กับ u.year
+        $yearExpr = null;
+        if ($P_COL_YEAR && $COL_YEAR) {
+            $yearExpr = "
+                COALESCE(
+                    NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), p.[$P_COL_YEAR]))), N''),
+                    NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), u.[$COL_YEAR]))), N'')
+                )
+            ";
+        } elseif ($P_COL_YEAR) {
+            $yearExpr = "p.[$P_COL_YEAR]";
+        } elseif ($COL_YEAR) {
+            $yearExpr = "u.[$COL_YEAR]";
+        }
+
+        if ($surveyYear !== '' && ctype_digit($surveyYear)) {
+            if ($P_COL_YEAR && $COL_YEAR) {
+                $q->whereRaw("
+                    TRY_CONVERT(int,
+                        COALESCE(
+                            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), p.[$P_COL_YEAR]))), N''),
+                            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(20), u.[$COL_YEAR]))), N'')
+                        )
+                    ) = ?
+                ", [(int) $surveyYear]);
+            } elseif ($P_COL_YEAR) {
+                $q->whereRaw("TRY_CONVERT(int, p.[$P_COL_YEAR]) = ?", [(int) $surveyYear]);
+            } elseif ($COL_YEAR) {
+                $q->whereRaw("TRY_CONVERT(int, u.[$COL_YEAR]) = ?", [(int) $surveyYear]);
+            }
+        }
+
+        $sel = fn(?string $expr, string $alias) =>
+            $expr ? DB::raw("$expr as [$alias]") : DB::raw("NULL as [$alias]");
+
+        $latExpr  = $P_COL_LAT ? "p.[$P_COL_LAT]" : null;
+        $lngExpr  = $P_COL_LNG ? "p.[$P_COL_LNG]" : null;
+
+        $q->select([
+            $sel($COL_HOUSE ? "u.[$COL_HOUSE]" : null, 'house_Id'),
+            $sel($yearExpr, 'survey_Year'),
+
+            $sel($provinceRef, 'survey_Province'),
+            $sel($districtRef, 'survey_District'),
+            $sel($tambonRef, 'survey_Subdistrict'),
+
+            $sel($P_COL_POSTCODE ? "p.[$P_COL_POSTCODE]" : null, 'survey_Postcode'),
+            $sel($P_COL_PHONE ? "p.[$P_COL_PHONE]" : null, 'survey_Informer_phone'),
+
+            $sel($P_COL_HOUSE_NO ? "p.[$P_COL_HOUSE_NO]" : null, 'house_Number'),
+            $sel($P_COL_MOO ? "p.[$P_COL_MOO]" : null, 'village_No'),
+            $sel($P_COL_VILLAGE ? "p.[$P_COL_VILLAGE]" : null, 'village_Name'),
+
+            $sel($latExpr, 'latitude'),
+            $sel($lngExpr, 'longitude'),
+
+            $sel($P_COL_TITLE ? "p.[$P_COL_TITLE]" : null, 'survey_Householder_title'),
+            $sel($P_COL_FNAME ? "p.[$P_COL_FNAME]" : null, 'survey_Householder_fname'),
+            $sel($P_COL_LNAME ? "p.[$P_COL_LNAME]" : null, 'survey_Householder_lname'),
+            $sel($P_COL_CID ? "p.[$P_COL_CID]" : null, 'survey_Householder_cid'),
+
+            $sel($P_COL_HOUSE_CONDITION ? "p.[$P_COL_HOUSE_CONDITION]" : null, 'house_condition'),
+            $sel($P_COL_SANITATION ? "p.[$P_COL_SANITATION]" : null, 'sanitation'),
+            $sel($P_COL_ROAD_ACCESS ? "p.[$P_COL_ROAD_ACCESS]" : null, 'road_access'),
+            $sel($P_COL_DRAINAGE ? "p.[$P_COL_DRAINAGE]" : null, 'drainage'),
+            $sel($P_COL_ELECTRIC ? "p.[$P_COL_ELECTRIC]" : null, 'electric'),
+            $sel($P_COL_MOBILE ? "p.[$P_COL_MOBILE]" : null, 'mobile'),
+            $sel($P_COL_HOME_ROUTE ? "p.[$P_COL_HOME_ROUTE]" : null, 'home_route'),
+            $sel($P_COL_OTHER121 ? "p.[$P_COL_OTHER121]" : null, 'other121'),
+            $sel($P_COL_ALT_ENERGY ? "p.[$P_COL_ALT_ENERGY]" : null, 'alternative_energy'),
+            $sel($P_COL_WATER ? "p.[$P_COL_WATER]" : null, 'water'),
+            $sel($P_COL_WATER_SUPPLY ? "p.[$P_COL_WATER_SUPPLY]" : null, 'water_supply'),
+            $sel($P_COL_WATER_SOURCES ? "p.[$P_COL_WATER_SOURCES]" : null, 'water_sources'),
+            $sel($P_COL_BUY_WATER ? "p.[$P_COL_BUY_WATER]" : null, 'buy_water'),
+            $sel($P_COL_WASTE ? "p.[$P_COL_WASTE]" : null, 'waste'),
+        ]);
+
+        return [$q, [
+            'conn'           => $conn,
+            'COL_HOUSE'      => $COL_HOUSE,
+            'P_COL_DISTRICT' => $P_COL_DISTRICT,
+            'P_COL_TAMBON'   => $P_COL_TAMBON,
+            'P_COL_LAT'      => $P_COL_LAT,
+            'P_COL_LNG'      => $P_COL_LNG,
+        ]];
+    }
+
+    private function score(array $r): int
+    {
+        $score = 0;
+
+        if (($r['house_condition'] ?? '') === 'ทรุดโทรม') $score += 30;
+        if (($r['sanitation'] ?? '') === 'ไม่มี') $score += 20;
+        if (($r['sanitation'] ?? '') === 'ไม่มาตรฐาน') $score += 12;
+        if (($r['drainage'] ?? '') === 'ไม่มี') $score += 15;
+        if (($r['electric'] ?? '') === 'ต่อพ่วง') $score += 10;
+        if (($r['electric'] ?? '') === 'ไม่มี') $score += 15;
+        if (($r['water'] ?? '') === 'ไม่เพียงพอ') $score += 10;
+        if (($r['road_access'] ?? '') === 'ยาก') $score += 10;
+        if (($r['waste'] ?? '') === 'ไม่เหมาะสม') $score += 10;
+
+        return min(100, $score);
+    }
+
+    private function level(int $score): array
+    {
+        if ($score >= 75) return ['label' => 'ด่วนมาก', 'badge' => 'bg-danger'];
+        if ($score >= 50) return ['label' => 'ด่วน', 'badge' => 'bg-warning text-dark'];
+        if ($score >= 25) return ['label' => 'เฝ้าระวัง', 'badge' => 'bg-info text-dark'];
+        return ['label' => 'ปกติ', 'badge' => 'bg-success'];
+    }
+
+    private function normalizeRow(array $r): array
+    {
+        $r['house_id']     = $r['house_id'] ?? ($r['house_Id'] ?? null);
+        $r['district']     = $r['district'] ?? ($r['survey_District'] ?? null);
+        $r['subdistrict']  = $r['subdistrict'] ?? ($r['survey_Subdistrict'] ?? null);
+        $r['village_no']   = $r['village_no'] ?? ($r['village_No'] ?? null);
+        $r['village_name'] = $r['village_name'] ?? ($r['village_Name'] ?? null);
+        $r['lat']          = $r['lat'] ?? ($r['latitude'] ?? null);
+        $r['lng']          = $r['lng'] ?? ($r['longitude'] ?? null);
+
+        return $r;
+    }
+
+    private function enrichCollection($rows)
+    {
+        return collect($rows)->map(function ($r) {
+            $r = $this->normalizeRow((array) $r);
+
+            $s   = $this->score($r);
+            $lvl = $this->level($s);
+
+            $r['score'] = $s;
+            $r['level'] = $lvl['label'];
+            $r['badge'] = $lvl['badge'];
+
+            return $r;
+        });
+    }
+
+    private function tableColsMap($conn, string $table): array
+    {
+        return collect($conn->select("
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA='dbo' AND TABLE_NAME=?
+        ", [$table]))
+            ->pluck('COLUMN_NAME')
+            ->mapWithKeys(fn($c) => [strtoupper((string) $c) => (string) $c])
+            ->toArray();
+    }
+
+    private function firstCol(array $colsMap, array $candidates): ?string
+    {
+        foreach ($candidates as $c) {
+            $key = strtoupper($c);
+            if (isset($colsMap[$key])) {
+                return $colsMap[$key];
+            }
+        }
+        return null;
     }
 }

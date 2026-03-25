@@ -96,6 +96,11 @@
             </li>
             <li><a class="dropdown-item" href="{{ url('/health') }}"><i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ</a></li>
           @endif
+          <li>
+            <a class="dropdown-item" href="{{ route('housing.dashboard') }}">
+              <i class="bi bi-house-door-fill me-2"></i>สภาพที่อยู่อาศัยและสาธารณูปโภค
+            </a>
+          </li>
 
           <li><hr class="dropdown-divider"></li>
 

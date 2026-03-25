@@ -476,7 +476,7 @@ class HealthController extends Controller
             ];
         });
 
-        return view('health', compact(
+        return view('health.health-status', compact(
             'actionUrl',
             'district','subdistrict','districtList','subdistrictList',
             'health','house_id','fname','lname','cid',
