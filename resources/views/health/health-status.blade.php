@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สถานะสุขภาพ</title>
+    <title>ข้อมูลสถานะสุขภาพ</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -23,48 +23,41 @@
                 </div>
 
                 <h1 style="font-size:42px; font-weight:700; color:#0f8b7d; margin:0 0 10px 0;">
-                    สถานะสุขภาพ
+                    ข้อมูลสถานะสุขภาพ
                 </h1>
 
                 <p style="font-size:17px; color:#64748b; margin:0;">
-                    เลือกหมวดหมู่ย่อยที่ต้องการเพื่อเข้าสู่หน้ารายงานและการวิเคราะห์ข้อมูล
+                   เลือกหมวดหมู่ย่อยที่ต้องการ
                 </p>
             </div>
 
             <div style="padding:34px 28px 38px;">
-                <div style="text-align:center; font-size:28px; font-weight:700; color:#334155; margin-bottom:10px;">
-                    เลือกหมวดหมู่ย่อยที่ต้องการ
-                </div>
-
-                <div style="text-align:center; color:#64748b; font-size:15px; margin-bottom:30px;">
-                    รองรับการเข้าถึงข้อมูลสุขภาพในแต่ละด้านอย่างเป็นระบบ
-                </div>
+               
 
                 <div class="row g-4">
 
-                   <div class="col-md-6">
-    <a href="{{ route('health.cardio_incidence') }}"
-       style="display:flex; align-items:center; gap:18px; text-decoration:none; background:linear-gradient(135deg,#ffffff 0%,#f8fcff 100%); border:1px solid #e5edf4; border-left:6px solid #14b8a6; border-radius:24px; padding:22px; min-height:120px; box-shadow:0 10px 24px rgba(15,23,42,.05); height:100%;">
-        
-        <div style="width:68px; height:68px; min-width:68px; border-radius:20px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e8fff8 0%,#e6f4ff 100%); color:#6480a0; font-size:30px;">
-            <i class="bi bi-heart-pulse"></i>
-        </div>
+                    <div class="col-md-6">
+                        <a href="{{ route('health.cardio_incidence') }}"
+                           style="display:flex; align-items:center; gap:18px; text-decoration:none; background:linear-gradient(135deg,#ffffff 0%,#f8fcff 100%); border:1px solid #e5edf4; border-left:6px solid #14b8a6; border-radius:24px; padding:22px; min-height:120px; box-shadow:0 10px 24px rgba(15,23,42,.05); height:100%;">
+                            
+                            <div style="width:68px; height:68px; min-width:68px; border-radius:20px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e8fff8 0%,#e6f4ff 100%); color:#6480a0; font-size:30px;">
+                                <i class="bi bi-heart-pulse"></i>
+                            </div>
 
-        <div style="flex:1;">
-            <div style="font-size:24px; font-weight:600; color:#6b7a96; margin-bottom:8px; line-height:1.35;">
-                อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด
-            </div>
-            <p style="color:#94a3b8; font-size:14px; margin:0;">
-                ดูข้อมูลอัตราป่วยรายใหม่ แนวโน้ม และการกระจายพื้นที่
-            </p>
-        </div>
+                            <div style="flex:1;">
+                                <div style="font-size:24px; font-weight:600; color:#6b7a96; margin-bottom:8px; line-height:1.35;">
+                                    อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด
+                                </div>
+                                <p style="color:#94a3b8; font-size:14px; margin:0;">
+                                    แสดงแนวโน้มและการกระจายของผู้ป่วยในพื้นที่
+                                </p>
+                            </div>
 
-        <div style="width:44px; height:44px; min-width:44px; border-radius:999px; background:#f1f8fd; color:#7c8ba4; display:flex; align-items:center; justify-content:center; font-size:18px;">
-            <i class="bi bi-arrow-right"></i>
-        </div>
-
-    </a>
-</div>
+                            <div style="width:44px; height:44px; min-width:44px; border-radius:999px; background:#f1f8fd; color:#7c8ba4; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                        </a>
+                    </div>
 
                     <div class="col-md-6">
                         <a href="{{ url('/health/mortality-cause') }}"
@@ -75,10 +68,10 @@
 
                             <div style="flex:1;">
                                 <div style="font-size:24px; font-weight:600; color:#6b7a96; margin-bottom:8px; line-height:1.35;">
-                                    สาเหตุการป่วย/ตาย
+                                    สาเหตุการเจ็บป่วยและการเสียชีวิต
                                 </div>
                                 <p style="color:#94a3b8; font-size:14px; margin:0;">
-                                    แสดงสถิติและการจำแนกข้อมูลด้านการเจ็บป่วยและการเสียชีวิต
+                                    นำเสนอข้อมูลสถิติและการจำแนกตามสาเหตุ
                                 </p>
                             </div>
 
@@ -100,7 +93,7 @@
                                     โรคจากการประกอบอาชีพและสิ่งแวดล้อม
                                 </div>
                                 <p style="color:#94a3b8; font-size:14px; margin:0;">
-                                    ติดตามข้อมูลผลกระทบด้านสุขภาพจากการทำงานและสิ่งแวดล้อม
+                                    ติดตามข้อมูลผลกระทบด้านสุขภาพจากปัจจัยเสี่ยงต่าง ๆ
                                 </p>
                             </div>
 
@@ -119,10 +112,10 @@
 
                             <div style="flex:1;">
                                 <div style="font-size:24px; font-weight:600; color:#6b7a96; margin-bottom:8px; line-height:1.35;">
-                                    การป่วยด้วยโรคจากมลพิษทางอากาศ
+                                    โรคจากมลพิษทางอากาศ
                                 </div>
                                 <p style="color:#94a3b8; font-size:14px; margin:0;">
-                                    ตรวจสอบข้อมูลสุขภาพที่เกี่ยวข้องกับฝุ่นควันและคุณภาพอากาศ
+                                    แสดงข้อมูลการเจ็บป่วยที่เกี่ยวข้องกับคุณภาพอากาศ
                                 </p>
                             </div>
 
@@ -136,7 +129,6 @@
             </div>
 
             <div style="text-align:center; padding:0 24px 28px; color:#94a3b8; font-size:13px;">
-                ระบบสารสนเทศด้านสุขภาพ จังหวัดพัทลุง
             </div>
         </div>
     </div>
