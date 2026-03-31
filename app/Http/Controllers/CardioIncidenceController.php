@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\HealthNcd;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CardioExport;
 
 class CardioIncidenceController extends Controller
 {
@@ -98,4 +100,13 @@ class CardioIncidenceController extends Controller
             'year'
         ));
     }
+    public function export(Request $request)
+{
+    $year = $request->get('year', 'all');
+
+    return Excel::download(
+        new CardioExport($request),
+        'อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด'.$year.'.xlsx'
+    );
+}
 }

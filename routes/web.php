@@ -92,3 +92,6 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.store');
 Route::get('/test', function () {
     return redirect()->route('health.index');
 })->name('test.redirect');
+
+Route::get('/health/ncd-major/export', [CardioIncidenceController::class, 'export'])
+    ->name('cardio.export');

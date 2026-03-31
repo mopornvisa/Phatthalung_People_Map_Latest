@@ -46,7 +46,7 @@
 
                             <div style="flex:1;">
                                 <div style="font-size:24px; font-weight:600; color:#6b7a96; margin-bottom:8px; line-height:1.35;">
-                                    อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด
+                                    การป่วยด้วยโรคไม่ติดต่อที่สำคัญ
                                 </div>
                                 <p style="color:#94a3b8; font-size:14px; margin:0;">
                                     แสดงแนวโน้มและการกระจายของผู้ป่วยในพื้นที่
