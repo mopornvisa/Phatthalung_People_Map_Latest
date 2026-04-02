@@ -583,7 +583,7 @@
 </head>
 <body class="app-bg">
 
-{{-- @include('layouts.topbar') --}}
+@include('layouts.topbar')
 
 @php
     $chartRows = collect(method_exists($rows, 'items') ? $rows->items() : $rows);
