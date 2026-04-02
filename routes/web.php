@@ -11,7 +11,8 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HousingPhysicalController;
 use App\Http\Controllers\HelpRecordController;
 use App\Http\Controllers\CardioIncidenceController;
-
+use App\Http\Controllers\HealthCardioIncidenceAllController;
+use App\Http\Controllers\HealthCardioMortalityController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -95,3 +96,19 @@ Route::get('/test', function () {
 
 Route::get('/health/ncd-major/export', [CardioIncidenceController::class, 'export'])
     ->name('cardio.export');
+
+Route::get('/health/cardio-incidence-all', [HealthCardioIncidenceAllController::class, 'index'])
+    ->name('health.cardio-incidence-all');
+
+Route::get('/health/cardio-incidence-all/export', [HealthCardioIncidenceAllController::class, 'export'])
+    ->name('health.cardio-incidence-all.export');
+
+Route::get('/health/cardio-mortality', [HealthCardioMortalityController::class, 'index'])
+    ->name('health.cardio-mortality');
+    
+Route::get('/health/cardio-mortality/export', [HealthCardioMortalityController::class, 'export'])
+    ->name('health.cardio-mortality.export');
+
+Route::get('/health/cardio-menu', function () {
+    return view('health.cardio-menu');
+})->name('health.cardio.menu');

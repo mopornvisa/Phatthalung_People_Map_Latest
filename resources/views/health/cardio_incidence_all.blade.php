@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>อัตราป่วยรายใหม่ของผู้ป่วยโรคหัวใจและหลอดเลือด</title>
+    <title>อัตราป่วยด้วยโรคหัวใจและหลอดเลือดต่อประชากร</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -82,16 +81,6 @@
             border-radius:16px;
             background:linear-gradient(135deg,#d7fbf1 0%,#dbeafe 100%);
             box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
-        }
-
-        .ga-right-title{
-            color:#0b7f6f;
-            font-weight:700;
-            font-size:14px;
-            padding:9px 15px;
-            border-radius:999px;
-            background:#ecfdf5;
-            border:1px solid #cdeee3;
         }
 
         .ga-subtitle{
@@ -213,6 +202,7 @@
             justify-content:center;
             gap:8px;
             transition:.2s ease;
+            text-decoration:none;
         }
 
         .ga-btn-export:hover{
@@ -230,6 +220,7 @@
             box-shadow:0 10px 24px rgba(2, 6, 23, .05);
             position:relative;
             overflow:hidden;
+            height:100%;
         }
 
         .ga-kpi::after{
@@ -260,6 +251,21 @@
             line-height:1.2;
             position:relative;
             z-index:1;
+        }
+
+        .ga-note{
+            margin-bottom:18px;
+            background:linear-gradient(135deg,#ffffff 0%,#f9fcff 100%);
+            border:1px solid #dcecf2;
+            border-radius:18px;
+            padding:14px 16px;
+            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
+            color:#475569;
+            font-size:12px;
+        }
+
+        .ga-note i{
+            color:#0ea5a4;
         }
 
         .ga-panel{
@@ -322,12 +328,12 @@
             padding:0 14px 12px 14px;
         }
 
-        /* ===== ปรับตารางในไฟล์นี้ ===== */
         .ga-table{
+            width:100%;
+            min-width:1700px;
             margin-bottom:0;
-            font-size:11px;
-            min-width:1200px;
             border-collapse:collapse;
+            font-size:11px;
         }
 
         .ga-table thead th{
@@ -374,9 +380,9 @@
 
         .ga-total-row td{
             background:#eaf2fb !important;
-            border:1px solid #c5d3e2 !important;
             font-weight:700;
             color:#0f172a;
+            border:1px solid #c5d3e2 !important;
         }
 
         .metric-blue{
@@ -387,7 +393,7 @@
         .ga-empty{
             padding:28px 10px !important;
             color:#94a3b8;
-            font-size:13px; 
+            font-size:13px;
         }
 
         .ga-small-note{
@@ -507,6 +513,17 @@
             }
         }
 
+        @media (max-width: 992px){
+            .ga-filter-actions{
+                flex-direction:column;
+                align-items:stretch;
+            }
+
+            .ga-btn-export{
+                width:100%;
+            }
+        }
+
         @media (max-width: 768px){
             .container-fluid{
                 padding-left:12px;
@@ -515,15 +532,11 @@
 
             .ga-page{
                 padding:14px;
-                border-radius:18px;
+                border-radius:22px;
             }
 
             .ga-title{
                 font-size:16px;
-            }
-
-            .ga-right-title{
-                font-size:13px;
             }
 
             .table-responsive{
@@ -534,16 +547,35 @@
                 font-size:22px;
             }
 
-            .ga-filter-actions{
-                align-items:stretch;
+            .ga-chart-wrap{
+                height:220px;
             }
 
-            .ga-filter-actions-text{
-                width:100%;
+            .ga-filter-card{
+                padding:16px;
+                border-radius:22px;
             }
 
-            .ga-filter-actions .ga-btn-export{
-                width:100%;
+            .ga-filter,
+            .ga-btn,
+            .ga-btn-light{
+                min-height:56px;
+                font-size:16px;
+                border-radius:16px;
+            }
+
+            .ga-export-title{
+                font-size:15px;
+            }
+
+            .ga-export-sub{
+                font-size:13px;
+            }
+
+            .ga-btn-export{
+                min-height:58px;
+                font-size:16px;
+                border-radius:18px;
             }
 
             .loading-ring{
@@ -558,7 +590,41 @@
     </style>
 </head>
 <body class="app-bg">
+
 @include('layouts.topbar')
+
+@php
+    $chartRows = collect(method_exists($rows, 'items') ? $rows->items() : $rows);
+
+    $districtLabels = $chartRows->pluck('district_name_thai')->map(fn($v) => (string) $v)->values();
+    $rateTotalData  = $chartRows->pluck('percentage_total')->map(fn($v) => round((float)$v, 2))->values();
+
+    $age1Data = $chartRows->pluck('percentage_total1')->map(fn($v) => round((float)$v, 2))->values();
+    $age2Data = $chartRows->pluck('percentage_total2')->map(fn($v) => round((float)$v, 2))->values();
+    $age3Data = $chartRows->pluck('percentage_total3')->map(fn($v) => round((float)$v, 2))->values();
+    $age4Data = $chartRows->pluck('percentage_total4')->map(fn($v) => round((float)$v, 2))->values();
+    $age5Data = $chartRows->pluck('percentage_total5')->map(fn($v) => round((float)$v, 2))->values();
+
+    $sumPopulation1 = $chartRows->sum(fn($r) => (float) ($r->population_total1 ?? 0));
+    $sumPatient1    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total1 ?? 0));
+    $sumRate1       = $sumPopulation1 > 0 ? ($sumPatient1 / $sumPopulation1) * 100 : 0;
+
+    $sumPopulation2 = $chartRows->sum(fn($r) => (float) ($r->population_total2 ?? 0));
+    $sumPatient2    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total2 ?? 0));
+    $sumRate2       = $sumPopulation2 > 0 ? ($sumPatient2 / $sumPopulation2) * 100 : 0;
+
+    $sumPopulation3 = $chartRows->sum(fn($r) => (float) ($r->population_total3 ?? 0));
+    $sumPatient3    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total3 ?? 0));
+    $sumRate3       = $sumPopulation3 > 0 ? ($sumPatient3 / $sumPopulation3) * 100 : 0;
+
+    $sumPopulation4 = $chartRows->sum(fn($r) => (float) ($r->population_total4 ?? 0));
+    $sumPatient4    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total4 ?? 0));
+    $sumRate4       = $sumPopulation4 > 0 ? ($sumPatient4 / $sumPopulation4) * 100 : 0;
+
+    $sumPopulation5 = $chartRows->sum(fn($r) => (float) ($r->population_total5 ?? 0));
+    $sumPatient5    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total5 ?? 0));
+    $sumRate5       = $sumPopulation5 > 0 ? ($sumPatient5 / $sumPopulation5) * 100 : 0;
+@endphp
 
 <div class="container-fluid py-4">
     <div class="ga-page shadow-soft">
@@ -568,15 +634,16 @@
                 <div>
                     <div class="ga-title">
                         <i class="bi bi-heart-pulse-fill"></i>
-                        <span>อัตราป่วยรายใหม่โรคหัวใจและหลอดเลือด</span>
+                        <span>อัตราป่วยด้วยโรคหัวใจและหลอดเลือดต่อประชากร </span>
                     </div>
                     <div class="ga-subtitle">
-                        แสดงข้อมูลสรุปภาพรวมรายอำเภอ พร้อมกราฟวิเคราะห์และตารางรายเดือน
+                        แสดงข้อมูลสรุปภาพรวมรายอำเภอ พร้อมกราฟวิเคราะห์และตารางข้อมูลรายกลุ่มอายุ
                     </div>
                 </div>
             </div>
         </div>
- <div class="ga-filter-card">
+
+        <div class="ga-filter-card">
             <form method="GET" id="filterForm">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
@@ -625,65 +692,59 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('cardio.export', request()->query()) }}" class="btn ga-btn-export">
+                    <a href="{{ route('health.cardio-incidence-all.export', request()->query()) }}" class="btn ga-btn-export">
                         <i class="bi bi-download"></i> Export Excel
                     </a>
                 </div>
             </form>
         </div>
-       
+
         <div class="row g-3 mb-3">
             <div class="col-md-4">
                 <div class="ga-kpi">
-                    <div class="ga-kpi-label">จำนวนป่วยรายใหม่</div>
-                    <h3 class="ga-kpi-value">{{ number_format($summary['case'] ?? 0) }}</h3>
+                    <div class="ga-kpi-label">ประชากรรวม</div>
+                    <h3 class="ga-kpi-value">{{ number_format($summary->population_total_sum ?? 0) }}</h3>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="ga-kpi">
-                    <div class="ga-kpi-label">จำนวนประชากร</div>
-                    <h3 class="ga-kpi-value">{{ number_format($summary['pop'] ?? 0) }}</h3>
+                    <div class="ga-kpi-label">ผู้ป่วยรวม</div>
+                    <h3 class="ga-kpi-value">{{ number_format($summary->patient_cardio_total_sum ?? 0) }}</h3>
                 </div>
             </div>
 
             <div class="col-md-4">
                 <div class="ga-kpi">
-                    <div class="ga-kpi-label">อัตราป่วยต่อแสนประชากร</div>
-                    <h3 class="ga-kpi-value">{{ number_format($summary['rate'] ?? 0, 2) }}</h3>
+                    <div class="ga-kpi-label">ร้อยละเฉลี่ยรวม</div>
+                    <h3 class="ga-kpi-value">{{ number_format($overallRate ?? 0, 2) }}</h3>
                 </div>
             </div>
         </div>
 
+        <div class="ga-note">
+            <i class="bi bi-info-circle me-1"></i>
+            กราฟและตารางด้านล่างจะแสดงเฉพาะข้อมูลที่กำลังถูกกรองอยู่ในหน้าปัจจุบัน
+        </div>
+
         <div class="row g-3">
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <div class="ga-panel">
-                    <div class="ga-panel-title">สัดส่วนผู้ป่วยรายอำเภอ</div>
+                    <div class="ga-panel-title">แผนภูมิร้อยละรวมรายอำเภอ</div>
                     <div class="ga-panel-body">
                         <div class="ga-chart-wrap">
-                            <canvas id="pieChart"></canvas>
+                            <canvas id="districtRateChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-4">
+            <div class="col-lg-6">
                 <div class="ga-panel">
-                    <div class="ga-panel-title">อัตราต่อแสนรายอำเภอ</div>
+                    <div class="ga-panel-title">แผนภูมิร้อยละตามช่วงอายุ</div>
                     <div class="ga-panel-body">
                         <div class="ga-chart-wrap">
-                            <canvas id="barChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <div class="ga-panel">
-                    <div class="ga-panel-title">ผู้ป่วยรายใหม่รายเดือน (รวม)</div>
-                    <div class="ga-panel-body">
-                        <div class="ga-chart-wrap">
-                            <canvas id="lineChart"></canvas>
+                            <canvas id="ageRateChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -694,7 +755,7 @@
             <div class="ga-table-head">
                 <div>
                     <div class="ga-table-head-title">ตารางสรุปข้อมูลรายอำเภอ</div>
-                    <div class="ga-table-head-sub">แสดงจำนวนประชากร จำนวนผู้ป่วย อัตราต่อแสน และข้อมูลรายเดือน</div>
+                    <div class="ga-table-head-sub">แสดงจำนวนประชากร จำนวนผู้ป่วย และอัตราร้อยละรายกลุ่มอายุ</div>
                 </div>
             </div>
 
@@ -704,74 +765,100 @@
                         <tr>
                             <th rowspan="2">อำเภอ</th>
                             <th colspan="3">ข้อมูลสรุป</th>
-                            <th colspan="12">จำนวนผู้ป่วยรายใหม่รายเดือน</th>
+                            <th colspan="3">ต่ำกว่า 15 ปี</th>
+                            <th colspan="3">15-39 ปี</th>
+                            <th colspan="3">40-49 ปี</th>
+                            <th colspan="3">50-59 ปี</th>
+                            <th colspan="3">60 ปีขึ้นไป</th>
                         </tr>
                         <tr>
-                            <th>B </th>
-                            <th>A </th>
-                            <th>อัตราต่อแสน</th>
-                            <th>ม.ค.</th>
-                            <th>ก.พ.</th>
-                            <th>มี.ค.</th>
-                            <th>เม.ย.</th>
-                            <th>พ.ค.</th>
-                            <th>มิ.ย.</th>
-                            <th>ก.ค.</th>
-                            <th>ส.ค.</th>
-                            <th>ก.ย.</th>
-                            <th>ต.ค.</th>
-                            <th>พ.ย.</th>
-                            <th>ธ.ค.</th>
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
+
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
+
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
+
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
+
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
+
+                            <th>B</th>
+                            <th>A</th>
+                            <th>ร้อยละ</th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        @forelse($rows as $r)
-                            @php
-                                $patient = (float)($r->patient_total ?? 0);
-                                $rate = (float)($r->rate_per_100k ?? 0);
-                            @endphp
+                        @forelse($rows as $row)
                             <tr>
-                                <td>{{ $r->district_name_thai }}</td>
-                                <td class="text-end metric-blue">{{ number_format($r->population_civil_registry ?? 0) }}</td>
-                                <td class="text-end metric-blue">{{ number_format($patient) }}</td>
-                                <td class="text-end metric-blue">{{ number_format($rate, 2) }}</td>
-                                <td class="text-end">{{ number_format($r->month1 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month2 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month3 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month4 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month5 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month6 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month7 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month8 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month9 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month10 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month11 ?? 0) }}</td>
-                                <td class="text-end">{{ number_format($r->month12 ?? 0) }}</td>
+                                <td>{{ $row->district_name_thai }}</td>
+
+                                <td class="text-end metric-blue">{{ number_format($row->population_total) }}</td>
+                                <td class="text-end metric-blue">{{ number_format($row->patient_cardio_total) }}</td>
+                                <td class="text-end metric-blue">{{ number_format($row->percentage_total, 2) }}</td>
+
+                                <td class="text-end">{{ number_format($row->population_total1) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_cardio_total1) }}</td>
+                                <td class="text-end">{{ number_format($row->percentage_total1, 2) }}</td>
+
+                                <td class="text-end">{{ number_format($row->population_total2) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_cardio_total2) }}</td>
+                                <td class="text-end">{{ number_format($row->percentage_total2, 2) }}</td>
+
+                                <td class="text-end">{{ number_format($row->population_total3) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_cardio_total3) }}</td>
+                                <td class="text-end">{{ number_format($row->percentage_total3, 2) }}</td>
+
+                                <td class="text-end">{{ number_format($row->population_total4) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_cardio_total4) }}</td>
+                                <td class="text-end">{{ number_format($row->percentage_total4, 2) }}</td>
+
+                                <td class="text-end">{{ number_format($row->population_total5) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_cardio_total5) }}</td>
+                                <td class="text-end">{{ number_format($row->percentage_total5, 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="16" class="text-center ga-empty">ไม่พบข้อมูล</td>
+                                <td colspan="19" class="text-center ga-empty">ไม่พบข้อมูล</td>
                             </tr>
                         @endforelse
 
                         <tr class="ga-total-row">
                             <td>รวม</td>
-                            <td class="text-end">{{ number_format($summary['pop'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['case'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['rate'] ?? 0, 2) }}</td>
-                            <td class="text-end">{{ number_format($summary['month1'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month2'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month3'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month4'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month5'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month6'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month7'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month8'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month9'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month10'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month11'] ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary['month12'] ?? 0) }}</td>
+
+                            <td class="text-end">{{ number_format($summary->population_total_sum ?? 0) }}</td>
+                            <td class="text-end">{{ number_format($summary->patient_cardio_total_sum ?? 0) }}</td>
+                            <td class="text-end">{{ number_format($overallRate ?? 0, 2) }}</td>
+
+                            <td class="text-end">{{ number_format($sumPopulation1) }}</td>
+                            <td class="text-end">{{ number_format($sumPatient1) }}</td>
+                            <td class="text-end">{{ number_format($sumRate1, 2) }}</td>
+
+                            <td class="text-end">{{ number_format($sumPopulation2) }}</td>
+                            <td class="text-end">{{ number_format($sumPatient2) }}</td>
+                            <td class="text-end">{{ number_format($sumRate2, 2) }}</td>
+
+                            <td class="text-end">{{ number_format($sumPopulation3) }}</td>
+                            <td class="text-end">{{ number_format($sumPatient3) }}</td>
+                            <td class="text-end">{{ number_format($sumRate3, 2) }}</td>
+
+                            <td class="text-end">{{ number_format($sumPopulation4) }}</td>
+                            <td class="text-end">{{ number_format($sumPatient4) }}</td>
+                            <td class="text-end">{{ number_format($sumRate4, 2) }}</td>
+
+                            <td class="text-end">{{ number_format($sumPopulation5) }}</td>
+                            <td class="text-end">{{ number_format($sumPatient5) }}</td>
+                            <td class="text-end">{{ number_format($sumRate5, 2) }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -785,10 +872,10 @@
         <div class="ga-legend-box">
             <div class="ga-legend-title">คำอธิบายตัวชี้วัด</div>
             <div class="ga-legend-item">
-                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคหัวใจและหลอดเลือด (Coronary Heart Disease) รายใหม่ในปี
+                <strong>A</strong> หมายถึง จำนวนผู้ป่วยด้วยโรคหัวใจและหลอดเลือด (Coronary heart disease) ทั้งหมดตามกลุ่มอายุ
             </div>
             <div class="ga-legend-item mb-0">
-                <strong>B</strong> หมายถึง จำนวนประชากรทะเบียนราษฎร์
+                <strong>B</strong> หมายถึง จำนวนประชากร ตามกลุ่มอายุ
             </div>
         </div>
 
@@ -804,145 +891,172 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const labels = @json(collect($rows)->pluck('district_name_thai')->values());
-    const cases = @json(collect($rows)->pluck('patient_total')->map(fn($v) => (float)($v ?? 0))->values());
-    const rates = @json(collect($rows)->pluck('rate_per_100k')->map(fn($v) => (float)($v ?? 0))->values());
+    const districtLabels = @json($districtLabels);
+    const rateTotalData  = @json($rateTotalData);
 
-    const monthly = [
-        {{ (float)($summary['month1'] ?? 0) }},
-        {{ (float)($summary['month2'] ?? 0) }},
-        {{ (float)($summary['month3'] ?? 0) }},
-        {{ (float)($summary['month4'] ?? 0) }},
-        {{ (float)($summary['month5'] ?? 0) }},
-        {{ (float)($summary['month6'] ?? 0) }},
-        {{ (float)($summary['month7'] ?? 0) }},
-        {{ (float)($summary['month8'] ?? 0) }},
-        {{ (float)($summary['month9'] ?? 0) }},
-        {{ (float)($summary['month10'] ?? 0) }},
-        {{ (float)($summary['month11'] ?? 0) }},
-        {{ (float)($summary['month12'] ?? 0) }},
-    ];
+    const age1Data = @json($age1Data);
+    const age2Data = @json($age2Data);
+    const age3Data = @json($age3Data);
+    const age4Data = @json($age4Data);
+    const age5Data = @json($age5Data);
 
-    const monthLabels = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-
-    const baseOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                labels: {
-                    font: { family: 'Prompt', size: 11 }
-                }
-            }
-        }
-    };
-
-    const pieEl = document.getElementById('pieChart');
-    if (pieEl) {
-        new Chart(pieEl, {
-            type: 'doughnut',
-            data: {
-                labels: labels,
-                datasets: [{
-                    data: cases,
-                    backgroundColor: [
-                        '#14b8a6','#60a5fa','#f59e0b','#8b5cf6','#22c55e',
-                        '#ef4444','#ec4899','#06b6d4','#f97316','#84cc16','#6366f1'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                ...baseOptions,
-                cutout: '60%'
-            }
-        });
-    }
-
-    const barEl = document.getElementById('barChart');
-    if (barEl) {
-        new Chart(barEl, {
+    const districtRateChart = document.getElementById('districtRateChart');
+    if (districtRateChart) {
+        new Chart(districtRateChart, {
             type: 'bar',
             data: {
-                labels: labels,
+                labels: districtLabels,
                 datasets: [{
-                    label: 'อัตราต่อแสน',
-                    data: rates,
+                    label: 'ร้อยละรวม',
+                    data: rateTotalData,
                     backgroundColor: '#2d74da',
                     borderColor: '#2d74da',
                     borderWidth: 1,
-                    borderRadius: 8
+                    borderRadius: 8,
+                    maxBarThickness: 42
                 }]
             },
             options: {
-                ...baseOptions,
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
                 scales: {
                     x: {
                         ticks: {
-                            font: { family: 'Prompt', size: 10 },
-                            color: '#334155'
+                            color: '#334155',
+                            font: { family: 'Prompt', size: 10 }
                         },
                         grid: { display: false }
                     },
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            font: { family: 'Prompt', size: 10 },
-                            color: '#334155'
+                            color: '#334155',
+                            font: { family: 'Prompt', size: 10 }
                         },
-                        grid: { color: '#e2e8f0' }
+                        grid: { color: '#e2e8f0' },
+                        title: {
+                            display: true,
+                            text: 'ร้อยละ',
+                            color: '#475569',
+                            font: { family: 'Prompt', weight: '600', size: 11 }
+                        }
                     }
                 }
             }
         });
     }
 
-    const lineEl = document.getElementById('lineChart');
-    if (lineEl) {
-        new Chart(lineEl, {
+    const ageRateChart = document.getElementById('ageRateChart');
+    if (ageRateChart) {
+        new Chart(ageRateChart, {
             type: 'line',
             data: {
-                labels: monthLabels,
-                datasets: [{
-                    label: 'ผู้ป่วยรายใหม่',
-                    data: monthly,
-                    borderColor: '#0ea5a4',
-                    backgroundColor: '#0ea5a4',
-                    pointRadius: 3,
-                    pointHoverRadius: 4,
-                    tension: 0.3,
-                    fill: false
-                }]
+                labels: districtLabels,
+                datasets: [
+                    {
+                        label: 'ต่ำกว่า 15 ปี',
+                        data: age1Data,
+                        borderColor: '#14b8a6',
+                        backgroundColor: '#14b8a6',
+                        tension: 0.35,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: '15-39 ปี',
+                        data: age2Data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: '#3b82f6',
+                        tension: 0.35,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: '40-49 ปี',
+                        data: age3Data,
+                        borderColor: '#8b5cf6',
+                        backgroundColor: '#8b5cf6',
+                        tension: 0.35,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: '50-59 ปี',
+                        data: age4Data,
+                        borderColor: '#f97316',
+                        backgroundColor: '#f97316',
+                        tension: 0.35,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 4
+                    },
+                    {
+                        label: '60 ปีขึ้นไป',
+                        data: age5Data,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        tension: 0.35,
+                        fill: false,
+                        pointRadius: 3,
+                        pointHoverRadius: 4
+                    }
+                ]
             },
             options: {
-                ...baseOptions,
-                plugins: { legend: { display: false } },
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            color: '#334155',
+                            font: { family: 'Prompt', size: 11 }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         ticks: {
-                            font: { family: 'Prompt', size: 10 },
-                            color: '#334155'
+                            color: '#334155',
+                            font: { family: 'Prompt', size: 10 }
                         },
-                        grid: { color: '#eef2f7' }
+                        grid: { display: false }
                     },
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            font: { family: 'Prompt', size: 10 },
-                            color: '#334155'
+                            color: '#334155',
+                            font: { family: 'Prompt', size: 10 }
                         },
-                        grid: { color: '#e2e8f0' }
+                        grid: { color: '#e2e8f0' },
+                        title: {
+                            display: true,
+                            text: 'ร้อยละ',
+                            color: '#475569',
+                            font: { family: 'Prompt', weight: '600', size: 11 }
+                        }
                     }
                 }
             }
         });
     }
 
-    const filterForm = document.querySelector('.ga-filter-card form');
-
+    const filterForm = document.getElementById('filterForm');
     if (filterForm) {
         filterForm.addEventListener('submit', function (e) {
             const overlay = document.getElementById('loadingOverlay');
@@ -953,12 +1067,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 setTimeout(() => {
                     filterForm.submit();
-                }, 1200);
+                }, 900);
             }
         });
     }
-});
 </script>
-
 </body>
 </html>

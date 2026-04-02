@@ -12,6 +12,7 @@
 <body style="font-family:'Prompt',sans-serif; background:linear-gradient(135deg,#e9f7f4 0%,#f4fbff 50%,#eef6fb 100%); min-height:100vh; margin:0;">
 
     @include('layouts.topbar')
+    
 
     <div style="min-height:100vh; padding:32px 20px;">
         <div style="max-width:1150px; margin:0 auto; background:rgba(255,255,255,.92); border:1px solid rgba(255,255,255,.7); border-radius:32px; box-shadow:0 18px 45px rgba(15,23,42,.08); backdrop-filter:blur(10px); overflow:hidden;">
@@ -37,7 +38,7 @@
                 <div class="row g-4">
 
                     <div class="col-md-6">
-                        <a href="{{ route('health.cardio_incidence') }}"
+                        <a href="{{ route('health.cardio.menu') }}"
                            style="display:flex; align-items:center; gap:18px; text-decoration:none; background:linear-gradient(135deg,#ffffff 0%,#f8fcff 100%); border:1px solid #e5edf4; border-left:6px solid #14b8a6; border-radius:24px; padding:22px; min-height:120px; box-shadow:0 10px 24px rgba(15,23,42,.05); height:100%;">
                             
                             <div style="width:68px; height:68px; min-width:68px; border-radius:20px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#e8fff8 0%,#e6f4ff 100%); color:#6480a0; font-size:30px;">
