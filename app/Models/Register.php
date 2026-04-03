@@ -6,9 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Register extends Model
 {
+    protected $connection = 'sqlsrv';   // ✅ ใช้ SQL Server
     protected $table = 'register';
     protected $primaryKey = 'register_Id';
-    public $timestamps = true; // หรือ false ถ้าตารางไม่มี timestamps
+
+    public $timestamps = false; // 👉 ถ้าไม่มี created_at / updated_at ให้ใช้ false
 
     protected $fillable = [
         'register_User',

@@ -13,41 +13,173 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body{ font-family:'Prompt',system-ui,sans-serif; }
-    .app-bg{ background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%); min-height:100vh; }
-    .shadow-soft{ box-shadow: 0 12px 28px rgba(2, 6, 23, .08) !important; }
+  body{
+    font-family:'Prompt',system-ui,sans-serif;
+  }
+
+  .app-bg{
+    background:linear-gradient(135deg,#CFEFF3 0%,#DFF7EF 50%,#F0F8FB 100%);
+    min-height:100vh;
+  }
+
+  .shadow-soft{
+    box-shadow: 0 10px 24px rgba(2, 6, 23, .06) !important;
+  }
+
+  .dashboard-layout{
+    display:flex;
+    align-items:flex-start;
+    gap:16px;
+  }
+
+  .dashboard-sidebar{
+    flex: 0 0 clamp(250px, 22vw, 310px);
+    max-width: 310px;
+    min-width: 250px;
+  }
+
+  .dashboard-main{
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .sidebar{
+    width: 100%;
+    min-width: 0;
+    position: sticky;
+    top: 74px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 22px !important;
+  }
+
+  .sidebar .nav-link{
+    display:flex;
+    align-items:flex-start;
+    gap:.65rem;
+    width:100%;
+    white-space:normal;
+    word-break:break-word;
+  }
+
+  .sidebar .nav-link i{
+    flex:0 0 auto;
+    margin-top:2px;
+  }
+
+  .sidebar .btn,
+  .sidebar .dropdown-menu,
+  .sidebar .badge{
+    max-width:100%;
+  }
+
+  .sidebar .text-truncate{
+    min-width:0;
+    display:inline-block;
+    max-width:calc(100% - 24px);
+  }
+
+  .nav-pills .nav-link.active{
+    background:#0B7F6F !important;
+    color:#fff !important;
+  }
+
+  .nav-pills .nav-link{
+    border-radius: 14px;
+    padding:12px 14px;
+    font-weight:500;
+  }
+
+  .kpi-icon{
+    width:48px;
+    height:48px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:16px;
+    flex-shrink:0;
+  }
+
+  .chip{
+    border-radius:999px;
+    padding:.35rem .7rem;
+    font-size:.85rem;
+    display:inline-flex;
+    align-items:center;
+    gap:.4rem;
+    border:1px solid rgba(0,0,0,.08);
+    background:#fff;
+  }
+
+  .dropdown-menu-scrollable{
+    max-height:260px;
+    overflow:auto;
+  }
+
+  .card-balance{
+    border-radius: 22px !important;
+  }
+
+  .hero-card .card-body{
+    min-height: 80px;
+    padding: 18px 20px;
+  }
+
+  .kpi-card .card-body{
+    min-height: 108px;
+    padding: 18px;
+  }
+
+  .section-card{
+    border-radius: 24px !important;
+    overflow: hidden;
+  }
+
+  .inner-panel{
+    border-radius: 20px;
+    border: 1px solid rgba(0,0,0,.06);
+    background: #fff;
+    padding: 16px;
+    height: 100%;
+  }
+
+  .main-col{
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+
+  .soft-table-wrap{
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid rgba(0,0,0,.06);
+    background:#fff;
+  }
+
+  @media (max-width: 1199.98px){
+    .sidebar{
+      top: 70px;
+    }
+  }
+
+  @media (max-width: 991.98px){
+    .dashboard-layout{
+      display:block;
+    }
+
+    .dashboard-sidebar,
+    .dashboard-main{
+      max-width:100%;
+      min-width:0;
+    }
 
     .sidebar{
-      width: 280px;
-      position: sticky;
-      top: 74px;
-      height: calc(100vh - 90px);
-      overflow: auto;
+      position: static;
+      max-height: none;
+      overflow: visible;
     }
-
-    .nav-pills .nav-link.active{ background:#0B7F6F !important; }
-    .nav-pills .nav-link{ border-radius: 14px; padding:10px 12px; }
-
-    .kpi-icon{
-      width:46px;height:46px;
-      display:flex;align-items:center;justify-content:center;
-      border-radius:16px;
-    }
-
-    .chip{
-      border-radius:999px;
-      padding:.35rem .7rem;
-      font-size:.85rem;
-      display:inline-flex;
-      align-items:center;
-      gap:.4rem;
-      border:1px solid rgba(0,0,0,.08);
-      background:#fff;
-    }
-
-    .dropdown-menu-scrollable{ max-height: 260px; overflow:auto; }
-  </style>
-  
+  }
+</style>
 </head>
 
 <body class="app-bg">
@@ -168,11 +300,12 @@
 @include('layouts.topbar')
 
 <div class="container-fluid px-3 px-lg-4 py-3">
-  <div class="row g-3">
+  <div class="dashboard-layout">
 
     {{-- Sidebar --}}
-    <div class="col-lg-3 d-none d-lg-block">
-      <div class="bg-white bg-opacity-75 border rounded-4 p-3 sidebar shadow-soft">
+    <aside class="dashboard-sidebar d-none d-lg-block">
+
+      <div class="bg-white bg-opacity-75 border p-3 sidebar shadow-soft card-balance">
 
         <div class="d-flex align-items-center gap-2 mb-3">
           <div class="kpi-icon" style="background:rgba(11,127,111,.12);color:{{ $teal }};">
@@ -205,10 +338,10 @@
             <i class="bi bi-table me-2"></i>ตารางครัวเรือน
           </a>
 
-          <a class="nav-link d-flex align-items-center text-nowrap {{ request()->routeIs('housing.dashboard') ? 'active' : 'text-dark' }}"
+          <a class="nav-link {{ request()->routeIs('housing.dashboard') ? 'active' : 'text-dark' }}"
              href="{{ route('housing.dashboard') }}">
             <i class="bi bi-house-door-fill me-2"></i>
-            สภาพที่อยู่อาศัยสาธารณูปโภค
+            <span>สภาพที่อยู่อาศัยสาธารณูปโภค</span>
           </a>
 
           @if(!session('user_firstname'))
@@ -367,15 +500,14 @@
               <i class="bi bi-hourglass-split me-1 text-success"></i>{{ $age_range ? ($AGE_RANGES[$age_range] ?? $age_range) : 'อายุ: ทั้งหมด' }}
             </span>
           </div>
-
         </div>
       </div>
-    </div>
+    </aside>
 
     {{-- Content --}}
-    <div class="col-lg-9">
-
-      <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+    <main class="dashboard-main main-col">
+   
+      <div class="card border-0 shadow-soft bg-white bg-opacity-75 mb-3 card-balance hero-card">
         <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
           <div>
             <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
@@ -422,7 +554,7 @@
 
       <div class="row g-3 mb-3">
         <div class="col-12 col-md-6 col-xl-3">
-          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+          <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance kpi-card">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
                 <div class="text-muted small">จำนวนครัวเรือน</div>
@@ -437,7 +569,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-xl-3">
-          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+          <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance kpi-card">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
                 <div class="text-muted small">จำนวนสมาชิก</div>
@@ -452,7 +584,7 @@
         </div>
 
         <div class="col-12 col-md-6 col-xl-3">
-          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+          <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance kpi-card">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
                 <div class="text-muted small">ครัวเรือนยากจน</div>
@@ -467,12 +599,12 @@
         </div>
 
         <div class="col-12 col-md-6 col-xl-3">
-          <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
+          <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance kpi-card">
             <div class="card-body d-flex align-items-center justify-content-between">
               <div>
                 <div class="text-muted small">สวัสดิการทั้งหมด</div>
                 <div class="h4 fw-bold mb-0" style="color:{{ $teal }}">{{ number_format($welfareTotal) }}</div>
-              <div class="text-muted small">(คน)</div>
+                <div class="text-muted small">(คน)</div>
               </div>
               <div class="kpi-icon bg-success-subtle text-success">
                 <i class="bi bi-gift-fill"></i>
@@ -482,7 +614,7 @@
         </div>
       </div>
 
-      <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 overflow-hidden mb-3">
+      <div class="card border-0 shadow-soft bg-white bg-opacity-75 overflow-hidden mb-3 section-card">
         <div class="card-header bg-white bg-opacity-50 border-0 border-bottom py-3">
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div class="fw-semibold" style="color:{{ $teal2 }}">
@@ -499,7 +631,7 @@
           <div class="row g-4 align-items-stretch">
 
             <div class="col-12 col-lg-8">
-              <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+              <div class="inner-panel">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="small fw-semibold" style="color:{{ $teal2 }}">
                     <i class="bi bi-heart-pulse-fill me-1 text-success"></i>สถานะสุขภาพสมาชิกแยกตาม{{ $chartAreaLabel }}
@@ -514,13 +646,11 @@
                 <div style="height:380px;">
                   <canvas id="healthChart"></canvas>
                 </div>
-
-                
               </div>
             </div>
 
             <div class="col-12 col-lg-4">
-              <div class="border rounded-4 bg-white p-3 h-100 d-flex flex-column" style="border-color:rgba(0,0,0,.06)!important;">
+              <div class="inner-panel d-flex flex-column">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <div class="small fw-semibold" style="color:{{ $teal2 }}">
                     <i class="bi bi-gender-ambiguous me-1 text-success"></i>สัดส่วนเพศ
@@ -549,7 +679,7 @@
 
       <div class="mt-3">
 
-        <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+        <div class="card border-0 shadow-soft bg-white bg-opacity-75 mb-3 card-balance hero-card">
           <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div>
               <div class="h5 fw-bold mb-1 d-flex align-items-center gap-2 flex-wrap" style="color:{{ $teal2 }}">
@@ -574,7 +704,7 @@
             'social'    => 'ทุนทางสังคม',
           ] as $key=>$label)
             <div class="col-12 col-sm-6 col-lg">
-              <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 text-center h-100">
+              <div class="card border-0 shadow-soft bg-white bg-opacity-75 text-center h-100 card-balance">
                 <div class="card-body py-3">
                   <div class="small text-muted mb-1">{{ $label }}</div>
                   <div class="fw-bold fs-4" style="color:{{ $teal2 }};">
@@ -589,7 +719,7 @@
           @endforeach
         </div>
 
-        <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 mb-3">
+        <div class="card border-0 shadow-soft bg-white bg-opacity-75 mb-3 card-balance section-card">
           <div class="card-body">
 
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
@@ -610,7 +740,7 @@
             <div class="row g-3 align-items-stretch">
 
               <div class="col-12 col-lg-7">
-                <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+                <div class="inner-panel">
                   <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="small fw-semibold" style="color:{{ $teal2 }}">
                       <i class="bi bi-activity me-1 text-success"></i> แนวโน้มทุนรวม
@@ -625,12 +755,12 @@
               </div>
 
               <div class="col-12 col-lg-5">
-                <div class="border rounded-4 bg-white p-3 h-100" style="border-color:rgba(0,0,0,.06)!important;">
+                <div class="inner-panel">
                   <div class="small fw-semibold mb-2" style="color:{{ $teal2 }}">
                     <i class="bi bi-table me-1 text-success"></i> สรุปทุนรวมรายปี
                   </div>
 
-                  <div class="table-responsive" style="border-radius:14px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
+                  <div class="table-responsive soft-table-wrap">
                     <table class="table mb-0 align-middle" style="font-size:14px;">
                       <thead style="background:rgba(11,127,111,.06);">
                         <tr class="text-muted" style="font-size:12.5px;">
@@ -660,117 +790,110 @@
               </div>
 
             </div>
-          </div>
+            </div>
+            </div>
+
+            <div class="row g-4 mt-2">
+  <div class="col-12 col-lg-6 pe-lg-2">
+    <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance">
+      <div class="card-body p-4">
+        <div class="fw-semibold mb-3" style="color:{{ $teal2 }}">
+          <i class="bi bi-pentagon-half me-1 text-success"></i> เรดาร์ทุน 5 ด้าน
         </div>
 
-        <div class="row g-3">
-          <div class="col-lg-6">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-              <div class="card-body">
-                <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
-                  <i class="bi bi-pentagon-half me-1 text-success"></i> เรดาร์ทุน 5 ด้าน
-                </div>
-                <div class="border rounded-4 bg-white p-2" style="border-color:rgba(0,0,0,.06)!important;">
-                  <div style="height:320px;">
-                    <canvas id="capitalsRadar"></canvas>
-                  </div>
-                </div>
-                <div class="small text-muted mt-2">
-                  <i class="bi bi-info-circle me-1"></i> เส้นประกอบ: Mean, Mean+SD, Mean-SD
-                </div>
-              </div>
-            </div>
+        <div class="soft-table-wrap p-3">
+          <div style="height:320px;">
+            <canvas id="capitalsRadar"></canvas>
           </div>
 
-          <div class="col-lg-6">
-            <div class="card border-0 rounded-4 shadow-soft bg-white bg-opacity-75 h-100">
-              <div class="card-body">
-                <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
-                  <i class="bi bi-table me-1 text-success"></i> ตารางสรุป (Average / SD)
-                </div>
+          <div class="small text-muted mt-3">
+            <i class="bi bi-info-circle me-1"></i>
+            เส้นประกอบ: Mean, Mean+SD, Mean-SD
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                <div class="text-muted small mb-3">
-                  ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของทุนแต่ละมิติ
-                </div>
+  <div class="col-12 col-lg-6 ps-lg-2">
+    <div class="card border-0 shadow-soft bg-white bg-opacity-75 h-100 card-balance">
+      <div class="card-body p-4">
+        <div class="fw-semibold mb-2" style="color:{{ $teal2 }}">
+          <i class="bi bi-table me-1 text-success"></i> ตารางสรุป (Average / SD)
+        </div>
 
-                <span class="badge rounded-pill text-bg-light border">
-                  ปีที่เลือก {{ $capYearLabel }}
-                </span>
+        <div class="text-muted small mb-3">
+          ค่าเฉลี่ยและส่วนเบี่ยงเบนมาตรฐานของทุนแต่ละมิติ
+        </div>
 
-                <div class="table-responsive mt-3"
-                     style="border-radius:16px; overflow:hidden; border:1px solid rgba(0,0,0,.06);">
+        <span class="badge rounded-pill text-bg-light border">
+          ปีที่เลือก {{ $capYearLabel }}
+        </span>
 
-                  <table class="table align-middle mb-0 text-center"
-                         style="font-size:14px; table-layout:fixed;">
+        <div class="table-responsive mt-3 soft-table-wrap">
+          <table class="table align-middle mb-0 text-center" style="font-size:14px; table-layout:fixed;">
+            <thead style="background:rgba(11,127,111,.06);">
+              <tr class="text-muted" style="font-size:12.5px;">
+                <th style="width:50%; padding:12px;">ทุน 5 ด้าน</th>
+                <th style="width:25%; padding:12px;">Mean</th>
+                <th style="width:25%; padding:12px;">SD</th>
+              </tr>
+            </thead>
 
-                    <thead style="background:rgba(11,127,111,.06);">
-                      <tr class="text-muted" style="font-size:12.5px;">
-                        <th style="width:50%; padding:12px;">ทุน 5 ด้าน</th>
-                        <th style="width:25%; padding:12px;">Mean</th>
-                        <th style="width:25%; padding:12px;">SD</th>
-                      </tr>
-                    </thead>
+            <tbody>
+              @php
+                $rowsCap = [
+                  ['k'=>'human','name'=>'ทุนมนุษย์','icon'=>'bi-person-heart','bg'=>'rgba(13,110,253,.08)','ic'=>'#0d6efd'],
+                  ['k'=>'physical','name'=>'ทุนกายภาพ','icon'=>'bi-house-heart','bg'=>'rgba(25,135,84,.10)','ic'=>'#198754'],
+                  ['k'=>'financial','name'=>'ทุนการเงิน','icon'=>'bi-cash-coin','bg'=>'rgba(255,193,7,.18)','ic'=>'#b45309'],
+                  ['k'=>'natural','name'=>'ทุนธรรมชาติ','icon'=>'bi-tree-fill','bg'=>'rgba(32,201,151,.14)','ic'=>'#0f766e'],
+                  ['k'=>'social','name'=>'ทุนทางสังคม','icon'=>'bi-people-fill','bg'=>'rgba(111,66,193,.10)','ic'=>'#6f42c1'],
+                ];
+              @endphp
 
-                    <tbody>
-                    @php
-                      $rowsCap = [
-                        ['k'=>'human','name'=>'ทุนมนุษย์','icon'=>'bi-person-heart','bg'=>'rgba(13,110,253,.08)','ic'=>'#0d6efd'],
-                        ['k'=>'physical','name'=>'ทุนกายภาพ','icon'=>'bi-house-heart','bg'=>'rgba(25,135,84,.10)','ic'=>'#198754'],
-                        ['k'=>'financial','name'=>'ทุนการเงิน','icon'=>'bi-cash-coin','bg'=>'rgba(255,193,7,.18)','ic'=>'#b45309'],
-                        ['k'=>'natural','name'=>'ทุนธรรมชาติ','icon'=>'bi-tree-fill','bg'=>'rgba(32,201,151,.14)','ic'=>'#0f766e'],
-                        ['k'=>'social','name'=>'ทุนทางสังคม','icon'=>'bi-people-fill','bg'=>'rgba(111,66,193,.10)','ic'=>'#6f42c1'],
-                      ];
-                    @endphp
+              @foreach($rowsCap as $r)
+                @php
+                  $mean = (float)($capSummary[$r['k']] ?? 0);
+                  $sd   = (float)($capStd[$r['k']] ?? 0);
+                @endphp
 
-                    @foreach($rowsCap as $r)
-                      @php
-                        $mean = (float)($capSummary[$r['k']] ?? 0);
-                        $sd   = (float)($capStd[$r['k']] ?? 0);
-                      @endphp
+                <tr style="height:60px; transition:.15s;"
+                    onmouseover="this.style.background='rgba(11,127,111,.05)'"
+                    onmouseout="this.style.background='transparent'">
 
-                      <tr style="height:60px; transition:.15s;"
-                          onmouseover="this.style.background='rgba(11,127,111,.05)'"
-                          onmouseout="this.style.background='transparent'">
+                  <td class="text-start px-3">
+                    <div class="d-flex align-items-center gap-2">
+                      <span style="width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:{{ $r['bg'] }};">
+                        <i class="bi {{ $r['icon'] }}" style="color:{{ $r['ic'] }}"></i>
+                      </span>
+                      <span class="fw-semibold">{{ $r['name'] }}</span>
+                    </div>
+                  </td>
 
-                        <td class="text-start px-3">
-                          <div class="d-flex align-items-center gap-2">
-                            <span style="width:32px;height:32px;border-radius:10px;
-                                         display:flex;align-items:center;justify-content:center;
-                                         background:{{ $r['bg'] }};">
-                              <i class="bi {{ $r['icon'] }}" style="color:{{ $r['ic'] }}"></i>
-                            </span>
-                            <span class="fw-semibold">{{ $r['name'] }}</span>
-                          </div>
-                        </td>
+                  <td>
+                    <span class="badge rounded-pill font-monospace"
+                          style="min-width:80px;background:rgba(11,127,111,.12);color:{{ $teal2 }};font-weight:700;">
+                      {{ number_format($mean, 2) }}
+                    </span>
+                  </td>
 
-                        <td>
-                          <span class="badge rounded-pill font-monospace"
-                                style="min-width:80px;
-                                       background:rgba(11,127,111,.12);
-                                       color:{{ $teal2 }};
-                                       font-weight:700;">
-                            {{ number_format($mean, 2) }}
-                          </span>
-                        </td>
+                  <td>
+                    <span class="badge rounded-pill font-monospace"
+                          style="min-width:80px;background:rgba(0,0,0,.06);color:#374151;font-weight:700;">
+                      {{ number_format($sd, 2) }}
+                    </span>
+                  </td>
 
-                        <td>
-                          <span class="badge rounded-pill font-monospace"
-                                style="min-width:80px;
-                                       background:rgba(0,0,0,.06);
-                                       color:#374151;
-                                       font-weight:700;">
-                            {{ number_format($sd, 2) }}
-                          </span>
-                        </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
 
-                      </tr>
-                    @endforeach
-                    </tbody>
-                  </table>
-                </div>
-
-              </div>
-            </div>
+      </div>
+    </div>
+  </div>
+</div>
           </div>
 
         </div>

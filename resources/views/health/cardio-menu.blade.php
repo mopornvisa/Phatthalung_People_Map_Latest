@@ -295,7 +295,7 @@
         
 
         <div class="toolbar">
-            <a href="{{ route('health.status') }}" class="back-btn">
+            <a href="{{ route('health_status') }}" class="back-btn">
                 <i class="bi bi-arrow-left"></i>
                 กลับหน้าเมนูการป่วยด้วยโรคไม่ติดต่อที่สำคัญ
             </a>

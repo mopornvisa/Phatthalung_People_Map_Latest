@@ -44,17 +44,17 @@ class WelfareController extends Controller
     }
 
     public function export(Request $request)
-{
-    @ini_set('max_execution_time', 300);
-    @ini_set('memory_limit', '1024M');
-    @set_time_limit(300);
+    {
+        @ini_set('max_execution_time', 300);
+        @ini_set('memory_limit', '1024M');
+        @set_time_limit(300);
 
-    $data = $this->getWelfareBaseData($request, true);
+        $data = $this->getWelfareBaseData($request, true);
 
-    $filename = 'welfare_export_' . now()->format('Ymd_His') . '.xlsx';
+        $filename = 'welfare_export_' . now()->format('Ymd_His') . '.xlsx';
 
-    return Excel::download(new WelfareExport($data['exportQuery']), $filename);
-}
+        return Excel::download(new WelfareExport($data['exportQuery']), $filename);
+    }
 
     private function getWelfareBaseData(Request $request, bool $forExport = false): array
     {
@@ -108,6 +108,19 @@ class WelfareController extends Controller
 
         $trim = fn($expr) => "LTRIM(RTRIM($expr))";
 
+        $coalesceTrim = function (?string $mainExpr, ?string $profExpr, string $alias) {
+            if ($mainExpr && $profExpr) {
+                return "COALESCE(NULLIF(LTRIM(RTRIM($mainExpr)), N''), NULLIF(LTRIM(RTRIM($profExpr)), N'')) as {$alias}";
+            }
+            if ($mainExpr) {
+                return "$mainExpr as {$alias}";
+            }
+            if ($profExpr) {
+                return "$profExpr as {$alias}";
+            }
+            return null;
+        };
+
         // ======================
         // mapping survey_a
         // ======================
@@ -136,7 +149,6 @@ class WelfareController extends Controller
         $P_COL_TEL      = $pickProfCol(['TEL'], null);
         $P_COL_LATX     = $pickProfCol(['latx'], null);
         $P_COL_LNGY     = $pickProfCol(['lngy'], null);
-        $P_COL_YEAR     = $pickProfCol(['survey_year', 'year'], null);
 
         $P_COL_HOUSE_NO     = $pickProfCol(['MBNO', 'house_number'], null);
         $P_COL_VILLAGE_NO   = $pickProfCol(['MB', 'village_no'], null);
@@ -205,17 +217,17 @@ class WelfareController extends Controller
         // ======================
         $baseQuery = function() use (
             $conn, $mainTable, $profileTable,
-            $COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR
+            $COL_HOUSE, $P_COL_HOUSE
         ) {
             $q = $conn->table(DB::raw("$mainTable as u"));
 
             if ($COL_HOUSE && $P_COL_HOUSE) {
-                $q->leftJoin(DB::raw("$profileTable as p"), function($join) use ($COL_HOUSE, $P_COL_HOUSE, $COL_YEAR, $P_COL_YEAR) {
-                    $join->on("u.$COL_HOUSE", '=', "p.$P_COL_HOUSE");
-
-                    if ($COL_YEAR && $P_COL_YEAR) {
-                        $join->on("u.$COL_YEAR", '=', "p.$P_COL_YEAR");
-                    }
+                $q->leftJoin(DB::raw("$profileTable as p"), function($join) use ($COL_HOUSE, $P_COL_HOUSE) {
+                    $join->on(
+                        DB::raw("LTRIM(RTRIM(u.[{$COL_HOUSE}]))"),
+                        '=',
+                        DB::raw("LTRIM(RTRIM(p.[{$P_COL_HOUSE}]))")
+                    );
                 });
             }
 
@@ -321,33 +333,45 @@ class WelfareController extends Controller
         if ($COL_AGE)      $selects[] = "u.[{$COL_AGE}] as a3_1";
         if ($COL_SEX)      $selects[] = "u.[{$COL_SEX}] as a4";
 
-        if ($COL_HOUSE_NO) {
-            $selects[] = "u.[{$COL_HOUSE_NO}] as house_number";
-        } elseif ($P_COL_HOUSE_NO) {
-            $selects[] = "p.[{$P_COL_HOUSE_NO}] as house_number";
+        $houseNoExpr = $coalesceTrim(
+            $COL_HOUSE_NO ? "u.[{$COL_HOUSE_NO}]" : null,
+            $P_COL_HOUSE_NO ? "p.[{$P_COL_HOUSE_NO}]" : null,
+            'house_number'
+        );
+        if ($houseNoExpr) $selects[] = $houseNoExpr;
+
+        $villageNoExpr = $coalesceTrim(
+            $COL_VILLAGE_NO ? "u.[{$COL_VILLAGE_NO}]" : null,
+            $P_COL_VILLAGE_NO ? "p.[{$P_COL_VILLAGE_NO}]" : null,
+            'village_no'
+        );
+        if ($villageNoExpr) $selects[] = $villageNoExpr;
+
+        $villageNameExpr = $coalesceTrim(
+            $COL_VILLAGE_NAME ? "u.[{$COL_VILLAGE_NAME}]" : null,
+            $P_COL_VILLAGE_NAME ? "p.[{$P_COL_VILLAGE_NAME}]" : null,
+            'village_name'
+        );
+        if ($villageNameExpr) $selects[] = $villageNameExpr;
+
+        $postcodeExpr = $coalesceTrim(
+            $COL_POSTCODE ? "u.[{$COL_POSTCODE}]" : null,
+            $P_COL_POSTCODE ? "p.[{$P_COL_POSTCODE}]" : null,
+            'postcode'
+        );
+        if ($postcodeExpr) $selects[] = $postcodeExpr;
+
+        if ($P_COL_TEL) {
+            $selects[] = "COALESCE(NULLIF(LTRIM(RTRIM(p.[{$P_COL_TEL}])), N''), N'') as TEL";
         }
 
-        if ($COL_VILLAGE_NO) {
-            $selects[] = "u.[{$COL_VILLAGE_NO}] as village_no";
-        } elseif ($P_COL_VILLAGE_NO) {
-            $selects[] = "p.[{$P_COL_VILLAGE_NO}] as village_no";
+        if ($P_COL_LATX) {
+            $selects[] = "COALESCE(NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(100), p.[{$P_COL_LATX}]))), N''), N'') as latx";
         }
 
-        if ($COL_VILLAGE_NAME) {
-            $selects[] = "u.[{$COL_VILLAGE_NAME}] as village_name";
-        } elseif ($P_COL_VILLAGE_NAME) {
-            $selects[] = "p.[{$P_COL_VILLAGE_NAME}] as village_name";
+        if ($P_COL_LNGY) {
+            $selects[] = "COALESCE(NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(100), p.[{$P_COL_LNGY}]))), N''), N'') as lngy";
         }
-
-        if ($COL_POSTCODE) {
-            $selects[] = "u.[{$COL_POSTCODE}] as postcode";
-        } elseif ($P_COL_POSTCODE) {
-            $selects[] = "p.[{$P_COL_POSTCODE}] as postcode";
-        }
-
-        if ($P_COL_TEL)  $selects[] = "p.[{$P_COL_TEL}] as TEL";
-        if ($P_COL_LATX) $selects[] = "p.[{$P_COL_LATX}] as latx";
-        if ($P_COL_LNGY) $selects[] = "p.[{$P_COL_LNGY}] as lngy";
 
         foreach (['a7_0','a7_1','a7_2','a7_3','a7_4','a7_5','a7_6'] as $wcol) {
             if ($hasMainCol($wcol)) {

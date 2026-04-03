@@ -19,7 +19,7 @@
   ];
 
   // ✅ เอาไว้กันพังเวลา route ยังไม่มี
-  $homeUrl = Route::has('sqlsrv.test') ? route('sqlsrv.test') : url('/');
+  $homeUrl = Route::has('dashboard') ? route('dashboard') : url('/');
 
   // ✅ บางคนยังไม่ได้ใส่ route household_64 ใน web.php ก็กันไว้
   $householdUrl = Route::has('household_64') ? route('household_64') : null;
@@ -94,7 +94,11 @@
                 <i class="bi bi-table me-2"></i>ตารางครัวเรือน
               </a>
             </li>
-            <li><a class="dropdown-item" href="{{ url('/health') }}"><i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ</a></li>
+<li>
+    <a class="dropdown-item" href="{{ url('/health-status') }}">
+        <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
+    </a>
+</li>
           @endif
           <li>
             <a class="dropdown-item" href="{{ route('housing.dashboard') }}">

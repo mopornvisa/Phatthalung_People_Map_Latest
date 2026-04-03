@@ -29,10 +29,7 @@
             box-shadow:0 14px 34px rgba(2, 6, 23, .08) !important;
         }
 
-        .container-fluid{
-            max-width:1450px;
-            margin:auto;
-        }
+       
 
         .ga-page{
             background:rgba(255,255,255,.86);
@@ -587,12 +584,18 @@
                 font-size: 14px;
             }
         }
+        .page-wrap{
+    max-width:1450px;
+    margin:34px auto;
+    padding:0 18px 32px;
+}
     </style>
 </head>
+
 <body class="app-bg">
 
-@include('layouts.topbar')
 
+@include('layouts.topbar')
 @php
     $chartRows = collect(method_exists($rows, 'items') ? $rows->items() : $rows);
 
@@ -626,7 +629,7 @@
     $sumRate5       = $sumPopulation5 > 0 ? ($sumPatient5 / $sumPopulation5) * 100 : 0;
 @endphp
 
-<div class="container-fluid py-4">
+<div class="page-wrap">
     <div class="ga-page shadow-soft">
 
         <div class="ga-topbar">
