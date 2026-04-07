@@ -66,8 +66,8 @@ class HealthController extends Controller
 
         $P_COL_HOUSE  = $pickProfCol(['HC1'], 'HC1');
         $P_COL_TEL    = $pickProfCol(['TEL']);
-        $P_COL_LAT    = $pickProfCol(['latx']);
-        $P_COL_LNG    = $pickProfCol(['lngy']);
+        $P_COL_LAT    = $pickProfCol(['latx', 'LATX']);
+        $P_COL_LNG    = $pickProfCol(['lngy', 'LNGY']);
 
         $districtRef = $colRef('u', $COL_DISTRICT);
         $tambonRef   = $colRef('u', $COL_TAMBON);
@@ -190,8 +190,8 @@ class HealthController extends Controller
 
                 $healthCaseSql as human_Health,
 
-                u.$COL_DISTRICT as survey_District,
-                u.$COL_TAMBON as survey_Subdistrict,
+                " . ($COL_DISTRICT ? "u.$COL_DISTRICT" : "NULL") . " as survey_District,
+                " . ($COL_TAMBON ? "u.$COL_TAMBON" : "NULL") . " as survey_Subdistrict,
 
                 " . ($COL_POPID ? "u.$COL_POPID" : "NULL") . " as human_Member_cid,
                 " . ($COL_HOUSE_NO ? "u.$COL_HOUSE_NO" : "NULL") . " as house_Number,
@@ -261,6 +261,19 @@ class HealthController extends Controller
             });
         }
 
+        // ======================
+        // year list
+        // ======================
+        $yearList = Cache::remember('health_year_list', 600, function () use ($conn, $mainTable, $COL_YEAR) {
+            return $conn->table(DB::raw("$mainTable as u"))
+                ->selectRaw("DISTINCT TRY_CONVERT(int, u.$COL_YEAR) as survey_year")
+                ->whereNotNull("u.$COL_YEAR")
+                ->orderByDesc('survey_year')
+                ->pluck('survey_year')
+                ->filter(fn($y) => !is_null($y) && $y !== '')
+                ->values();
+        });
+
         return view('health', compact(
             'actionUrl',
             'health',
@@ -278,6 +291,7 @@ class HealthController extends Controller
             'counts',
             'districtList',
             'subdistrictList',
+            'yearList',
             'HEALTH_OPTIONS',
             'HEALTH_NULL_TOKEN'
         ));
@@ -285,6 +299,9 @@ class HealthController extends Controller
 
     public function export(Request $request)
     {
-        return Excel::download(new HealthExport($request->all()), 'health.xlsx');
+        $year = trim((string) $request->get('survey_year', ''));
+        $filename = $year !== '' ? "health_{$year}.xlsx" : 'health.xlsx';
+
+        return Excel::download(new HealthExport($request->all()), $filename);
     }
 }

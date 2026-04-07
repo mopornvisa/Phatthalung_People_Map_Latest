@@ -323,10 +323,10 @@
             <i class="bi bi-speedometer2 me-2"></i>Dashboard
           </a>
 
-          <a class="nav-link {{ request()->is('health') ? 'active' : 'text-dark' }}"
-             href="{{ $healthHref }}">
-            <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
-          </a>
+          <a class="nav-link {{ request()->is('health-status') ? 'active' : 'text-dark' }}"
+   href="{{ route('health_status') }}">
+    <i class="bi bi-heart-pulse-fill me-2"></i>ข้อมูลสุขภาพ
+</a>
 
           <a class="nav-link {{ request()->is('welfare') ? 'active' : 'text-dark' }}"
              href="{{ $welfareHref }}">
