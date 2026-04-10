@@ -13,7 +13,7 @@ use App\Http\Controllers\HelpRecordController;
 use App\Http\Controllers\CardioIncidenceController;
 use App\Http\Controllers\HealthCardioIncidenceAllController;
 use App\Http\Controllers\HealthCardioMortalityController;
-
+use App\Http\Controllers\HtIncidence100kController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -115,3 +115,13 @@ Route::get('/test', fn() => redirect()->route('health.index'))->name('test.redir
 // export ncd
 Route::get('/health/ncd-major/export', [CardioIncidenceController::class, 'export'])
     ->name('cardio.export');
+
+    Route::get('/health/ht-incidence-100k', [HtIncidence100kController::class, 'index'])
+    ->name('ht.incidence100k');
+
+Route::get('/health/ht-incidence-100k/export', [HtIncidence100kController::class, 'export'])
+    ->name('ht.incidence.100k.export');
+    Route::get('/test-speed', function () {
+    return 'ok';
+});
+

@@ -71,7 +71,7 @@
                         </div>
 
                         <div style="flex:1;">
-                            <div style="font-size:24px; font-weight:600; color:#6b7a96;">การป่วยด้วยโรคไม่ติดต่อที่สำคัญ</div>
+                            <div style="font-size:24px; font-weight:600; color:#6b7a96;">โรคไม่ติดต่อที่สำคัญ</div>
                             <p style="color:#94a3b8; font-size:14px; margin:0;">แสดงแนวโน้มและการกระจายของผู้ป่วยในพื้นที่</p>
                         </div>
 

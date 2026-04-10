@@ -297,12 +297,12 @@
         <div class="toolbar">
             <a href="{{ route('health_status') }}" class="back-btn">
                 <i class="bi bi-arrow-left"></i>
-                กลับหน้าเมนูการป่วยด้วยโรคไม่ติดต่อที่สำคัญ
+                กลับหน้าเมนูโรคไม่ติดต่อที่สำคัญ
             </a>
 
             <div class="count-badge">
                 <i class="bi bi-grid-1x2-fill me-1"></i>
-                ทั้งหมด 3 รายการ
+                ทั้งหมด 4 รายการ
             </div>
         </div>
 
@@ -361,6 +361,26 @@
                         <i class="bi bi-chevron-right"></i>
                     </div>
                 </a>
+
+                <a href="{{ route('ht.incidence100k') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">4</div>
+        <div class="menu-icon">
+            <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราป่วยรายใหม่ของโรคความดันโลหิตสูงต่อแสนประชากรในปีงบประมาณ
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วยและอัตราป่วยต่อแสนประชากร รายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
 
             </div>
         </div>
