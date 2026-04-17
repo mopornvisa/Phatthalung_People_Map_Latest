@@ -302,7 +302,7 @@
 
             <div class="count-badge">
                 <i class="bi bi-grid-1x2-fill me-1"></i>
-                ทั้งหมด 4 รายการ
+                ทั้งหมด 5 รายการ
             </div>
         </div>
 
@@ -381,7 +381,25 @@
         <i class="bi bi-chevron-right"></i>
     </div>
 </a>
-
+<a href="{{ route('dm.incidence.100k') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">5</div>
+        <div class="menu-icon">
+            <i class="bi bi-droplet-half"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราป่วยรายใหม่ของโรคเบาหวานต่อแสนประชากรในปีงบประมาณ
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วยโรคเบาหวานและอัตราป่วยต่อแสนประชากร รายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
             </div>
         </div>
 

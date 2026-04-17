@@ -14,6 +14,7 @@ use App\Http\Controllers\CardioIncidenceController;
 use App\Http\Controllers\HealthCardioIncidenceAllController;
 use App\Http\Controllers\HealthCardioMortalityController;
 use App\Http\Controllers\HtIncidence100kController;
+use App\Http\Controllers\DmIncidence100kController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -125,3 +126,9 @@ Route::get('/health/ht-incidence-100k/export', [HtIncidence100kController::class
     return 'ok';
 });
 
+
+Route::get('/health/dm-incidence-100k', [DmIncidence100kController::class, 'index'])
+    ->name('dm.incidence.100k');
+
+Route::get('/health/dm-incidence-100k/export', [DmIncidence100kController::class, 'export'])
+    ->name('dm.incidence.100k.export');
