@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>อัตราป่วยรายใหม่โรคเบาหวาน</title>
+    <title>อัตราป่วยรายใหม่โรคหืด</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -554,7 +554,7 @@
                 <div>
                     <div class="ga-title">
                         <i class="bi bi-heart-pulse-fill"></i>
-                        <span>อัตราป่วยรายใหม่โรคเบาหวาน</span>
+                        <span>อัตราป่วยรายใหม่โรคหืด</span>
                     </div>
                     <div class="ga-subtitle">
                         แสดงข้อมูลสรุปรายอำเภอ พร้อมกราฟวิเคราะห์ และข้อมูลรายเดือน
@@ -612,7 +612,7 @@
                         </div>
                     </div>
 
-                   <a href="{{ route('dm.incidence.100k.export', request()->query()) }}" class="btn ga-btn-export">
+                 <a href="{{ route('as.incidence.100k.export', request()->query()) }}" class="btn ga-btn-export">
     <i class="bi bi-download"></i> Export Excel
 </a>
                 </div>
@@ -715,7 +715,7 @@
                     <tbody>
                         @forelse(($rows ?? []) as $r)
                             @php
-                                $patient = (float)($r->patient_dm_total ?? 0);
+                                $patient = (float)($r->patient_as_total ?? 0);
                                 $rate = (float)($r->rate_per_100k ?? 0);
                             @endphp
                             <tr>
@@ -772,10 +772,10 @@
         <div class="ga-legend-box">
             <div class="ga-legend-title">คำอธิบายตัวชี้วัด</div>
             <div class="ga-legend-item">
-                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคเบาหวาน รายใหม่ในปีงบประมาณ
+                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคหืด รายใหม่ในปี
             </div>
             <div class="ga-legend-item mb-0">
-                <strong>B</strong> หมายถึง จำนวนประชากรทะเบียนราษฎร์ทั้งหมดทุกกล่มอายุ
+                <strong>B</strong> หมายถึง จำนวนประชากรทะเบียนราษฎร์
             </div>
         </div>
 
@@ -794,7 +794,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const labels = @json(collect($rows ?? [])->pluck('district_name_thai')->values());
-    const cases = @json(collect($rows ?? [])->pluck('patient_dm_total')->map(fn($v) => (float)($v ?? 0))->values());
+    const cases = @json(collect($rows ?? [])->pluck('patient_as_total')->map(fn($v) => (float)($v ?? 0))->values());
     const rates = @json(collect($rows ?? [])->pluck('rate_per_100k')->map(fn($v) => (float)($v ?? 0))->values());
 
     const monthly = [

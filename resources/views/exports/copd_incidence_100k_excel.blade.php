@@ -8,7 +8,9 @@
 
     <!-- TITLE -->
     <div style="text-align:center; font-size:24px; font-weight:bold; margin-bottom:4px;">
-        รายงานอัตราป่วยรายใหม่ของโรคเบาหวาน
+        รายงานอัตราป่วยรายใหม่ของโรคปอดอุดกั้นเรื้อรัง
+
+
     </div>
 
     <div style="text-align:center; font-size:15px; margin-bottom:14px; color:#475569;">
@@ -57,7 +59,7 @@
                     </td>
 
                     <td style="border:1px solid #d5dfeb; padding:6px; text-align:right; background:#edf4fb;">
-                        {{ number_format($r->patient_dm_total ?? 0) }}
+                        {{ number_format($r->patient_copd_total ?? 0) }}
                     </td>
 
                     <td style="border:1px solid #d5dfeb; padding:6px; text-align:right; background:#edf4fb;">
@@ -110,12 +112,12 @@
     <table style="width:100%; margin-top:14px;">
         <tr>
             <td style="padding:8px; background:#f8fbfd; border:1px solid #dcecf2; font-size:13px;">
-                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคเบาหวาน รายใหม่ในปีงบประมาณ
+                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคปอดอุดกั้นเรื้อรัง รายใหม่ในปี
             </td>
         </tr>
         <tr>
             <td style="padding:8px; background:#f8fbfd; border:1px solid #dcecf2; font-size:13px;">
-                <strong>B</strong> หมายถึง จำนวนประชากรทะเบียนราษฎร์ทั้งหมดทุกกล่มอายุ
+                <strong>B</strong> หมายถึง จำนวนประชากรทะเบียนราษฎร์
             </td>
         </tr>
     </table>

@@ -15,6 +15,18 @@ use App\Http\Controllers\HealthCardioIncidenceAllController;
 use App\Http\Controllers\HealthCardioMortalityController;
 use App\Http\Controllers\HtIncidence100kController;
 use App\Http\Controllers\DmIncidence100kController;
+use App\Http\Controllers\CopdIncidence100kController;
+use App\Http\Controllers\AsthmaIncidence100kController;
+use App\Http\Controllers\CardioCompareController;
+use App\Http\Controllers\HtIncidenceAllController;
+use App\Http\Controllers\HtMortalityController;
+use App\Http\Controllers\StrokeIncidenceAllController;
+use App\Http\Controllers\DmIncidenceAllController;
+use App\Http\Controllers\DmMortalityController;
+use App\Http\Controllers\CopdIncidenceAllController;
+use App\Http\Controllers\CopdMortalityController;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -132,3 +144,66 @@ Route::get('/health/dm-incidence-100k', [DmIncidence100kController::class, 'inde
 
 Route::get('/health/dm-incidence-100k/export', [DmIncidence100kController::class, 'export'])
     ->name('dm.incidence.100k.export');
+
+Route::get('/health/copd-incidence-100k', [CopdIncidence100kController::class, 'index'])
+    ->name('copd.incidence.100k');
+
+Route::get('/health/copd-incidence-100k/export', [CopdIncidence100kController::class, 'export'])
+    ->name('copd.incidence.100k.export');
+
+Route::get('/health/as-incidence-100k', [AsthmaIncidence100kController::class, 'index'])
+    ->name('as.incidence.100k');
+
+Route::get('/health/as-incidence-100k/export', [AsthmaIncidence100kController::class, 'export'])
+    ->name('as.incidence.100k.export'); 
+
+Route::get('/health/cardio-compare', [CardioCompareController::class, 'index'])
+    ->name('health.cardio_compare');
+
+Route::get('/health/cardio-compare/export', [CardioCompareController::class, 'export'])
+    ->name('health.cardio_compare.export');
+
+Route::get('/health/ht-incidence-all', [HtIncidenceAllController::class, 'index'])
+    ->name('health.ht-incidence-all');
+
+Route::get('/health/ht-incidence-all/export', [HtIncidenceAllController::class, 'export'])
+    ->name('health.ht-incidence-all.export');
+
+
+Route::get('/health/ht-mortality', [HtMortalityController::class, 'index'])
+    ->name('health.ht-mortality');
+
+Route::get('/health/ht-mortality/export', [HtMortalityController::class, 'export'])
+    ->name('health.ht-mortality.export');
+
+Route::get('/health/stroke-incidence-all', [StrokeIncidenceAllController::class, 'index'])
+    ->name('health.stroke-incidence-all');
+
+Route::get('/health/stroke-incidence-all/export', [StrokeIncidenceAllController::class, 'export'])
+    ->name('health.stroke-incidence-all.export');
+
+
+
+Route::get('/health/dm-incidence-all', [DmIncidenceAllController::class, 'index'])
+    ->name('health.dm-incidence-all');
+
+Route::get('/health/dm-incidence-all/export', [DmIncidenceAllController::class, 'export'])
+    ->name('health.dm-incidence-all.export');
+
+Route::get('/health/dm-mortality', [DmMortalityController::class, 'index'])
+    ->name('health.dm-mortality');
+
+Route::get('/health/dm-mortality/export', [DmMortalityController::class, 'export'])
+    ->name('health.dm-mortality.export');
+
+Route::get('/health/copd-incidence-all', [CopdIncidenceAllController::class, 'index'])
+    ->name('health.copd-incidence-all');
+
+Route::get('/health/copd-incidence-all/export', [CopdIncidenceAllController::class, 'export'])
+    ->name('health.copd-incidence-all.export');
+
+Route::get('/health/copd-mortality', [CopdMortalityController::class, 'index'])
+    ->name('health.copd-mortality');
+
+Route::get('/health/copd-mortality/export', [CopdMortalityController::class, 'export'])
+    ->name('health.copd-mortality.export');

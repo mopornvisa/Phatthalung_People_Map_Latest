@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โรคหัวใจและหลอดเลือด</title>
+    <title>การป่วยด้วยโรคไม่ติดต่อที่สำคัญ</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -302,7 +302,7 @@
 
             <div class="count-badge">
                 <i class="bi bi-grid-1x2-fill me-1"></i>
-                ทั้งหมด 5 รายการ
+                ทั้งหมด 15 รายการ
             </div>
         </div>
 
@@ -337,7 +337,7 @@
                             <i class="bi bi-people"></i>
                         </div>
                         <div class="menu-text">
-                            <div class="menu-title">อัตราป่วยด้วยโรคหัวใจและหลอดเลือดต่อประชากร</div>
+                            <div class="menu-title">อัตราป่วยด้วยโรคหัวใจและหลอดเลือด</div>
                             <p class="menu-sub">แสดงอัตราป่วยเทียบกับจำนวนประชากรในแต่ละพื้นที่</p>
                         </div>
                     </div>
@@ -370,7 +370,7 @@
         </div>
         <div class="menu-text">
             <div class="menu-title">
-                อัตราป่วยรายใหม่ของโรคความดันโลหิตสูงต่อแสนประชากรในปีงบประมาณ
+                อัตราป่วยรายใหม่ของโรคความดันโลหิตสูง
             </div>
             <p class="menu-sub">
                 แสดงข้อมูลจำนวนผู้ป่วยและอัตราป่วยต่อแสนประชากร รายปีและรายอำเภอ
@@ -381,15 +381,34 @@
         <i class="bi bi-chevron-right"></i>
     </div>
 </a>
-<a href="{{ route('dm.incidence.100k') }}" class="menu-item">
+<a href="{{ route('health.ht-mortality') }}" class="menu-item">
     <div class="menu-left">
         <div class="menu-no">5</div>
+        <div class="menu-icon">
+            <i class="bi bi-heartbreak-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยตายด้วยโรคความดันโลหิตสูง
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วย จำนวนผู้ป่วยตาย และร้อยละการป่วยตายรายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('dm.incidence.100k') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">6</div>
         <div class="menu-icon">
             <i class="bi bi-droplet-half"></i>
         </div>
         <div class="menu-text">
             <div class="menu-title">
-                อัตราป่วยรายใหม่ของโรคเบาหวานต่อแสนประชากรในปีงบประมาณ
+                อัตราป่วยรายใหม่ของโรคเบาหวาน
             </div>
             <p class="menu-sub">
                 แสดงข้อมูลจำนวนผู้ป่วยโรคเบาหวานและอัตราป่วยต่อแสนประชากร รายปีและรายอำเภอ
@@ -400,6 +419,179 @@
         <i class="bi bi-chevron-right"></i>
     </div>
 </a>
+
+<a href="{{ route('health.dm-incidence-all') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">7</div>
+        <div class="menu-icon">
+            <i class="bi bi-droplet-half"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยด้วยโรคเบาหวาน
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วยเทียบกับจำนวนประชากร แยกตามปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('health.dm-mortality') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">8</div>
+        <div class="menu-icon">
+            <i class="bi bi-heartbreak-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยตายด้วยโรคเบาหวาน
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วย จำนวนผู้เสียชีวิต และร้อยละการป่วยตายรายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('copd.incidence.100k') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">9</div>
+        <div class="menu-icon">
+            <i class="bi bi-lungs-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราป่วยรายใหม่ของโรคปอดอุดกั้นเรื้อรัง
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลผู้ป่วยโรค COPD รายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('health.copd-incidence-all') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">10</div>
+        <div class="menu-icon">
+            <i class="bi bi-lungs-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยด้วยโรคปอดอุดกั้นเรื้อรัง
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วยเทียบกับจำนวนประชากร แยกตามปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('health.copd-mortality') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">11</div>
+        <div class="menu-icon">
+            <i class="bi bi-heartbreak-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยตายด้วยโรคปอดอุดกั้นเรื้อรัง
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วย จำนวนผู้เสียชีวิต และร้อยละการป่วยตายรายปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+<a href="{{ route('as.incidence.100k') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">12</div>
+        <div class="menu-icon">
+            <i class="bi bi-wind"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราป่วยรายใหม่ของโรคหืด
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลผู้ป่วยโรคหืดรายปีและรายอำเภอ
+            </p>
+        </div>
+        
+    </div>
+    <div class="menu-arrow">
+                        <i class="bi bi-chevron-right"></i>
+                    </div>
+</a>
+<a href="{{ route('health.cardio_compare') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">13</div>
+        <div class="menu-icon">
+            <i class="bi bi-graph-down-arrow"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">เปรียบเทียบอัตราป่วยโรคหลอดเลือดหัวใจลดลงแต่ละปี</div>
+            <p class="menu-sub">แสดงข้อมูลเปรียบเทียบปีเก่าและปีใหม่รายอำเภอ</p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+
+<a href="{{ route('health.ht-incidence-all') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">14</div>
+        <div class="menu-icon">
+            <i class="bi bi-bar-chart-line-fill"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราป่วยด้วยโรคความดันโลหิตสูงต่อประชากร
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลอัตราป่วยเทียบกับจำนวนประชากร แยกตามปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+
+<a href="{{ route('health.stroke-incidence-all') }}" class="menu-item">
+    <div class="menu-left">
+        <div class="menu-no">15</div>
+        <div class="menu-icon">
+            <i class="bi bi-activity"></i>
+        </div>
+        <div class="menu-text">
+            <div class="menu-title">
+                อัตราการป่วยด้วยโรคหลอดเลือดสมอง
+            </div>
+            <p class="menu-sub">
+                แสดงข้อมูลจำนวนผู้ป่วยเทียบกับจำนวนประชากร แยกตามปีและรายอำเภอ
+            </p>
+        </div>
+    </div>
+    <div class="menu-arrow">
+        <i class="bi bi-chevron-right"></i>
+    </div>
+</a>
+
+
             </div>
         </div>
 
