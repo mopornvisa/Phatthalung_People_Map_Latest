@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>อัตราป่วยด้วยโรคหัวใจและหลอดเลือด</title>
+    <title>อัตราผู้ป่วยโรคถุงลมโป่งพอง</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
@@ -16,7 +16,6 @@
             margin:0;
             color:#0f172a;
         }
-
         .app-bg{
             background:
                 radial-gradient(circle at top left, rgba(14,165,164,.18), transparent 26%),
@@ -24,13 +23,8 @@
                 linear-gradient(135deg,#dff5f7 0%,#eaf8f3 45%,#f4f9fc 100%);
             min-height:100vh;
         }
-
-        .shadow-soft{
-            box-shadow:0 14px 34px rgba(2, 6, 23, .08) !important;
-        }
-
-       
-
+        .shadow-soft{ box-shadow:0 14px 34px rgba(2, 6, 23, .08) !important; }
+        .page-wrap{ max-width:1450px; margin:34px auto; padding:0 18px 32px; }
         .ga-page{
             background:rgba(255,255,255,.86);
             border:1px solid rgba(255,255,255,.7);
@@ -39,118 +33,37 @@
             box-shadow:0 16px 36px rgba(2, 6, 23, .08);
             backdrop-filter:blur(8px);
         }
-
-        .ga-topbar{
-            background:linear-gradient(135deg,#ffffff 0%,#f7fcff 100%);
-            border:1px solid #d8ebf2;
-            padding:16px 18px;
-            margin-bottom:18px;
-            border-radius:22px;
-            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
-        }
-
-        .ga-brand{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            flex-wrap:wrap;
-            gap:12px;
-        }
-
-        .ga-title{
-            font-size:20px;
-            font-weight:700;
-            color:#0f172a;
-            display:flex;
-            align-items:center;
-            gap:12px;
-            line-height:1.25;
-        }
-
-        .ga-title i{
-            font-size:24px;
-            color:#0ea5a4;
-            width:46px;
-            height:46px;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            border-radius:16px;
-            background:linear-gradient(135deg,#d7fbf1 0%,#dbeafe 100%);
-            box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
-        }
-
-        .ga-subtitle{
-            margin-top:8px;
-            color:#64748b;
-            font-size:13px;
-            line-height:1.5;
-        }
-
-        .ga-filter-card{
+        .ga-topbar,.ga-filter-card,.ga-kpi,.ga-panel,.ga-table-panel,.ga-note,.ga-legend-box{
             background:linear-gradient(135deg,#ffffff 0%,#f9fcff 100%);
             border:1px solid #dcecf2;
-            border-radius:22px;
-            padding:18px;
-            margin-bottom:18px;
             box-shadow:0 10px 24px rgba(2, 6, 23, .05);
         }
-
-        .ga-filter-label{
-            display:block;
-            font-size:12px;
-            font-weight:600;
-            color:#64748b;
-            margin-bottom:6px;
+        .ga-topbar{ padding:16px 18px; margin-bottom:18px; border-radius:22px; }
+        .ga-title{
+            font-size:20px; font-weight:700; color:#0f172a;
+            display:flex; align-items:center; gap:12px; line-height:1.25;
         }
-
+        .ga-title i{
+            font-size:24px; color:#0ea5a4; width:46px; height:46px;
+            display:inline-flex; align-items:center; justify-content:center;
+            border-radius:16px; background:linear-gradient(135deg,#d7fbf1 0%,#dbeafe 100%);
+        }
+        .ga-subtitle{ margin-top:8px; color:#64748b; font-size:13px; line-height:1.5; }
+        .ga-filter-card{ border-radius:22px; padding:18px; margin-bottom:18px; }
+        .ga-filter-label{ display:block; font-size:12px; font-weight:600; color:#64748b; margin-bottom:6px; }
         .ga-filter{
-            background:#fff;
-            border:1px solid #d8e8ef;
-            border-radius:14px;
-            min-height:46px;
-            font-size:13px;
-            color:#1f2937;
-            box-shadow:none !important;
+            background:#fff; border:1px solid #d8e8ef; border-radius:14px;
+            min-height:46px; font-size:13px; color:#1f2937;
         }
-
-        .ga-filter:focus{
-            border-color:#0ea5a4;
-            box-shadow:0 0 0 .15rem rgba(14,165,164,.12) !important;
-        }
-
         .ga-btn{
             background:linear-gradient(135deg,#0ea5a4 0%,#2d74da 100%);
-            border:none;
-            color:#fff;
-            border-radius:14px;
-            min-height:46px;
-            font-size:13px;
-            font-weight:700;
-            box-shadow:0 8px 18px rgba(45,116,218,.18);
+            border:none; color:#fff; border-radius:14px; min-height:46px;
+            font-size:13px; font-weight:700;
         }
-
-        .ga-btn:hover{
-            color:#fff;
-            opacity:.96;
-            transform:translateY(-1px);
-        }
-
         .ga-btn-light{
-            background:#fff;
-            border:1px solid #d8e8ef;
-            color:#334155;
-            border-radius:14px;
-            min-height:46px;
-            font-size:13px;
-            font-weight:700;
+            background:#fff; border:1px solid #d8e8ef; color:#334155;
+            border-radius:14px; min-height:46px; font-size:13px; font-weight:700;
         }
-
-        .ga-btn-light:hover{
-            background:#f8fbfd;
-            color:#0f172a;
-        }
-
         .ga-filter-actions{
             margin-top:16px;
             padding-top:16px;
@@ -161,7 +74,6 @@
             gap:12px;
             flex-wrap:wrap;
         }
-
         .ga-filter-actions-text{
             display:flex;
             align-items:center;
@@ -170,7 +82,6 @@
             font-size:13px;
             font-weight:500;
         }
-
         .ga-filter-actions-text i{
             width:36px;
             height:36px;
@@ -183,223 +94,49 @@
             border:1px solid #bbf7d0;
             font-size:16px;
         }
-
         .ga-btn-export{
             background:linear-gradient(135deg,#16a34a 0%,#22c55e 100%);
-            border:none;
-            color:#fff;
-            border-radius:16px;
-            min-height:48px;
-            padding:0 18px;
-            font-size:13px;
-            font-weight:700;
-            box-shadow:0 10px 22px rgba(34,197,94,.22);
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            transition:.2s ease;
-            text-decoration:none;
+            border:none; color:#fff; border-radius:16px; min-height:48px; padding:0 18px;
+            font-size:13px; font-weight:700; text-decoration:none;
+            display:inline-flex; align-items:center; gap:8px;
         }
-
-        .ga-btn-export:hover{
-            color:#fff;
-            transform:translateY(-2px);
-            box-shadow:0 14px 28px rgba(34,197,94,.28);
-        }
-
         .ga-kpi{
-            background:linear-gradient(135deg,#ffffff 0%,#f9fcff 100%);
-            border:1px solid #dcecf2;
-            padding:18px;
-            min-height:110px;
-            border-radius:22px;
-            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
-            position:relative;
-            overflow:hidden;
-            height:100%;
+            padding:18px; min-height:110px; border-radius:22px; position:relative; overflow:hidden; height:100%;
         }
-
-        .ga-kpi::after{
-            content:'';
-            position:absolute;
-            right:-20px;
-            top:-20px;
-            width:90px;
-            height:90px;
-            border-radius:50%;
-            background:linear-gradient(135deg, rgba(14,165,164,.12), rgba(45,116,218,.08));
-        }
-
-        .ga-kpi-label{
-            color:#64748b;
-            font-size:12px;
-            margin-bottom:8px;
-            line-height:1.2;
-            position:relative;
-            z-index:1;
-        }
-
-        .ga-kpi-value{
-            color:#0f172a;
-            font-size:26px;
-            font-weight:700;
-            margin:0;
-            line-height:1.2;
-            position:relative;
-            z-index:1;
-        }
-
-        .ga-note{
-            margin-bottom:18px;
-            background:linear-gradient(135deg,#ffffff 0%,#f9fcff 100%);
-            border:1px solid #dcecf2;
-            border-radius:18px;
-            padding:14px 16px;
-            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
-            color:#475569;
-            font-size:12px;
-        }
-
-        .ga-note i{
-            color:#0ea5a4;
-        }
-
-        .ga-panel{
-            background:linear-gradient(135deg,#ffffff 0%,#fafdff 100%);
-            border:1px solid #dcecf2;
-            margin-bottom:10px;
-            border-radius:22px;
-            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
-            height:100%;
-        }
-
-        .ga-panel-title{
-            color:#334155;
-            font-size:13px;
-            padding:16px 16px 0 16px;
-            font-weight:700;
-        }
-
-        .ga-panel-body{
-            padding:12px 16px 18px 16px;
-        }
-
-        .ga-chart-wrap{
-            position:relative;
-            height:245px;
-        }
-
-        .ga-table-panel{
-            background:linear-gradient(135deg,#ffffff 0%,#fbfdff 100%);
-            border:1px solid #dcecf2;
-            margin-top:18px;
-            border-radius:22px;
-            overflow:hidden;
-            box-shadow:0 10px 24px rgba(2, 6, 23, .05);
-        }
-
+        .ga-kpi-label{ color:#64748b; font-size:12px; margin-bottom:8px; }
+        .ga-kpi-value{ color:#0f172a; font-size:26px; font-weight:700; margin:0; }
+        .ga-note{ margin-bottom:18px; border-radius:18px; padding:14px 16px; color:#475569; font-size:12px; }
+        .ga-panel{ margin-bottom:10px; border-radius:22px; height:100%; }
+        .ga-panel-title{ color:#334155; font-size:13px; padding:16px 16px 0 16px; font-weight:700; }
+        .ga-panel-body{ padding:12px 16px 18px 16px; }
+        .ga-chart-wrap{ position:relative; height:245px; }
+        .ga-table-panel{ margin-top:18px; border-radius:22px; overflow:hidden; }
         .ga-table-head{
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            flex-wrap:wrap;
-            gap:10px;
-            padding:16px 18px;
-            border-bottom:1px solid #e5edf4;
+            display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;
+            gap:10px; padding:16px 18px; border-bottom:1px solid #e5edf4;
             background:linear-gradient(135deg,#f8fcff 0%,#f3fbf8 100%);
         }
-
-        .ga-table-head-title{
-            font-size:15px;
-            font-weight:700;
-            color:#0f172a;
-        }
-
-        .ga-table-head-sub{
-            font-size:12px;
-            color:#64748b;
-        }
-
-        .table-responsive{
-            padding:0 14px 12px 14px;
-        }
-
-        .ga-table{
-            width:100%;
-            min-width:1700px;
-            margin-bottom:0;
-            border-collapse:collapse;
-            font-size:11px;
-        }
-
+        .ga-table-head-title{ font-size:15px; font-weight:700; color:#0f172a; }
+        .ga-table-head-sub{ font-size:12px; color:#64748b; }
+        .table-responsive{ padding:0 14px 12px 14px; }
+        .ga-table{ width:100%; min-width:1700px; margin-bottom:0; border-collapse:collapse; font-size:11px; }
         .ga-table thead th{
-            background:#d9e7f5 !important;
-            color:#1e293b !important;
-            border:1px solid #bfcddd !important;
-            text-align:center;
-            vertical-align:middle;
-            white-space:nowrap;
-            padding:8px 6px;
-            font-weight:700;
-            line-height:1.25;
+            background:#d9e7f5 !important; color:#1e293b !important; border:1px solid #bfcddd !important;
+            text-align:center; vertical-align:middle; white-space:nowrap; padding:8px 6px; font-weight:700;
         }
-
-        .ga-table thead tr:first-child th{
-            background:#cfe0f2 !important;
-            font-size:11px;
-        }
-
-        .ga-table thead tr:nth-child(2) th{
-            background:#e5eff9 !important;
-            font-size:10px;
-        }
-
+        .ga-table thead tr:first-child th{ background:#cfe0f2 !important; }
+        .ga-table thead tr:nth-child(2) th{ background:#e5eff9 !important; font-size:10px; }
         .ga-table tbody td{
-            border:1px solid #d5dfeb;
-            padding:6px 6px;
-            vertical-align:middle;
-            background:#fff;
-            white-space:nowrap;
+            border:1px solid #d5dfeb; padding:6px 6px; vertical-align:middle; background:#fff; white-space:nowrap;
         }
-
-        .ga-table tbody td:first-child{
-            font-weight:600;
-        }
-
-        .ga-table tbody tr:nth-child(even) td{
-            background:#f8fbff;
-        }
-
-        .ga-table tbody tr:hover td{
-            background:#eef5fc;
-        }
-
+        .ga-table tbody tr:nth-child(even) td{ background:#f8fbff; }
         .ga-total-row td{
-            background:#eaf2fb !important;
-            font-weight:700;
-            color:#0f172a;
-            border:1px solid #c5d3e2 !important;
+            background:#eaf2fb !important; font-weight:700; color:#0f172a; border:1px solid #c5d3e2 !important;
         }
-
-        .metric-blue{
-            background:#edf4fb !important;
-            font-weight:600;
-        }
-
-        .ga-empty{
-            padding:28px 10px !important;
-            color:#94a3b8;
-            font-size:13px;
-        }
-
-        .ga-small-note{
-            color:#64748b;
-            font-size:11px;
-            padding:0 16px 16px 16px;
-        }
-
-        .ga-legend-box{
+        .metric-blue{ background:#edf4fb !important; font-weight:600; }
+        .ga-empty{ padding:28px 10px !important; color:#94a3b8; font-size:13px; }
+        .ga-small-note{ color:#64748b; font-size:11px; padding:0 16px 16px 16px; }
+ .ga-legend-box{
             margin-top:18px;
             background:linear-gradient(135deg,#ffffff 0%,#f9fcff 100%);
             border:1px solid #dcecf2;
@@ -426,66 +163,72 @@
         }
 
         .loading-overlay{
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.55);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
+            position:fixed;
+            inset:0;
+            background:rgba(15, 23, 42, 0.55);
+            backdrop-filter:blur(3px);
+            -webkit-backdrop-filter:blur(3px);
+            display:none;
+            align-items:center;
+            justify-content:center;
+            z-index:99999;
         }
 
         .loading-modal{
-            text-align: center;
-            animation: fadeInUp .25s ease;
+            text-align:center;
+            animation:fadeInUp .25s ease;
         }
 
         .loading-ring{
-            width: 108px;
-            height: 108px;
-            border: 7px solid rgba(255,255,255,.95);
-            border-radius: 50%;
-            margin: 0 auto 18px;
-            position: relative;
-            box-shadow: 0 8px 30px rgba(0,0,0,.18);
-            animation: ringPulse 1.4s ease-in-out infinite;
-            background: rgba(255,255,255,.02);
+            width:108px;
+            height:108px;
+            border:7px solid rgba(255,255,255,.95);
+            border-radius:50%;
+            margin:0 auto 18px;
+            position:relative;
+            box-shadow:0 8px 30px rgba(0,0,0,.18);
+            animation:ringPulse 1.4s ease-in-out infinite;
+            background:rgba(255,255,255,.02);
         }
 
         .loading-needle{
-            position: absolute;
-            width: 10px;
-            height: 38px;
-            background: #ffffff;
-            border-radius: 999px;
-            left: 50%;
-            top: 50%;
-            transform-origin: center 85%;
-            transform: translate(-50%, -85%) rotate(45deg);
-            box-shadow: 0 0 10px rgba(255,255,255,.35);
-            animation: needleSpin 1.2s ease-in-out infinite;
+            position:absolute;
+            width:10px;
+            height:38px;
+            background:#ffffff;
+            border-radius:999px;
+            left:50%;
+            top:50%;
+            transform-origin:center 85%;
+            transform:translate(-50%, -85%) rotate(45deg);
+            box-shadow:0 0 10px rgba(255,255,255,.35);
+            animation:needleSpin 1.2s ease-in-out infinite;
         }
 
         .loading-needle::after{
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 14px;
-            height: 14px;
-            background: #ffffff;
-            border-radius: 50%;
+            content:'';
+            position:absolute;
+            bottom:-5px;
+            left:50%;
+            transform:translateX(-50%);
+            width:14px;
+            height:14px;
+            background:#ffffff;
+            border-radius:50%;
+        }
+
+        .page-wrap{
+            max-width:1450px;
+            margin:34px auto;
+            padding:0 18px 32px;
         }
 
         .loading-text{
-            color: #ffffff;
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: .2px;
-            text-shadow: 0 2px 10px rgba(0,0,0,.18);
+            color:#ffffff;
+            font-size:16px;
+            font-weight:700;
+            letter-spacing:.2px;
+            text-shadow:0 2px 10px rgba(0,0,0,.18);
         }
 
         @keyframes needleSpin{
@@ -501,35 +244,19 @@
 
         @keyframes fadeInUp{
             from{
-                opacity: 0;
-                transform: translateY(8px);
+                opacity:0;
+                transform:translateY(8px);
             }
             to{
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 992px){
-            .ga-filter-actions{
-                flex-direction:column;
-                align-items:stretch;
-            }
-
-            .ga-btn-export{
-                width:100%;
+                opacity:1;
+                transform:translateY(0);
             }
         }
 
         @media (max-width: 768px){
-            .container-fluid{
-                padding-left:12px;
-                padding-right:12px;
-            }
-
             .ga-page{
                 padding:14px;
-                border-radius:22px;
+                border-radius:18px;
             }
 
             .ga-title{
@@ -544,58 +271,33 @@
                 font-size:22px;
             }
 
-            .ga-chart-wrap{
-                height:220px;
+            .ga-filter-actions{
+                align-items:stretch;
             }
 
-            .ga-filter-card{
-                padding:16px;
-                border-radius:22px;
+            .ga-filter-actions-text{
+                width:100%;
             }
 
-            .ga-filter,
-            .ga-btn,
-            .ga-btn-light{
-                min-height:56px;
-                font-size:16px;
-                border-radius:16px;
-            }
-
-            .ga-export-title{
-                font-size:15px;
-            }
-
-            .ga-export-sub{
-                font-size:13px;
-            }
-
-            .ga-btn-export{
-                min-height:58px;
-                font-size:16px;
-                border-radius:18px;
+            .ga-filter-actions .ga-btn-export{
+                width:100%;
             }
 
             .loading-ring{
-                width: 90px;
-                height: 90px;
+                width:90px;
+                height:90px;
             }
 
             .loading-text{
-                font-size: 14px;
+                font-size:14px;
             }
         }
-        .page-wrap{
-    max-width:1450px;
-    margin:34px auto;
-    padding:0 18px 32px;
-}
     </style>
 </head>
-
 <body class="app-bg">
 
-
 @include('layouts.topbar')
+
 @php
     $chartRows = collect(method_exists($rows, 'items') ? $rows->items() : $rows);
 
@@ -609,23 +311,23 @@
     $age5Data = $chartRows->pluck('percentage_total5')->map(fn($v) => round((float)$v, 2))->values();
 
     $sumPopulation1 = $chartRows->sum(fn($r) => (float) ($r->population_total1 ?? 0));
-    $sumPatient1    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total1 ?? 0));
+    $sumPatient1    = $chartRows->sum(fn($r) => (float) ($r->patient_emph_total1 ?? 0));
     $sumRate1       = $sumPopulation1 > 0 ? ($sumPatient1 / $sumPopulation1) * 100 : 0;
 
     $sumPopulation2 = $chartRows->sum(fn($r) => (float) ($r->population_total2 ?? 0));
-    $sumPatient2    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total2 ?? 0));
+    $sumPatient2    = $chartRows->sum(fn($r) => (float) ($r->patient_emph_total2 ?? 0));
     $sumRate2       = $sumPopulation2 > 0 ? ($sumPatient2 / $sumPopulation2) * 100 : 0;
 
     $sumPopulation3 = $chartRows->sum(fn($r) => (float) ($r->population_total3 ?? 0));
-    $sumPatient3    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total3 ?? 0));
+    $sumPatient3    = $chartRows->sum(fn($r) => (float) ($r->patient_emph_total3 ?? 0));
     $sumRate3       = $sumPopulation3 > 0 ? ($sumPatient3 / $sumPopulation3) * 100 : 0;
 
     $sumPopulation4 = $chartRows->sum(fn($r) => (float) ($r->population_total4 ?? 0));
-    $sumPatient4    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total4 ?? 0));
+    $sumPatient4    = $chartRows->sum(fn($r) => (float) ($r->patient_emph_total4 ?? 0));
     $sumRate4       = $sumPopulation4 > 0 ? ($sumPatient4 / $sumPopulation4) * 100 : 0;
 
     $sumPopulation5 = $chartRows->sum(fn($r) => (float) ($r->population_total5 ?? 0));
-    $sumPatient5    = $chartRows->sum(fn($r) => (float) ($r->patient_cardio_total5 ?? 0));
+    $sumPatient5    = $chartRows->sum(fn($r) => (float) ($r->patient_emph_total5 ?? 0));
     $sumRate5       = $sumPopulation5 > 0 ? ($sumPatient5 / $sumPopulation5) * 100 : 0;
 @endphp
 
@@ -633,16 +335,12 @@
     <div class="ga-page shadow-soft">
 
         <div class="ga-topbar">
-            <div class="ga-brand">
-                <div>
-                    <div class="ga-title">
-                        <i class="bi bi-heart-pulse-fill"></i>
-                        <span>อัตราป่วยด้วยโรคหัวใจและหลอดเลือด</span>
-                    </div>
-                    <div class="ga-subtitle">
-                        แสดงข้อมูลสรุปภาพรวมรายอำเภอ พร้อมกราฟวิเคราะห์และตารางข้อมูลรายกลุ่มอายุ
-                    </div>
-                </div>
+            <div class="ga-title">
+                <i class="bi bi-wind"></i>
+                <span>อัตราผู้ป่วยโรคถุงลมโป่งพอง</span>
+            </div>
+            <div class="ga-subtitle">
+                แสดงข้อมูลสรุปภาพรวมรายอำเภอ พร้อมกราฟวิเคราะห์และตารางข้อมูลรายกลุ่มอายุ
             </div>
         </div>
 
@@ -652,11 +350,8 @@
                     <div class="col-md-3">
                         <label class="ga-filter-label">ปี</label>
                         <select name="year" class="form-select ga-filter">
-                            
                             @foreach($yearList as $y)
-                                <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
-                                    ปี {{ $y }}
-                                </option>
+                                <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>ปี {{ $y }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -666,9 +361,7 @@
                         <select name="district" class="form-select ga-filter">
                             <option value="">ทุกอำเภอ</option>
                             @foreach($districtList as $d)
-                                <option value="{{ $d }}" {{ $district == $d ? 'selected' : '' }}>
-                                    {{ $d }}
-                                </option>
+                                <option value="{{ $d }}" {{ $district == $d ? 'selected' : '' }}>{{ $d }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -695,7 +388,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('health.cardio-incidence-all.export', request()->query()) }}" class="btn ga-btn-export">
+                    <a href="{{ route('health.emph-incidence-all.export', request()->query()) }}" class="btn ga-btn-export">
                         <i class="bi bi-download"></i> Export Excel
                     </a>
                 </div>
@@ -709,14 +402,12 @@
                     <h3 class="ga-kpi-value">{{ number_format($summary->population_total_sum ?? 0) }}</h3>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="ga-kpi">
                     <div class="ga-kpi-label">ผู้ป่วยรวม</div>
-                    <h3 class="ga-kpi-value">{{ number_format($summary->patient_cardio_total_sum ?? 0) }}</h3>
+                    <h3 class="ga-kpi-value">{{ number_format($summary->patient_emph_total_sum ?? 0) }}</h3>
                 </div>
             </div>
-
             <div class="col-md-4">
                 <div class="ga-kpi">
                     <div class="ga-kpi-label">ร้อยละเฉลี่ยรวม</div>
@@ -775,59 +466,41 @@
                             <th colspan="3">60 ปีขึ้นไป</th>
                         </tr>
                         <tr>
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
-
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
-
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
-
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
-
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
-
-                            <th>B</th>
-                            <th>A</th>
-                            <th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
+                            <th>B</th><th>A</th><th>ร้อยละ</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         @forelse($rows as $row)
                             <tr>
                                 <td>{{ $row->district_name_thai }}</td>
 
                                 <td class="text-end metric-blue">{{ number_format($row->population_total) }}</td>
-                                <td class="text-end metric-blue">{{ number_format($row->patient_cardio_total) }}</td>
+                                <td class="text-end metric-blue">{{ number_format($row->patient_emph_total) }}</td>
                                 <td class="text-end metric-blue">{{ number_format($row->percentage_total, 2) }}</td>
 
                                 <td class="text-end">{{ number_format($row->population_total1) }}</td>
-                                <td class="text-end">{{ number_format($row->patient_cardio_total1) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_emph_total1) }}</td>
                                 <td class="text-end">{{ number_format($row->percentage_total1, 2) }}</td>
 
                                 <td class="text-end">{{ number_format($row->population_total2) }}</td>
-                                <td class="text-end">{{ number_format($row->patient_cardio_total2) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_emph_total2) }}</td>
                                 <td class="text-end">{{ number_format($row->percentage_total2, 2) }}</td>
 
                                 <td class="text-end">{{ number_format($row->population_total3) }}</td>
-                                <td class="text-end">{{ number_format($row->patient_cardio_total3) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_emph_total3) }}</td>
                                 <td class="text-end">{{ number_format($row->percentage_total3, 2) }}</td>
 
                                 <td class="text-end">{{ number_format($row->population_total4) }}</td>
-                                <td class="text-end">{{ number_format($row->patient_cardio_total4) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_emph_total4) }}</td>
                                 <td class="text-end">{{ number_format($row->percentage_total4, 2) }}</td>
 
                                 <td class="text-end">{{ number_format($row->population_total5) }}</td>
-                                <td class="text-end">{{ number_format($row->patient_cardio_total5) }}</td>
+                                <td class="text-end">{{ number_format($row->patient_emph_total5) }}</td>
                                 <td class="text-end">{{ number_format($row->percentage_total5, 2) }}</td>
                             </tr>
                         @empty
@@ -840,7 +513,7 @@
                             <td>รวม</td>
 
                             <td class="text-end">{{ number_format($summary->population_total_sum ?? 0) }}</td>
-                            <td class="text-end">{{ number_format($summary->patient_cardio_total_sum ?? 0) }}</td>
+                            <td class="text-end">{{ number_format($summary->patient_emph_total_sum ?? 0) }}</td>
                             <td class="text-end">{{ number_format($overallRate ?? 0, 2) }}</td>
 
                             <td class="text-end">{{ number_format($sumPopulation1) }}</td>
@@ -875,13 +548,12 @@
         <div class="ga-legend-box">
             <div class="ga-legend-title">คำอธิบายตัวชี้วัด</div>
             <div class="ga-legend-item">
-                <strong>A</strong> หมายถึง จำนวนผู้ป่วยด้วยโรคหัวใจและหลอดเลือด (Coronary heart disease) ทั้งหมดตามกลุ่มอายุ
+                <strong>A</strong> หมายถึง จำนวนผู้ป่วยโรคถุงลมโป่งพองทั้งหมด
             </div>
             <div class="ga-legend-item mb-0">
                 <strong>B</strong> หมายถึง จำนวนประชากร ตามกลุ่มอายุ
             </div>
         </div>
-
     </div>
 </div>
 
@@ -893,6 +565,7 @@
         <div class="loading-text">กำลังประมวลผล</div>
     </div>
 </div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -925,30 +598,12 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    x: {
-                        ticks: {
-                            color: '#334155',
-                            font: { family: 'Prompt', size: 10 }
-                        },
-                        grid: { display: false }
-                    },
+                    x: { grid: { display: false } },
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            color: '#334155',
-                            font: { family: 'Prompt', size: 10 }
-                        },
-                        grid: { color: '#e2e8f0' },
-                        title: {
-                            display: true,
-                            text: 'ร้อยละ',
-                            color: '#475569',
-                            font: { family: 'Prompt', weight: '600', size: 11 }
-                        }
+                        title: { display: true, text: 'ร้อยละ' }
                     }
                 }
             }
@@ -962,97 +617,23 @@
             data: {
                 labels: districtLabels,
                 datasets: [
-                    {
-                        label: 'ต่ำกว่า 15 ปี',
-                        data: age1Data,
-                        borderColor: '#14b8a6',
-                        backgroundColor: '#14b8a6',
-                        tension: 0.35,
-                        fill: false,
-                        pointRadius: 3,
-                        pointHoverRadius: 4
-                    },
-                    {
-                        label: '15-39 ปี',
-                        data: age2Data,
-                        borderColor: '#3b82f6',
-                        backgroundColor: '#3b82f6',
-                        tension: 0.35,
-                        fill: false,
-                        pointRadius: 3,
-                        pointHoverRadius: 4
-                    },
-                    {
-                        label: '40-49 ปี',
-                        data: age3Data,
-                        borderColor: '#8b5cf6',
-                        backgroundColor: '#8b5cf6',
-                        tension: 0.35,
-                        fill: false,
-                        pointRadius: 3,
-                        pointHoverRadius: 4
-                    },
-                    {
-                        label: '50-59 ปี',
-                        data: age4Data,
-                        borderColor: '#f97316',
-                        backgroundColor: '#f97316',
-                        tension: 0.35,
-                        fill: false,
-                        pointRadius: 3,
-                        pointHoverRadius: 4
-                    },
-                    {
-                        label: '60 ปีขึ้นไป',
-                        data: age5Data,
-                        borderColor: '#ef4444',
-                        backgroundColor: '#ef4444',
-                        tension: 0.35,
-                        fill: false,
-                        pointRadius: 3,
-                        pointHoverRadius: 4
-                    }
+                    { label: 'ต่ำกว่า 15 ปี', data: age1Data, borderColor: '#14b8a6', backgroundColor: '#14b8a6', tension: 0.35, fill: false },
+                    { label: '15-39 ปี', data: age2Data, borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.35, fill: false },
+                    { label: '40-49 ปี', data: age3Data, borderColor: '#8b5cf6', backgroundColor: '#8b5cf6', tension: 0.35, fill: false },
+                    { label: '50-59 ปี', data: age4Data, borderColor: '#f97316', backgroundColor: '#f97316', tension: 0.35, fill: false },
+                    { label: '60 ปีขึ้นไป', data: age5Data, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.35, fill: false }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            usePointStyle: true,
-                            boxWidth: 8,
-                            color: '#334155',
-                            font: { family: 'Prompt', size: 11 }
-                        }
-                    }
-                },
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { position: 'top' } },
                 scales: {
-                    x: {
-                        ticks: {
-                            color: '#334155',
-                            font: { family: 'Prompt', size: 10 }
-                        },
-                        grid: { display: false }
-                    },
+                    x: { grid: { display: false } },
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            color: '#334155',
-                            font: { family: 'Prompt', size: 10 }
-                        },
-                        grid: { color: '#e2e8f0' },
-                        title: {
-                            display: true,
-                            text: 'ร้อยละ',
-                            color: '#475569',
-                            font: { family: 'Prompt', weight: '600', size: 11 }
-                        }
+                        title: { display: true, text: 'ร้อยละ' }
                     }
                 }
             }
@@ -1063,14 +644,10 @@
     if (filterForm) {
         filterForm.addEventListener('submit', function (e) {
             const overlay = document.getElementById('loadingOverlay');
-
             if (overlay) {
                 overlay.style.display = 'flex';
                 e.preventDefault();
-
-                setTimeout(() => {
-                    filterForm.submit();
-                }, 900);
+                setTimeout(() => filterForm.submit(), 700);
             }
         });
     }

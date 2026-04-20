@@ -6,7 +6,7 @@
 <body style="font-family:'TH Sarabun New','Sarabun',sans-serif; font-size:14px; color:#0f172a;">
 
     <div style="text-align:center; font-size:24px; font-weight:bold; margin-bottom:4px; color:#0f172a;">
-        รายงานอัตราป่วยด้วยโรคความดันโลหิตสูงต่อประชากร
+        รายงานอัตราป่วยด้วยโรคความดันโลหิตสูง
     </div>
 
     <div style="text-align:center; font-size:15px; margin-bottom:14px; color:#475569;">

@@ -80,12 +80,14 @@
     <i class="bi bi-speedometer2 me-2"></i>Dashboard
   </a>
 </li>
-          <li>
-            <a class="dropdown-item" href="{{ $homeUrl }}">
-              <i class="bi bi-plug-fill me-2"></i>SQLSRV Test
-            </a>
-          </li>
-          
+          {{-- ปิดไว้ก่อนชั่วคราว --}}
+{{--
+<li>
+    <a class="dropdown-item" href="{{ $homeUrl }}">
+        <i class="bi bi-plug-fill me-2"></i>SQLSRV Test
+    </a>
+</li>
+--}}
           <li><a class="dropdown-item" href="{{ url('/welfare') }}"><i class="bi bi-gift-fill me-2"></i>ข้อมูลสวัสดิการ</a></li>
 
           @if($householdUrl)

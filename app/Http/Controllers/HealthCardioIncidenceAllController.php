@@ -140,7 +140,7 @@ class HealthCardioIncidenceAllController extends Controller
             $year = '2569';
         }
 
-        $fileName = 'อัตราป่วยด้วยโรคหัวใจและหลอดเลือดต่อประชากร ' . $year . '.xlsx';
+        $fileName = 'อัตราป่วยด้วยโรคหัวใจและหลอดเลือด_ ' . $year . '.xlsx';
 
         return Excel::download(
             new HealthCardioIncidenceAllExport($request),

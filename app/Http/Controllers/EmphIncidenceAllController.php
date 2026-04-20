@@ -5,16 +5,16 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\HtIncidenceAllExport;
+use App\Exports\EmphIncidenceAllExport;
 
-class HtIncidenceAllController extends Controller
+class EmphIncidenceAllController extends Controller
 {
     public function index(Request $request)
     {
         set_time_limit(120);
         ini_set('memory_limit', '512M');
 
-        $table = 'health_ht_incidence_all';
+        $table = 'health_emph_incidence_all';
         $conn  = DB::connection('mysql_help');
 
         $year     = $request->get('year', 2569);
@@ -48,45 +48,45 @@ class HtIncidenceAllController extends Controller
                 district_name_thai,
 
                 SUM(IFNULL(population_total, 0)) as population_total,
-                SUM(IFNULL(patient_ht_total, 0)) as patient_ht_total,
+                SUM(IFNULL(patient_emph_total, 0)) as patient_emph_total,
                 CASE
                     WHEN SUM(IFNULL(population_total, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total, 0)) * 100.0) / SUM(IFNULL(population_total, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total, 0)) * 100.0) / SUM(IFNULL(population_total, 0))
                 END as percentage_total,
 
                 SUM(IFNULL(population_total1, 0)) as population_total1,
-                SUM(IFNULL(patient_ht_total1, 0)) as patient_ht_total1,
+                SUM(IFNULL(patient_emph_total1, 0)) as patient_emph_total1,
                 CASE
                     WHEN SUM(IFNULL(population_total1, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total1, 0)) * 100.0) / SUM(IFNULL(population_total1, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total1, 0)) * 100.0) / SUM(IFNULL(population_total1, 0))
                 END as percentage_total1,
 
                 SUM(IFNULL(population_total2, 0)) as population_total2,
-                SUM(IFNULL(patient_ht_total2, 0)) as patient_ht_total2,
+                SUM(IFNULL(patient_emph_total2, 0)) as patient_emph_total2,
                 CASE
                     WHEN SUM(IFNULL(population_total2, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total2, 0)) * 100.0) / SUM(IFNULL(population_total2, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total2, 0)) * 100.0) / SUM(IFNULL(population_total2, 0))
                 END as percentage_total2,
 
                 SUM(IFNULL(population_total3, 0)) as population_total3,
-                SUM(IFNULL(patient_ht_total3, 0)) as patient_ht_total3,
+                SUM(IFNULL(patient_emph_total3, 0)) as patient_emph_total3,
                 CASE
                     WHEN SUM(IFNULL(population_total3, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total3, 0)) * 100.0) / SUM(IFNULL(population_total3, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total3, 0)) * 100.0) / SUM(IFNULL(population_total3, 0))
                 END as percentage_total3,
 
                 SUM(IFNULL(population_total4, 0)) as population_total4,
-                SUM(IFNULL(patient_ht_total4, 0)) as patient_ht_total4,
+                SUM(IFNULL(patient_emph_total4, 0)) as patient_emph_total4,
                 CASE
                     WHEN SUM(IFNULL(population_total4, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total4, 0)) * 100.0) / SUM(IFNULL(population_total4, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total4, 0)) * 100.0) / SUM(IFNULL(population_total4, 0))
                 END as percentage_total4,
 
                 SUM(IFNULL(population_total5, 0)) as population_total5,
-                SUM(IFNULL(patient_ht_total5, 0)) as patient_ht_total5,
+                SUM(IFNULL(patient_emph_total5, 0)) as patient_emph_total5,
                 CASE
                     WHEN SUM(IFNULL(population_total5, 0)) = 0 THEN 0
-                    ELSE (SUM(IFNULL(patient_ht_total5, 0)) * 100.0) / SUM(IFNULL(population_total5, 0))
+                    ELSE (SUM(IFNULL(patient_emph_total5, 0)) * 100.0) / SUM(IFNULL(population_total5, 0))
                 END as percentage_total5
             ")
             ->groupBy('district_name_thai')
@@ -94,15 +94,15 @@ class HtIncidenceAllController extends Controller
             ->get();
 
         $summary = (object) [
-            'population_total_sum' => $rows->sum('population_total'),
-            'patient_ht_total_sum' => $rows->sum('patient_ht_total'),
+            'population_total_sum'   => (float) $rows->sum('population_total'),
+            'patient_emph_total_sum' => (float) $rows->sum('patient_emph_total'),
         ];
 
-        $overallRate = ($summary->population_total_sum ?? 0) > 0
-            ? (($summary->patient_ht_total_sum ?? 0) * 100) / $summary->population_total_sum
+        $overallRate = $summary->population_total_sum > 0
+            ? (($summary->patient_emph_total_sum * 100) / $summary->population_total_sum)
             : 0;
 
-        return view('health.ht_incidence_all', compact(
+        return view('health.emph_incidence_all', compact(
             'rows',
             'summary',
             'districtList',
@@ -118,11 +118,8 @@ class HtIncidenceAllController extends Controller
         $year = $request->get('year', 'all');
 
         return Excel::download(
-            new HtIncidenceAllExport(
-                $request->get('year', ''),
-                $request->get('district', '')
-            ),
-            'อัตราป่วยด้วยโรคความดันโลหิตสูง' . $year . '.xlsx'
+            new EmphIncidenceAllExport($request),
+            'อัตราผู้ป่วยโรคถุงลมโป่งพอง' . $year . '.xlsx'
         );
     }
 }

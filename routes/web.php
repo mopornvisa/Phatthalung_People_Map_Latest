@@ -25,6 +25,10 @@ use App\Http\Controllers\DmIncidenceAllController;
 use App\Http\Controllers\DmMortalityController;
 use App\Http\Controllers\CopdIncidenceAllController;
 use App\Http\Controllers\CopdMortalityController;
+use App\Http\Controllers\BcIncidenceAllController;
+use App\Http\Controllers\CcIncidenceAllController;
+use App\Http\Controllers\EmphIncidenceAllController;
+use App\Http\Controllers\LcIncidenceAllController;
 
 
 /*
@@ -182,8 +186,6 @@ Route::get('/health/stroke-incidence-all', [StrokeIncidenceAllController::class,
 Route::get('/health/stroke-incidence-all/export', [StrokeIncidenceAllController::class, 'export'])
     ->name('health.stroke-incidence-all.export');
 
-
-
 Route::get('/health/dm-incidence-all', [DmIncidenceAllController::class, 'index'])
     ->name('health.dm-incidence-all');
 
@@ -207,3 +209,28 @@ Route::get('/health/copd-mortality', [CopdMortalityController::class, 'index'])
 
 Route::get('/health/copd-mortality/export', [CopdMortalityController::class, 'export'])
     ->name('health.copd-mortality.export');
+
+Route::get('/health/bc-incidence-all', [BcIncidenceAllController::class, 'index'])
+    ->name('health.bc-incidence-all');
+
+Route::get('/health/bc-incidence-all/export', [BcIncidenceAllController::class, 'export'])
+    ->name('health.bc-incidence-all.export');
+
+Route::get('/health/cc-incidence-all', [CcIncidenceAllController::class, 'index'])
+    ->name('health.cc-incidence-all');
+
+Route::get('/health/cc-incidence-all/export', [CcIncidenceAllController::class, 'export'])
+    ->name('health.cc-incidence-all.export');
+
+Route::get('/health/emph-incidence-all', [EmphIncidenceAllController::class, 'index'])
+    ->name('health.emph-incidence-all');
+
+Route::get('/health/emph-incidence-all/export', [EmphIncidenceAllController::class, 'export'])
+    ->name('health.emph-incidence-all.export');
+
+
+Route::get('/health/lc-incidence-all', [LcIncidenceAllController::class, 'index'])
+    ->name('health.lc-incidence-all');
+
+Route::get('/health/lc-incidence-all/export', [LcIncidenceAllController::class, 'export'])
+    ->name('health.lc-incidence-all.export');
