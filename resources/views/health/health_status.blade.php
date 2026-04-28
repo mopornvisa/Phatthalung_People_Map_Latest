@@ -153,6 +153,32 @@ style="display:flex; align-items:center; gap:18px; text-decoration:none; backgro
 </a>
 </div>
 
+<!-- CARD 6 -->
+<div class="col-md-6">
+<a href="{{ route('health.death_dashboard') }}"
+style="display:flex; align-items:center; gap:18px; text-decoration:none; background:#fff; border:1px solid #e5edf4; border-left:6px solid #ef4444; border-radius:24px; padding:22px; min-height:130px; box-shadow:0 10px 24px rgba(15,23,42,.05); height:100%;">
+
+<div style="width:68px;height:68px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:#fff1f2;color:#dc2626;font-size:30px;">
+<i class="bi bi-heartbreak-fill"></i>
+</div>
+
+<div style="flex:1;">
+<div style="font-size:22px;font-weight:600;color:#475569;margin-bottom:8px;">
+ข้อมูลการเสียชีวิต
+</div>
+
+<p style="color:#94a3b8;font-size:14px;margin:0;line-height:1.7;">
+แสดงสถิติการเสียชีวิต จำแนกตามปี อำเภอ เพศ กลุ่มอายุ และสาเหตุการตาย
+</p>
+</div>
+
+<div style="color:#dc2626;">
+<i class="bi bi-arrow-right-circle-fill"></i>
+</div>
+
+</a>
+</div>
+
 
         </div>
         </div>

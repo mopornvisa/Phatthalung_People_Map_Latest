@@ -333,9 +333,11 @@ class DashboardController extends Controller
         }
 
         // ======================
-        // main filtered query
+        // main filtered query (member-level)
         // ======================
-        $q = $baseQuery();
+        // ใช้ survey_a ตรง ๆ ไม่ JOIN survey_profile64
+        // เพื่อไม่ให้จำนวนสมาชิก/เพศ/สุขภาพ/สวัสดิการถูกนับซ้ำจากการ join
+        $q = $conn->table(DB::raw("$mainTable as u"));
         $q = $applyCommonFilters($q);
 
         // ======================
@@ -427,7 +429,8 @@ class DashboardController extends Controller
         if ($COL_HEALTH && ($COL_DISTRICT || $COL_TAMBON)) {
             $healthExpr = $trim("u.[$COL_HEALTH]");
 
-            $chartQ = $baseQuery();
+            // ใช้ survey_a ตรง ๆ สำหรับกราฟสุขภาพ เพื่อกันข้อมูลซ้ำจากการ join
+            $chartQ = $conn->table(DB::raw("$mainTable as u"));
             $chartQ = $applyCommonFilters($chartQ);
 
             if ($district !== '' && $COL_TAMBON) {
@@ -491,7 +494,8 @@ class DashboardController extends Controller
         // householdsByDistrict
         // ======================
         if ($COL_DISTRICT && $COL_HOUSE) {
-            $hhQ = $baseQuery();
+            // ใช้ survey_a ตรง ๆ สำหรับจำนวนครัวเรือนรายอำเภอ
+            $hhQ = $conn->table(DB::raw("$mainTable as u"));
             $hhQ = $applyCommonFilters($hhQ);
 
             $householdsByDistrict = $hhQ

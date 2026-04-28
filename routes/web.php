@@ -29,6 +29,8 @@ use App\Http\Controllers\BcIncidenceAllController;
 use App\Http\Controllers\CcIncidenceAllController;
 use App\Http\Controllers\EmphIncidenceAllController;
 use App\Http\Controllers\LcIncidenceAllController;
+use App\Http\Controllers\DeathDashboardController;
+
 
 
 /*
@@ -37,10 +39,10 @@ use App\Http\Controllers\LcIncidenceAllController;
 |--------------------------------------------------------------------------
 */
 
-// หน้าแรก
+// หน้าแรกใหม่
 Route::get('/', function () {
-    return redirect()->route('dashboard');
-});
+    return view('home');
+})->name('home');
 
 // Dashboard
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -234,3 +236,9 @@ Route::get('/health/lc-incidence-all', [LcIncidenceAllController::class, 'index'
 
 Route::get('/health/lc-incidence-all/export', [LcIncidenceAllController::class, 'export'])
     ->name('health.lc-incidence-all.export');
+
+Route::get('/health/death-dashboard', [DeathDashboardController::class, 'index'])
+    ->name('health.death_dashboard');
+
+Route::get('/health/death-dashboard/export', [DeathDashboardController::class, 'export'])
+    ->name('health.death_dashboard.export');
