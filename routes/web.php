@@ -30,7 +30,7 @@ use App\Http\Controllers\CcIncidenceAllController;
 use App\Http\Controllers\EmphIncidenceAllController;
 use App\Http\Controllers\LcIncidenceAllController;
 use App\Http\Controllers\DeathDashboardController;
-
+use App\Http\Controllers\DeathSummaryManageController;
 
 
 /*
@@ -242,3 +242,20 @@ Route::get('/health/death-dashboard', [DeathDashboardController::class, 'index']
 
 Route::get('/health/death-dashboard/export', [DeathDashboardController::class, 'export'])
     ->name('health.death_dashboard.export');
+
+    
+
+Route::get('/death-summary-manage', [DeathSummaryManageController::class, 'index'])
+    ->name('death_summary.manage');
+
+Route::post('/death-summary-manage/import', [DeathSummaryManageController::class, 'import'])
+    ->name('death_summary.import');
+
+Route::post('/death-summary-manage/store', [DeathSummaryManageController::class, 'store'])
+    ->name('death_summary.store');
+
+Route::put('/death-summary-manage/{id}', [DeathSummaryManageController::class, 'update'])
+    ->name('death_summary.update');
+
+Route::delete('/death-summary-manage/{id}', [DeathSummaryManageController::class, 'destroy'])
+    ->name('death_summary.destroy');

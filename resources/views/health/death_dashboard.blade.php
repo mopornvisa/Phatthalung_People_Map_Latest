@@ -1040,26 +1040,73 @@ body{
             <i class="bi bi-link-45deg"></i>
         </div>
 
-        <div class="flex-grow-1">
-            <div style="font-size:13px; font-weight:700; color:#0f172a;">
-                แหล่งที่มา : ระบบบริการข้อมูลสถิติชีพประเทศไทย
+       <div class="flex-grow-1">
+
+    <div style="font-size:13px; font-weight:700; color:#0f172a;">
+        แหล่งที่มา : ระบบบริการข้อมูลสถิติชีพประเทศไทย
+    </div>
+
+    <a class="source-link"
+       href="https://vitalstat.moph.go.th"
+       target="_blank"
+       rel="noopener noreferrer"
+       style="font-size:12px;">
+        vitalstat.moph.go.th
+    </a>
+
+    <div style="font-size:12px; color:#64748b; margin-top:4px;">
+        อัปเดตข้อมูลล่าสุด :
+        {{ \Carbon\Carbon::now('Asia/Bangkok')->format('d/m/Y H:i') }} น.
+    </div>
+
+</div>
+
+    </div>
+</div>
+
+    </div>
+</div>
+<div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:24px; border:0; overflow:hidden;">
+
+            <div class="modal-header" style="background:linear-gradient(135deg,#0f766e,#2563eb); color:#fff;">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-cloud-arrow-up-fill me-2"></i>
+                    นำเข้าข้อมูลการตายจาก Excel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
 
-            <a class="source-link"
-               href="https://vitalstat.moph.go.th"
-               target="_blank"
-               rel="noopener noreferrer"
-               style="font-size:12px;">
-                vitalstat.moph.go.th
-            </a>
+            <form method="POST" action="{{ route('death_summary.import') }}" enctype="multipart/form-data">
+                @csrf
+
+                <div class="modal-body p-4">
+                    <label class="form-label fw-semibold">เลือกไฟล์ Excel</label>
+                    <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls,.csv" required>
+
+                    <div class="mt-3 small text-muted">
+                       หัวตาราง Excel ต้องเรียงเป็น 8 ช่อง:<br>
+ปี,เดือน,ชื่อจังหวัด,ชื่ออำเภอ,ชื่อเพศ,กลุ่มอายุ,สาเหตุการตาย,จำนวนผู้ตาย
+                    </div>
+                    <div class="mt-2">
+    ตัวอย่าง:<br>
+    2569, 1, พัทลุง, เมืองพัทลุง, ชาย, 60+, โรคหัวใจ, 25
+</div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-upload me-1"></i>
+                        นำเข้า Excel
+                    </button>
+                </div>
+            </form>
+
         </div>
-
     </div>
 </div>
-
-    </div>
-</div>
-
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-modal">
         <div class="loading-ring">
