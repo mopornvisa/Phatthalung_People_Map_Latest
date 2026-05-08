@@ -122,6 +122,9 @@ body{
 .dropdown-submenu:hover > .submenu{
     display:block;
 }
+.dropdown-menu{
+    z-index:2000;
+}
 </style>
 
 {{-- HEADER --}}
@@ -192,38 +195,66 @@ data-bs-toggle="dropdown">
                     ด้านสวัสดิการ
                 </a>
             </li>
-
-            <li>
-                <a class="dropdown-item" href="{{ route('dashboard') }}">
-    <i class="bi bi-house-heart-fill me-2"></i>
-    ด้านที่อยู่อาศัย
-</a>
-            </li>
+<li>
+    <a class="dropdown-item" href="{{ route('household_64') }}">
+        <i class="bi bi-house-heart-fill me-2"></i>
+        ด้านที่อยู่อาศัย
+    </a>
+</li>
 
         </ul>
     </li>
 
-    <!-- เมนูหลักอื่น -->
-    <li>
-        <a class="dropdown-item" href="{{ $dashboardUrl }}">
+   <!-- เมืองเศรษฐกิจยั่งยืน -->
+<li class="dropdown-submenu position-relative">
+    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">
+        <span>
             <i class="bi bi-graph-up-arrow me-2"></i>
             เมืองเศรษฐกิจยั่งยืน
-        </a>
-    </li>
+        </span>
+        <i class="bi bi-chevron-right small"></i>
+    </a>
 
-    <li>
-        <a class="dropdown-item" href="{{ $dashboardUrl }}">
-            <i class="bi bi-tree-fill me-2"></i>
-            เมืองสิ่งแวดล้อมยั่งยืน
-        </a>
-    </li>
+    <!-- เมนูย่อย -->
+    <ul class="dropdown-menu submenu shadow">
 
+        <li>
+            <a class="dropdown-item" href="{{ route('economy.index') }}">
+                <i class="bi bi-cash-coin me-2"></i>
+                ด้านเศรษฐกิจ
+            </a>
+        </li>
+
+    </ul>
+</li>
     <li>
-        <a class="dropdown-item" href="{{ route('welfare.index') }}">
+    <div class="dropdown-item">
+        <i class="bi bi-tree-fill me-2"></i>
+        เมืองสิ่งแวดล้อมยั่งยืน
+    </div>
+</li>
+
+    <!-- เมืองของพลเมือง -->
+<li class="dropdown-submenu position-relative">
+    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">
+        <span>
             <i class="bi bi-people-fill me-2"></i>
             เมืองของพลเมือง
-        </a>
-    </li>
+        </span>
+        <i class="bi bi-chevron-right small"></i>
+    </a>
+
+    <ul class="dropdown-menu submenu shadow">
+
+        <li>
+            <a class="dropdown-item" href="{{ route('education.dashboard') }}">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                ด้านการศึกษา
+            </a>
+        </li>
+
+    </ul>
+</li>
 
 </ul>
 </li>
@@ -231,7 +262,7 @@ data-bs-toggle="dropdown">
 <li class="nav-item">
 <a class="nav-link" href="{{ $dashboardUrl }}">
 <i class="bi bi-bar-chart-fill me-1"></i>
-ข้อมูลภาพรวม
+ภาพรวมครัวเรือนยากจน
 </a>
 </li>
 

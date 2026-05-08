@@ -14,17 +14,17 @@ class DeathDashboardController extends Controller
         $conn = DB::connection('mysql_help');
         $table = 'death_summary';
 
-        $selectedYear = trim((string) $request->get('year', ''));
-        $selectedDistrict = trim((string) $request->get('district', ''));
-        $selectedGender = trim((string) $request->get('gender', ''));
-        $selectedAgeGroup = trim((string) $request->get('age_group', ''));
-        $selectedCause = trim((string) $request->get('cause_of_death', ''));
+        $selectedYear      = trim((string) $request->get('year', ''));
+        $selectedDistrict  = trim((string) $request->get('district', ''));
+        $selectedGender    = trim((string) $request->get('gender', ''));
+        $selectedAgeGroup  = trim((string) $request->get('age_group', ''));
+        $selectedCause     = trim((string) $request->get('cause_of_death', ''));
 
         $yearList = $conn->table($table)
             ->select('year_th')
             ->whereNotNull('year_th')
             ->distinct()
-            ->orderBy('year_th', 'desc')
+            ->orderByDesc('year_th')
             ->pluck('year_th');
 
         $districtList = $conn->table($table)
@@ -55,30 +55,29 @@ class DeathDashboardController extends Controller
             '60+',
         ]);
 
-          $ageGroupMap = [
-    '0-5' => [
-        '0-5','0-5 ปี',
-        '0','1','2','3','4','5'
-    ],
+        $ageGroupMap = [
+            '0-5' => [
+                '0-5', '0-5 ปี',
+                '0', '1', '2', '3', '4', '5',
+            ],
+            '6-24' => [
+                '6-24', '6-24 ปี',
+                '6', '7', '8', '9', '10', '11', '12',
+                '13', '14', '15', '16', '17', '18', '19',
+                '20', '21', '22', '23', '24',
+            ],
+            '25-59' => [
+                '25-59', '25-59 ปี',
+            ],
+            '60+' => [
+                '60+', '60 ปีขึ้นไป',
+            ],
+        ];
 
-    '6-24' => [
-        '6-24','6-24 ปี',
-        '6','7','8','9','10','11','12','13','14','15',
-        '16','17','18','19','20','21','22','23','24'
-    ],
-
-    '25-59' => [
-        '25-59','25-59 ปี'
-    ],
-
-    '60+' => [
-        '60+','60 ปีขึ้นไป'
-    ],
-];
         $baseQuery = $conn->table($table);
 
         if ($selectedYear !== '') {
-            $baseQuery->where('year_th', (int)$selectedYear);
+            $baseQuery->where('year_th', (int) $selectedYear);
         }
 
         if ($selectedDistrict !== '') {
@@ -96,6 +95,9 @@ class DeathDashboardController extends Controller
         if ($selectedAgeGroup !== '' && isset($ageGroupMap[$selectedAgeGroup])) {
             $baseQuery->whereIn('age_group', $ageGroupMap[$selectedAgeGroup]);
         }
+
+        // ✅ อัปเดตข้อมูลล่าสุดจาก updated_at จริง ตามเงื่อนไขที่กรอง
+        $lastUpdate = (clone $baseQuery)->max('updated_at');
 
         $totalDeaths = (clone $baseQuery)->sum('death_total');
 
@@ -138,7 +140,7 @@ class DeathDashboardController extends Controller
             '0-5 ปี',
             '6-24 ปี',
             '25-59 ปี',
-            '60 ปีขึ้นไป'
+            '60 ปีขึ้นไป',
         ]);
 
         $ageGroupChartData = collect([
@@ -181,22 +183,31 @@ class DeathDashboardController extends Controller
             ->get();
 
         $monthLabels = [
-            1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.',
-            5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.',
-            9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.',
+            1 => 'ม.ค.',
+            2 => 'ก.พ.',
+            3 => 'มี.ค.',
+            4 => 'เม.ย.',
+            5 => 'พ.ค.',
+            6 => 'มิ.ย.',
+            7 => 'ก.ค.',
+            8 => 'ส.ค.',
+            9 => 'ก.ย.',
+            10 => 'ต.ค.',
+            11 => 'พ.ย.',
+            12 => 'ธ.ค.',
         ];
 
         $monthlyChartLabels = $monthlyData->pluck('month_no')
-            ->map(fn($m) => $monthLabels[(int)$m] ?? $m)
+            ->map(fn ($m) => $monthLabels[(int) $m] ?? $m)
             ->values();
 
         $monthlyChartData = $monthlyData->pluck('total')->values();
 
         $districtChartLabels = $districtData->pluck('district_name_th')->values();
-        $districtChartData = $districtData->pluck('total')->values();
+        $districtChartData   = $districtData->pluck('total')->values();
 
         $causeChartLabels = $causeData->pluck('cause_of_death')->values();
-        $causeChartData = $causeData->pluck('total')->values();
+        $causeChartData   = $causeData->pluck('total')->values();
 
         return view('health.death_dashboard', compact(
             'selectedYear',
@@ -225,17 +236,18 @@ class DeathDashboardController extends Controller
             'topCausesAge0_5',
             'topCausesAge6_24',
             'topCausesAge25_59',
-            'topCausesAge60Plus'
+            'topCausesAge60Plus',
+            'lastUpdate'
         ));
     }
 
     public function export(Request $request)
     {
-        $year = trim((string)$request->get('year', ''));
-        $district = trim((string)$request->get('district', ''));
-        $gender = trim((string)$request->get('gender', ''));
-        $ageGroup = trim((string)$request->get('age_group', ''));
-        $cause = trim((string)$request->get('cause_of_death', ''));
+        $year      = trim((string) $request->get('year', ''));
+        $district  = trim((string) $request->get('district', ''));
+        $gender    = trim((string) $request->get('gender', ''));
+        $ageGroup  = trim((string) $request->get('age_group', ''));
+        $cause     = trim((string) $request->get('cause_of_death', ''));
 
         $fileName = 'ข้อมูลการตายจังหวัดพัทลุง';
 

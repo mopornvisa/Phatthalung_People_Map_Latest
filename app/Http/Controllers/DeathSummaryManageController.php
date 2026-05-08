@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\DeathSummaryImport;
+use Carbon\Carbon;
+use Illuminate\Validation\ValidationException;
+
 class DeathSummaryManageController extends Controller
 {
    public function index(Request $request)
@@ -35,23 +38,7 @@ class DeathSummaryManageController extends Controller
     }
 
     $rows = $query
-        ->orderByDesc('year_th')
-        ->orderBy('month_no')
-        ->orderByRaw("
-            FIELD(district_name_th,
-                'เมืองพัทลุง',
-                'กงหรา',
-                'เขาชัยสน',
-                'ตะโหมด',
-                'ควนขนุน',
-                'ปากพะยูน',
-                'ศรีบรรพต',
-                'ป่าบอน',
-                'บางแก้ว',
-                'ป่าพะยอม',
-                'ศรีนครินทร์'
-            )
-        ")
+        ->orderByDesc('id')
         ->paginate(20)
         ->withQueryString();
 
@@ -97,8 +84,8 @@ class DeathSummaryManageController extends Controller
             'age_group'        => $request->age_group,
             'cause_of_death'   => $request->cause_of_death,
             'death_total'      => $request->death_total ?? 0,
-            'created_at' => \Carbon\Carbon::now('Asia/Bangkok'),
-'updated_at' => \Carbon\Carbon::now('Asia/Bangkok'),
+            'created_at'       => Carbon::now('Asia/Bangkok'),
+            'updated_at'       => Carbon::now('Asia/Bangkok'),
         ]);
 
         return back()->with('success', 'เพิ่มข้อมูลเรียบร้อยแล้ว');
@@ -118,7 +105,7 @@ class DeathSummaryManageController extends Controller
                 'age_group'        => $request->age_group,
                 'cause_of_death'   => $request->cause_of_death,
                 'death_total'      => $request->death_total ?? 0,
-                'updated_at'       => now(),
+                'updated_at'       => Carbon::now('Asia/Bangkok'),
             ]);
 
         return back()->with('success', 'แก้ไขข้อมูลเรียบร้อยแล้ว');
@@ -141,16 +128,63 @@ class DeathSummaryManageController extends Controller
     ]);
 
     try {
-
         Excel::import(new DeathSummaryImport, $request->file('excel_file'));
 
         return back()->with('success', 'นำเข้า Excel เรียบร้อยแล้ว');
 
-    } catch (\Throwable $e) {
+    } catch (ValidationException $e) {
+        return back()->withErrors($e->errors());
 
+    } catch (\Throwable $e) {
         return back()->withErrors([
-            'excel_file' => 'นำเข้าไม่สำเร็จ กรุณาตรวจสอบรูปแบบไฟล์ Excel หรือหัวตารางไม่ถูกต้อง'
+            'excel_file' => 'นำเข้าไม่สำเร็จ กรุณาตรวจสอบว่า “หัวตาราง” ต้องตรงตามนี้เท่านั้น: ปี, เดือน, ชื่อจังหวัด, ชื่ออำเภอ, ชื่อเพศ, กลุ่มอายุ, สาเหตุการตาย, จำนวนผู้ตาย'
         ]);
     }
+}
+    public function downloadTemplate()
+{
+    $headers = [
+        ['ปี','เดือน','ชื่อจังหวัด','ชื่ออำเภอ','ชื่อเพศ','กลุ่มอายุ','สาเหตุการตาย','จำนวนผู้ตาย'],
+       
+    ];
+
+    $fileName = 'template_ข้อมูลการตาย.xlsx';
+
+    return \Maatwebsite\Excel\Facades\Excel::download(
+        new class($headers) implements \Maatwebsite\Excel\Concerns\FromArray {
+            protected $data;
+
+            public function __construct($data)
+            {
+                $this->data = $data;
+            }
+
+            public function array(): array
+            {
+                return $this->data;
+            }
+        },
+        $fileName
+    );
+}
+public function bulkDestroy(Request $request)
+{
+    $ids = collect(explode(',', $request->ids))
+        ->filter()
+        ->map(fn ($id) => (int) $id)
+        ->values();
+
+    if ($ids->isEmpty()) {
+        return back()->withErrors([
+            'delete' => 'กรุณาเลือกรายการที่ต้องการลบ'
+        ]);
+    }
+
+    DB::connection('mysql_help')
+        ->table('death_summary')
+        ->whereIn('id', $ids)
+        ->delete();
+
+    return back()->with('success', 'ลบข้อมูลที่เลือกเรียบร้อยแล้ว');
 }
 }

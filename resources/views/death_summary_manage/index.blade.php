@@ -8,7 +8,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+@php
+$monthNames = [
+    1=>'มกราคม',2=>'กุมภาพันธ์',3=>'มีนาคม',4=>'เมษายน',
+    5=>'พฤษภาคม',6=>'มิถุนายน',7=>'กรกฎาคม',8=>'สิงหาคม',
+    9=>'กันยายน',10=>'ตุลาคม',11=>'พฤศจิกายน',12=>'ธันวาคม',
+];
+@endphp
     <style>
         body{
             font-family:'Prompt',sans-serif;
@@ -271,6 +277,99 @@
     from{opacity:0;transform:translateY(8px);}
     to{opacity:1;transform:translateY(0);}
 }
+/* ===== IMPORT EXCEL STEP UI ===== */
+.import-excel-card{
+    border-radius:24px !important;
+    background:linear-gradient(180deg,#f8fffb 0%,#ffffff 100%);
+    border:1px solid #d9f4e5 !important;
+    box-shadow:0 18px 45px rgba(15,118,110,.10);
+}
+
+.import-icon{
+    width:54px;
+    height:54px;
+    border-radius:18px;
+    background:linear-gradient(135deg,#16a34a,#0f766e);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+}
+
+.step-box{
+    height:100%;
+    background:#fff;
+    border:1px solid #d9f4e5;
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 10px 24px rgba(15,118,110,.06);
+}
+
+.step-no{
+    width:36px;
+    height:36px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#16a34a,#0B7F6F);
+    color:#fff;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:12px;
+}
+
+.step-title{
+    font-size:16px;
+    font-weight:800;
+    color:#0f172a;
+    margin-bottom:6px;
+}
+
+.step-desc{
+    font-size:12px;
+    color:#64748b;
+    line-height:1.7;
+}
+
+.code-line{
+    font-family:monospace;
+    background:#f8fafc;
+    border-radius:12px;
+    padding:10px;
+    color:#334155;
+    word-break:break-word;
+}
+
+.import-warning{
+    background:#fffbeb;
+    border:1px solid #fde68a;
+    border-radius:16px;
+    padding:12px 14px;
+    font-size:13px;
+    color:#92400e;
+}
+
+.import-example{
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+    padding:12px 14px;
+    font-size:13px;
+}
+
+.import-submit-btn{
+    border:none;
+    border-radius:18px;
+    background:linear-gradient(135deg,#16a34a,#0B7F6F);
+    color:#fff;
+    font-weight:800;
+}
+
+.import-submit-btn:hover{
+    color:#fff;
+    transform:translateY(-1px);
+}
     </style>
 </head>
 
@@ -305,128 +404,192 @@
          
              
 
-            <div class="section-card">
-                <h5 class="fw-bold mb-3">
-                    <i class="bi bi-plus-circle-fill text-success me-1"></i>
-                    เพิ่มข้อมูลใหม่
-                </h5>
+          
 
-                <form method="POST" action="{{ route('death_summary.store') }}">
-                    @csrf
-
-                    <div class="row g-3">
-                                            <div class="col-md-2">
-                            <label class="form-label">ปี พ.ศ.</label>
-                            <select name="year_th" class="form-select" required>
-                                <option value="">เลือกปี</option>
-
-                                @for($y = date('Y') + 543 + 1; $y >= 2565; $y--)
-                                    <option value="{{ $y }}">{{ $y }}</option>
-                                @endfor
-
-                                @foreach($years as $year)
-                                    <option value="{{ $year }}">{{ $year }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                                                <div class="col-md-2">
-                            <label class="form-label">เดือน</label>
-                            <select name="month_no" class="form-select" required>
-                                <option value="">เลือกเดือน</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="8">8</option>
-                                <option value="9">9</option>
-                                <option value="10">10</option>
-                                <option value="11">11</option>
-                                <option value="12">12</option>
-                            </select>
-                        </div>
-
-                                                <div class="col-md-3">
-                                                    <label class="form-label">จังหวัด</label>
-                                                    <input type="text" name="province_name_th" class="form-control" value="พัทลุง" readonly>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label class="form-label">อำเภอ</label>
-                                                    <select name="district_name_th" class="form-select" required>
-                                                        <option value="">เลือกอำเภอ</option>
-                                                        @foreach($districts as $district)
-                                                            <option value="{{ $district }}">{{ $district }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <div class="col-md-2">
-                                                    <label class="form-label">เพศ</label>
-                                                    <select name="sex_name_th" class="form-select" required>
-                                                        <option value="">เลือก</option>
-                                                        <option value="ชาย">ชาย</option>
-                                                        <option value="หญิง">หญิง</option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="col-md-3">
-                                                    <label class="form-label">กลุ่มอายุ</label>
-                                                    <select name="age_group" class="form-select" required>
-                                                        <option value="">เลือก</option>
-                                                        <option value="0-5">0-5 ปี</option>
-                                                        <option value="6-24">6-24 ปี</option>
-                                                        <option value="25-59">25-59 ปี</option>
-                                                        <option value="60+">60 ปีขึ้นไป</option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="col-md-7">
-                                                    <label class="form-label">สาเหตุการตาย</label>
-                                                    <input type="text" name="cause_of_death" class="form-control" placeholder="เช่น โรคหัวใจ" required>
-                                                </div>
-
-                                                <div class="col-md-2">
-                                                    <label class="form-label">จำนวนผู้เสียชีวิต</label>
-                                                    <input type="number" name="death_total" class="form-control" value="0" min="0" required>
-                                                </div>
-
-                                                <div class="col-md-12 text-end">
-                                                    <button class="btn btn-success px-4">
-                                                        <i class="bi bi-save-fill me-1"></i>
-                                                        บันทึกข้อมูลใหม่
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
-                <div class="import-box mt-4">
-                                <form method="POST" action="{{ route('death_summary.import') }}" enctype="multipart/form-data">
-                                    @csrf
-
-                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                                        <div>
-                                            <div class="fw-bold">
-                                                <i class="bi bi-file-earmark-excel-fill text-success me-1"></i>
-                                                นำเข้าไฟล์ Excel
-                                            </div>
-                                            <div class="hint">
-                                                หัวตาราง: ปี, เดือน, ชื่อจังหวัด, ชื่ออำเภอ, ชื่อเพศ, กลุ่มอายุ, สาเหตุการตาย, จำนวนผู้ตาย
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls,.csv" required>
-                                        <button class="btn btn-success px-4">
-                                            <i class="bi bi-upload me-1"></i>
-                                            Import
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+    {{-- ซ้าย: เพิ่มข้อมูลใหม่ --}}
+    <div class="col-lg-12">
+        <div class="section-card h-100">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                     style="width:38px;height:38px;background:#e8fff3;color:#15803d;">
+                    <i class="bi bi-plus-circle-fill"></i>
+                </div>
+                <div>
+                    <h5 class="fw-bold mb-0">เพิ่มข้อมูลใหม่</h5>
+                    <div class="text-muted" style="font-size:12px;">กรอกข้อมูลการตายรายรายการ</div>
+                </div>
             </div>
+
+            <form method="POST" action="{{ route('death_summary.store') }}">
+                @csrf
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">ปี พ.ศ.</label>
+                        <select name="year_th" class="form-select" required>
+                            <option value="">เลือกปี</option>
+                            @for($y = date('Y') + 543 + 1; $y >= 2565; $y--)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+
+                   <div class="col-md-3">
+    <label class="form-label">เดือน</label>
+    <select name="month_no" class="form-select" required>
+        <option value="">เลือกเดือน</option>
+        @for($m = 1; $m <= 12; $m++)
+            <option value="{{ $m }}">{{ $m }} - {{ $monthNames[$m] }}</option>
+        @endfor
+    </select>
+</div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">จังหวัด</label>
+                        <input type="text" name="province_name_th" class="form-control" value="พัทลุง" readonly>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">อำเภอ</label>
+                        <select name="district_name_th" class="form-select" required>
+                            <option value="">เลือกอำเภอ</option>
+                            @foreach($districts as $district)
+                                <option value="{{ $district }}">{{ $district }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">เพศ</label>
+                        <select name="sex_name_th" class="form-select" required>
+                            <option value="">เลือก</option>
+                            <option value="ชาย">ชาย</option>
+                            <option value="หญิง">หญิง</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">กลุ่มอายุ</label>
+                        <select name="age_group" class="form-select" required>
+                            <option value="">เลือก</option>
+                            <option value="0-5">0-5 ปี</option>
+                            <option value="6-24">6-24 ปี</option>
+                            <option value="25-59">25-59 ปี</option>
+                            <option value="60+">60 ปีขึ้นไป</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">สาเหตุการตาย</label>
+                        <input type="text" name="cause_of_death" class="form-control" placeholder="เช่น โรคหัวใจ" required>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">จำนวน</label>
+                        <input type="number" name="death_total" class="form-control text-end" value="0" min="0" required>
+                    </div>
+
+                    <div class="col-12 text-end mt-2">
+                        <button class="btn btn-success px-4 py-2">
+                            <i class="bi bi-save-fill me-1"></i>
+                            บันทึกข้อมูลใหม่
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{{-- ================== Import Excel FINAL ================== --}}
+<div class="section-card import-excel-card mt-3">
+    <form method="POST" action="{{ route('death_summary.import') }}" enctype="multipart/form-data">
+        @csrf
+
+        <div class="row g-4 align-items-stretch">
+
+            {{-- 🔹 ซ้าย --}}
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="import-icon">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold" style="font-size:20px;">
+                            นำเข้าข้อมูลการตายจาก Excel
+                        </div>
+                        <div class="text-muted" style="font-size:12px;">
+                            อัปโหลดไฟล์เพื่อเพิ่มข้อมูลจำนวนมาก
+                        </div>
+                    </div>
+                </div>
+
+                <div class="import-warning mb-3">
+                    <strong>⚠️ ข้อกำหนดสำคัญ</strong><br>
+                    • หัวตารางต้องตรงเป๊ะ ห้ามพิมพ์ผิด<br>
+                    • ต้องมี 8 คอลัมน์เท่านั้น<br>
+                    • ห้ามสลับลำดับคอลัมน์<br>
+                    • ถ้าไม่ตรง ระบบจะ “ไม่บันทึกข้อมูล”
+                </div>
+
+                <ul class="hint mb-0" style="padding-left:16px;">
+                    <li>กลุ่มอายุ: 0-5, 6-24, 25-59, 60+</li>
+                    <li>จำนวนผู้ตายต้องเป็นตัวเลข</li>
+                    <li>รองรับไฟล์ .xlsx, .xls, .csv</li>
+                </ul>
+            </div>
+
+            {{-- 🔹 ขวา --}}
+           <div class="col-lg-6 ps-lg-0">
+                <div class="h-100 p-3 rounded-4"
+                     style="background:#f8fbff;border:1px solid #dbeafe;">
+
+                    {{-- 📋 Header --}}
+                    <div class="import-example mb-3">
+                        <strong>📋 หัวตารางที่ถูกต้อง</strong>
+
+                       <div class="code-line mt-2"
+     style="white-space:nowrap; font-size:11px; padding:8px;">
+                            ปี | เดือน | ชื่อจังหวัด | ชื่ออำเภอ | ชื่อเพศ | กลุ่มอายุ | สาเหตุการตาย | จำนวนผู้ตาย
+                        </div>
+                    </div>
+
+                    {{-- 📊 Example --}}
+                    <div class="import-example mb-3">
+                        <strong>📊 ตัวอย่างข้อมูล</strong>
+
+                        <div class="code-line mt-2"
+                             style="white-space:nowrap; overflow-x:auto; font-size:12px;">
+                            2569 | 1 | พัทลุง | เมืองพัทลุง | ชาย | 60+ | โรคหัวใจ | 25
+                        </div>
+                    </div>
+
+                   {{-- Upload --}}
+<label class="form-label fw-semibold mb-1">เลือกไฟล์ Excel</label>
+
+<div class="d-flex align-items-stretch gap-2">
+
+    <input type="file"
+           name="excel_file"
+           class="form-control"
+           style="height:44px;"
+           accept=".xlsx,.xls,.csv"
+           required>
+
+    <button type="submit"
+            class="btn btn-success d-flex align-items-center justify-content-center"
+            style="height:44px; min-width:140px;">
+        <i class="bi bi-upload me-1"></i>
+        นำเข้า Excel
+    </button>
+
+</div>       </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+
 
                                     
                         <div class="section-card">
@@ -459,16 +622,16 @@
 
     {{-- เดือน --}}
     <div class="col-md-2">
-        <label class="form-label">เดือน</label>
-        <select name="month_no" class="form-select">
-            <option value="">ทั้งหมด</option>
-            @for($m = 1; $m <= 12; $m++)
-                <option value="{{ $m }}" {{ request('month_no') == $m ? 'selected' : '' }}>
-                    {{ $m }}
-                </option>
-            @endfor
-        </select>
-    </div>
+    <label class="form-label">เดือน</label>
+    <select name="month_no" class="form-select">
+        <option value="">ทั้งหมด</option>
+        @for($m = 1; $m <= 12; $m++)
+            <option value="{{ $m }}" {{ request('month_no') == $m ? 'selected' : '' }}>
+                {{ $m }} - {{ $monthNames[$m] }}
+            </option>
+        @endfor
+    </select>
+</div>
 
     {{-- อำเภอ --}}
     <div class="col-md-2">
@@ -511,7 +674,7 @@
     </div>
 
 </div>
-
+ </div>
                     </div>
                 </form>
             </div>
@@ -519,65 +682,75 @@
             <div class="section-card">
                 
                 <div class="table-tools">
-                    <div>
-                        <h5 class="fw-bold mb-1">
-                            <i class="bi bi-table me-1"></i>
-                            รายการข้อมูล
-                        </h5>
-                        <div class="text-muted" style="font-size:12px;">
-                            แสดง {{ $rows->firstItem() ?? 0 }} ถึง {{ $rows->lastItem() ?? 0 }} จากทั้งหมด {{ number_format($rows->total()) }} รายการ
-                        </div>
-                    </div>
+    <div>
+        <h5 class="fw-bold mb-1">
+            <i class="bi bi-table me-1"></i>
+            รายการข้อมูล
+        </h5>
+        <div class="text-muted" style="font-size:12px;">
+            แสดง {{ $rows->firstItem() ?? 0 }} ถึง {{ $rows->lastItem() ?? 0 }} จากทั้งหมด {{ number_format($rows->total()) }} รายการ
+        </div>
+    </div>
 
-                </div>
+    <button type="button" id="bulkDeleteBtn" class="btn btn-danger px-3" disabled>
+        <i class="bi bi-trash3-fill me-1"></i>
+        ลบรายการที่เลือก
+    </button>
+</div>
 
                 <div class="data-table-wrap">
                     <table class="table table-bordered align-middle" id="deathTable">
-                        <thead>
-                            <tr>
-                                <th>ปี</th>
-                                <th>เดือน</th>
-                                <th>จังหวัด</th>
-                                <th>อำเภอ</th>
-                                <th>เพศ</th>
-                                <th>กลุ่มอายุ</th>
-                                <th>สาเหตุการตาย</th>
-                                <th>จำนวน</th>
-                                <th width="120">จัดการ</th>
-                            </tr>
-                        </thead>
+                       <thead>
+<tr>
+    <th width="50">
+        <input type="checkbox" id="checkAll">
+    </th>
+    <th>ปี</th>
+    <th>เดือน</th>
+    <th>จังหวัด</th>
+    <th>อำเภอ</th>
+    <th>เพศ</th>
+    <th>กลุ่มอายุ</th>
+    <th>สาเหตุการตาย</th>
+    <th>จำนวน</th>
+    <th width="120">จัดการ</th>
+</tr>
+</thead>
 
                         <tbody>
             @forelse($rows as $row)
             <tr>
-                <td class="text-center">{{ $row->year_th }}</td>
-                <td class="text-center">{{ $row->month_no }}</td>
-                <td>{{ $row->province_name_th ?? 'พัทลุง' }}</td>
-                <td>{{ $row->district_name_th }}</td>
-                <td class="text-center">{{ $row->sex_name_th }}</td>
-                <td class="text-center">{{ $row->age_group }}</td>
-                <td>{{ $row->cause_of_death }}</td>
-                <td class="text-end fw-bold">{{ number_format($row->death_total) }}</td>
+    <td class="text-center">
+        <input type="checkbox" class="row-check" value="{{ $row->id }}">
+    </td>
+    <td class="text-center">{{ $row->year_th }}</td>
+    <td class="text-center">{{ $monthNames[(int)$row->month_no] ?? $row->month_no }}</td>
+    <td>{{ $row->province_name_th ?? 'พัทลุง' }}</td>
+    <td>{{ $row->district_name_th }}</td>
+    <td class="text-center">{{ $row->sex_name_th }}</td>
+    <td class="text-center">{{ $row->age_group }}</td>
+    <td>{{ $row->cause_of_death }}</td>
+    <td class="text-end fw-bold">{{ number_format($row->death_total) }}</td>
 
-                <td class="text-center">
-                    <button type="button"
-                            class="btn btn-warning btn-sm action-btn"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editModal{{ $row->id }}">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
+    <td class="text-center">
+        <button type="button"
+                class="btn btn-warning btn-sm action-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#editModal{{ $row->id }}">
+            <i class="bi bi-pencil-square"></i>
+        </button>
 
-                    <form method="POST"
-                        action="{{ route('death_summary.destroy', $row->id) }}"
-                        class="d-inline delete-form">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-danger btn-sm action-btn">
-                            <i class="bi bi-trash3-fill"></i>
-                        </button>
-                    </form>
-                </td>
-            </tr>
+        <form method="POST"
+              action="{{ route('death_summary.destroy', $row->id) }}"
+              class="d-inline delete-form">
+            @csrf
+            @method('DELETE')
+            <button class="btn btn-danger btn-sm action-btn">
+                <i class="bi bi-trash3-fill"></i>
+            </button>
+        </form>
+    </td>
+</tr>
 
             {{-- Modal แก้ไข --}}
             <div class="modal fade" id="editModal{{ $row->id }}" tabindex="-1">
@@ -614,8 +787,8 @@
                             <select name="month_no" class="form-select" required>
                                 @for($m = 1; $m <= 12; $m++)
                                     <option value="{{ $m }}" {{ $row->month_no == $m ? 'selected' : '' }}>
-                                        {{ $m }}
-                                    </option>
+    {{ $m }} - {{ $monthNames[$m] }}
+</option>
                                 @endfor
                             </select>
                         </div>
@@ -713,9 +886,9 @@ Swal.fire({
     title: 'สำเร็จ',
     text: '{{ session('success') }}',
     confirmButtonText: 'ตกลง',
-    confirmButtonColor: '#0f766e',
-    timer: 2200,
-    timerProgressBar: true
+    confirmButtonColor: '#16a34a',
+    allowOutsideClick: false,
+    allowEscapeKey: false
 });
 </script>
 @endif
@@ -783,9 +956,61 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const checkAll = document.getElementById('checkAll');
+const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 
+function updateBulkButton() {
+    const checked = document.querySelectorAll('.row-check:checked').length;
+    if (bulkDeleteBtn) {
+        bulkDeleteBtn.disabled = checked === 0;
+    }
+}
+
+checkAll?.addEventListener('change', function () {
+    document.querySelectorAll('.row-check').forEach(cb => {
+        cb.checked = this.checked;
+    });
+    updateBulkButton();
+});
+
+document.querySelectorAll('.row-check').forEach(cb => {
+    cb.addEventListener('change', updateBulkButton);
+});
+
+bulkDeleteBtn?.addEventListener('click', function () {
+    const ids = Array.from(document.querySelectorAll('.row-check:checked'))
+        .map(cb => cb.value);
+
+    Swal.fire({
+        icon: 'warning',
+        title: 'ยืนยันการลบ?',
+        text: `ต้องการลบ ${ids.length} รายการใช่ไหม`,
+        showCancelButton: true,
+        confirmButtonText: 'ลบข้อมูล',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#dc2626',
+        cancelButtonColor: '#64748b'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = "{{ route('death_summary.bulk_destroy') }}";
+
+            form.innerHTML = `
+                @csrf
+                <input type="hidden" name="ids" value="${ids.join(',')}">
+            `;
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
+</script>
 </body>
 </html>

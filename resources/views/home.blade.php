@@ -196,69 +196,153 @@
 
 <section class="section-space" id="strategies">
   <div class="container">
+
     <div class="section-heading">
       <div class="section-kicker">
         <i class="bi bi-compass-fill"></i>
         4 ยุทธศาสตร์หลัก
       </div>
+
       <h2>พัทลุงมหานครแห่งความสุข</h2>
-      <p>เชื่อมโยงข้อมูลเพื่อขับเคลื่อนการพัฒนาคุณภาพชีวิตของประชาชน</p>
+
+      <p>
+        เชื่อมโยงข้อมูลเพื่อขับเคลื่อนการพัฒนาคุณภาพชีวิตของประชาชน
+      </p>
     </div>
 
     <div class="row g-4">
+
+      {{-- ยุทธศาสตร์ 1 --}}
       <div class="col-md-6 col-xl-3">
-        <a href="{{ route('health_status') }}" class="strategy-card" style="--main:#dc6b6b;--soft:rgba(220,107,107,.12);">
+
+        <div class="strategy-card"
+             style="--main:#dc6b6b;--soft:rgba(220,107,107,.12);">
+
           <div class="strategy-inner">
-            <div class="strategy-icon" style="background:linear-gradient(135deg,#dc6b6b,#b64d4d);"><i class="bi bi-heart-pulse-fill"></i></div>
-            <div class="strategy-tag">ยุทธศาสตร์ที่ 1</div>
+
+            <div class="strategy-icon"
+                 style="background:linear-gradient(135deg,#dc6b6b,#b64d4d);">
+              <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+
+            <div class="strategy-tag">
+              ยุทธศาสตร์ที่ 1
+            </div>
+
             <h5>เมืองคนคุณภาพชีวิตที่ดี</h5>
-            <p>สุขภาพ บ้านสุขภาวะ สวัสดิการ ความปลอดภัย และคุณภาพชีวิตทุกช่วงวัย</p>
-            <div class="strategy-link"><span>ดูข้อมูลสุขภาพ</span><i class="bi bi-arrow-right"></i></div>
+
+            <p>
+              สุขภาพ บ้านสุขภาวะ สวัสดิการ ความปลอดภัย และคุณภาพชีวิตทุกช่วงวัย
+            </p>
+
+            <div class="strategy-link">
+              <span>ดูข้อมูลสุขภาพ</span>
+              <i class="bi bi-arrow-right"></i>
+            </div>
+
           </div>
-        </a>
+        </div>
       </div>
 
+      {{-- ยุทธศาสตร์ 2 --}}
       <div class="col-md-6 col-xl-3">
-        <a href="{{ route('dashboard') }}" class="strategy-card" style="--main:#c58a42;--soft:rgba(197,138,66,.13);">
+
+        <div class="strategy-card"
+             style="--main:#c58a42;--soft:rgba(197,138,66,.13);">
+
           <div class="strategy-inner">
-            <div class="strategy-icon" style="background:linear-gradient(135deg,#d8a15f,#b77935);"><i class="bi bi-graph-up-arrow"></i></div>
-            <div class="strategy-tag">ยุทธศาสตร์ที่ 2</div>
+
+            <div class="strategy-icon"
+                 style="background:linear-gradient(135deg,#d8a15f,#b77935);">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+
+            <div class="strategy-tag">
+              ยุทธศาสตร์ที่ 2
+            </div>
+
             <h5>เมืองเศรษฐกิจยั่งยืน</h5>
-            <p>เศรษฐกิจเกื้อกูล สินค้าและบริการสร้างสรรค์จากฐานภูมิปัญญาและทรัพยากรพื้นที่</p>
-            <div class="strategy-link"><span>ดูข้อมูลภาพรวม</span><i class="bi bi-arrow-right"></i></div>
+
+            <p>
+              เศรษฐกิจเกื้อกูล สินค้าและบริการสร้างสรรค์จากฐานภูมิปัญญาและทรัพยากรพื้นที่
+            </p>
+
+            <div class="strategy-link">
+              <span>ดูข้อมูลเศรษฐกิจ</span>
+              <i class="bi bi-arrow-right"></i>
+            </div>
+
           </div>
-        </a>
+        </div>
       </div>
 
+      {{-- ยุทธศาสตร์ 3 --}}
       <div class="col-md-6 col-xl-3">
-        <a href="{{ route('dashboard') }}" class="strategy-card" style="--main:#29967f;--soft:rgba(41,150,127,.12);">
+
+        <div class="strategy-card"
+             style="--main:#29967f;--soft:rgba(41,150,127,.12);">
+
           <div class="strategy-inner">
-            <div class="strategy-icon" style="background:linear-gradient(135deg,#35b79c,#227967);"><i class="bi bi-tree-fill"></i></div>
-            <div class="strategy-tag">ยุทธศาสตร์ที่ 3</div>
+
+            <div class="strategy-icon"
+                 style="background:linear-gradient(135deg,#35b79c,#227967);">
+              <i class="bi bi-tree-fill"></i>
+            </div>
+
+            <div class="strategy-tag">
+              ยุทธศาสตร์ที่ 3
+            </div>
+
             <h5>เมืองสิ่งแวดล้อมยั่งยืน</h5>
-            <p>คนอยู่ได้ ป่าอยู่ดี จัดการน้ำ อาหารใกล้บ้าน อาหารเป็นยา และสิ่งแวดล้อมสมดุล</p>
-            <div class="strategy-link"><span>ดูข้อมูลพื้นที่</span><i class="bi bi-arrow-right"></i></div>
+
+            <p>
+              คนอยู่ได้ ป่าอยู่ดี จัดการน้ำ อาหารใกล้บ้าน อาหารเป็นยา และสิ่งแวดล้อมสมดุล
+            </p>
+
+            <div class="strategy-link">
+              <span>ดูข้อมูลพื้นที่</span>
+              <i class="bi bi-arrow-right"></i>
+            </div>
+
           </div>
-        </a>
+        </div>
       </div>
 
+      {{-- ยุทธศาสตร์ 4 --}}
       <div class="col-md-6 col-xl-3">
-        <a href="{{ route('welfare.index') }}" class="strategy-card" style="--main:#8b5aa5;--soft:rgba(139,90,165,.12);">
+
+        <div class="strategy-card"
+             style="--main:#8b5aa5;--soft:rgba(139,90,165,.12);">
+
           <div class="strategy-inner">
-            <div class="strategy-icon" style="background:linear-gradient(135deg,#a56ac4,#70428a);"><i class="bi bi-people-fill"></i></div>
-            <div class="strategy-tag">ยุทธศาสตร์ที่ 4</div>
+
+            <div class="strategy-icon"
+                 style="background:linear-gradient(135deg,#a56ac4,#70428a);">
+              <i class="bi bi-people-fill"></i>
+            </div>
+
+            <div class="strategy-tag">
+              ยุทธศาสตร์ที่ 4
+            </div>
+
             <h5>เมืองของพลเมือง</h5>
-            <p>พลเมืองเข้มแข็ง การศึกษา วัฒนธรรม ทุนปัญญา และการมีส่วนร่วมของชุมชน</p>
-            <div class="strategy-link"><span>ดูข้อมูลสวัสดิการ</span><i class="bi bi-arrow-right"></i></div>
+
+            <p>
+              พลเมืองเข้มแข็ง การศึกษา วัฒนธรรม ทุนปัญญา และการมีส่วนร่วมของชุมชน
+            </p>
+
+            <div class="strategy-link">
+              <span>ดูข้อมูลสวัสดิการ</span>
+              <i class="bi bi-arrow-right"></i>
+            </div>
+
           </div>
-        </a>
+        </div>
       </div>
+
     </div>
   </div>
 </section>
-
-
-
 <footer class="site-footer">
   <div class="container">
     <div class="d-flex flex-column flex-lg-row align-items-start align-items-lg-center justify-content-between gap-3">

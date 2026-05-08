@@ -31,6 +31,9 @@ use App\Http\Controllers\EmphIncidenceAllController;
 use App\Http\Controllers\LcIncidenceAllController;
 use App\Http\Controllers\DeathDashboardController;
 use App\Http\Controllers\DeathSummaryManageController;
+use App\Http\Controllers\EducationDashboardController;
+use App\Http\Controllers\EconomyController; 
+
 
 
 /*
@@ -53,7 +56,9 @@ Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])->name('sqlsrv
 // ======================
 // Household
 // ======================
-Route::get('/household_64', [Household64Controller::class, 'index'])->name('household_64');
+Route::get('/household_64', [Household64Controller::class, 'index'])
+    ->name('household_64');
+Route::get('/household_64/export', [Household64Controller::class, 'export'])->name('household_64.export');
 
 // ======================
 // Welfare
@@ -259,3 +264,26 @@ Route::put('/death-summary-manage/{id}', [DeathSummaryManageController::class, '
 
 Route::delete('/death-summary-manage/{id}', [DeathSummaryManageController::class, 'destroy'])
     ->name('death_summary.destroy');
+Route::get('/death-summary/template', [DeathSummaryManageController::class, 'downloadTemplate'])
+    ->name('death_summary.template');
+Route::post('/death-summary/bulk-destroy', [DeathSummaryManageController::class, 'bulkDestroy'])
+    ->name('death_summary.bulk_destroy');
+
+
+
+Route::get('/education', [EducationDashboardController::class, 'index'])
+    ->name('education.dashboard');
+Route::get('/education/export', [EducationDashboardController::class, 'export'])
+    ->name('education.export');
+
+Route::get('/economy', [EconomyController::class, 'index'])->name('economy.index');
+Route::get('/economy', [EconomyController::class, 'index'])
+    ->name('economy.index');
+Route::get('/economy/export', [EconomyController::class, 'export'])
+    ->name('economy.export');
+
+Route::get('/health/export', [HealthController::class, 'export'])
+    ->name('health.export');
+
+Route::get('/welfare/export', [WelfareController::class, 'export'])
+    ->name('welfare.export');

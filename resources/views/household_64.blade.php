@@ -161,16 +161,16 @@
     color:#0f172a;
   }
 
-  .ga-filter-actions{
-    margin-top:16px;
-    padding-top:16px;
-    border-top:1px dashed #d8e8ef;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
-  }
+ .ga-filter-actions{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px dashed #d8e8ef;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
 
   .ga-filter-actions-text{
     display:flex;
@@ -498,11 +498,34 @@
 
   @media (max-width: 992px){
     .ga-filter-actions{
+      justify-content:flex-start;
       flex-direction:column;
       align-items:stretch;
     }
   }
+.ga-btn-export{
+    background:linear-gradient(135deg,#16a34a 0%,#22c55e 100%);
+    border:none;
+    color:#fff;
+    border-radius:16px;
+    min-height:48px;
+    padding:0 18px;
+    font-size:13px;
+    font-weight:700;
+    box-shadow:0 10px 22px rgba(34,197,94,.22);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:.2s ease;
+    text-decoration:none;
+}
 
+.ga-btn-export:hover{
+    color:#fff;
+    transform:translateY(-2px);
+    box-shadow:0 14px 28px rgba(34,197,94,.28);
+}
   @media (max-width: 768px){
     .page-wrap{
       padding:0 12px 24px;
@@ -543,7 +566,50 @@
     .loading-text{
       font-size: 14px;
     }
+    
   }
+  .detail-section{
+  background:#ffffff;
+  border:1px solid #dbe7ef;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 8px 18px rgba(15,23,42,.05);
+}
+
+.detail-section-title{
+  padding:11px 14px;
+  background:linear-gradient(135deg,#eef7f7,#f8fbff);
+  border-bottom:1px solid #dbe7ef;
+  font-size:13px;
+  font-weight:700;
+  color:#0B5B6B;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.detail-table{
+  font-size:13px;
+}
+
+.detail-table th{
+  width:22%;
+  background:#f8fafc;
+  color:#475569;
+  font-weight:700;
+  border-color:#e5edf4 !important;
+  padding:10px 12px !important;
+  white-space:nowrap;
+}
+
+.detail-table td{
+  width:28%;
+  color:#0f172a;
+  font-weight:600;
+  border-color:#e5edf4 !important;
+  padding:10px 12px !important;
+  background:#fff;
+}
 </style>
 </head>
 
@@ -625,46 +691,140 @@
 
     <div class="ga-filter-card">
       <form method="GET" action="{{ route('household_64') }}" id="searchForm">
+        @php
+  $actionUrl = route('household_64');
+
+  $baseQueryParams = array_filter([
+      'q' => $q,
+      'survey_year' => $survey_year,
+      'HC' => $HC,
+      'popid' => $popid,
+      'TEL' => $TEL,
+  ], fn($v) => $v !== '' && $v !== null);
+@endphp
+
+<div class="row g-3 align-items-end mb-3">
+  <div class="col-md-3">
+    <label class="ga-filter-label">อำเภอ</label>
+    <div class="dropdown">
+      <button class="btn ga-btn-light w-100 dropdown-toggle"
+        type="button"
+        data-bs-toggle="dropdown"
+        data-no-loading="1">
+    <i class="bi bi-geo-alt-fill me-1"></i>
+    {{ !empty($district_name_thai) ? "อ.{$district_name_thai}" : "เลือกอำเภอ" }}
+</button>
+
+      <ul class="dropdown-menu rounded-4 border-0 shadow w-100">
+        <li>
+          <a class="dropdown-item text-danger"
+             href="{{ $actionUrl }}?{{ http_build_query(array_merge($baseQueryParams, [
+               'district_name_thai'=>'',
+               'tambon_name_thai'=>'',
+             ])) }}">
+            ล้างตัวกรองอำเภอ
+          </a>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+
+        @foreach($districtList ?? [] as $d)
+          <li>
+            <a class="dropdown-item"
+               href="{{ $actionUrl }}?{{ http_build_query(array_merge($baseQueryParams, [
+                 'district_name_thai'=>$d,
+                 'tambon_name_thai'=>'',
+               ])) }}">
+              อ.{{ $d }}
+            </a>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <label class="ga-filter-label">ตำบล</label>
+    <div class="dropdown">
+      <button class="btn ga-btn-light w-100 dropdown-toggle"
+        type="button"
+        data-bs-toggle="dropdown"
+        data-no-loading="1"
+        @if(empty($district_name_thai)) disabled @endif>
+    <i class="bi bi-pin-map-fill me-1"></i>
+    {{ !empty($tambon_name_thai) ? "ต.{$tambon_name_thai}" : "เลือกตำบล" }}
+</button>
+
+      <ul class="dropdown-menu rounded-4 border-0 shadow w-100">
+        <li>
+          <a class="dropdown-item text-danger"
+             href="{{ $actionUrl }}?{{ http_build_query(array_merge($baseQueryParams, [
+               'district_name_thai'=>$district_name_thai,
+               'tambon_name_thai'=>'',
+             ])) }}">
+            ล้างตัวกรองตำบล
+          </a>
+        </li>
+
+        <li><hr class="dropdown-divider"></li>
+
+        @foreach($subdistrictList ?? [] as $sd)
+         <li>
+    <a class="dropdown-item"
+       data-no-loading="1"
+       href="{{ $actionUrl }}?{{ http_build_query(array_merge($baseQueryParams, [
+            'district_name_thai'=>$district_name_thai,
+            'tambon_name_thai'=>$sd,
+       ])) }}">
+        ต.{{ $sd }}
+    </a>
+</li>
+        @endforeach
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <label class="ga-filter-label">ส่งออกรายงาน</label>
+    <a class="ga-btn-export w-100 justify-content-center"
+       href="{{ route('household_64.export', request()->query()) }}"
+       onclick="showLoading(); setTimeout(hideLoading, 2500);">
+      <i class="bi bi-file-earmark-excel-fill"></i>
+      Export Excel
+    </a>
+  </div>
+
+  <div class="col-md-3">
+    <label class="ga-filter-label">รีเซ็ตตัวกรอง</label>
+    <a class="btn ga-btn-light w-100" href="{{ route('household_64') }}">
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      ล้างทั้งหมด
+    </a>
+  </div>
+</div>
         @foreach(request()->except('q','page') as $k => $v)
           @if(is_scalar($v) && $v !== '' && $v !== null)
             <input type="hidden" name="{{ $k }}" value="{{ $v }}">
           @endif
         @endforeach
 
-        <div class="row g-3 align-items-end">
-          <div class="col-lg-8">
-            <label class="ga-filter-label">ค้นหาข้อมูล</label>
-            <div class="input-group">
-              <span class="input-group-text ga-filter bg-white">
-                <i class="bi bi-search text-secondary"></i>
-              </span>
-              <input name="q" value="{{ $q }}" class="form-control ga-filter border-start-0"
-                     placeholder="ค้นหา (HC / ชื่อ / หมู่บ้าน / popid / TEL ...)">
+ <div class="ga-filter-actions">
+
+    <div class="ga-filter-actions-text">
+        <i class="bi bi-info-circle"></i>
+
+        <div>
+            <div style="font-weight:700; color:#0f172a;">
+                ข้อมูลตามตัวกรองปัจจุบัน
             </div>
-          </div>
 
-          <div class="col-md-2 col-lg-2">
-            <button class="btn ga-btn w-100" type="submit">
-              <i class="bi bi-search me-1"></i> ค้นหา
-            </button>
-          </div>
-
-          <div class="col-md-2 col-lg-2">
-            <a href="{{ route('household_64') }}" class="btn ga-btn-light w-100">
-              <i class="bi bi-arrow-clockwise me-1"></i> ล้างข้อมูล
-            </a>
-          </div>
+            <div style="font-size:12px; color:#64748b;">
+                กด Enter ในช่องกรองตารางเพื่อค้นหาได้ทันที
+            </div>
         </div>
+    </div>
 
-        <div class="ga-filter-actions">
-          <div class="ga-filter-actions-text">
-            <i class="bi bi-info-circle"></i>
-            <div>
-              <div style="font-weight:700; color:#0f172a;">ข้อมูลตามตัวกรองปัจจุบัน</div>
-              <div style="font-size:12px; color:#64748b;">กด Enter ในช่องกรองตารางเพื่อค้นหาได้ทันที</div>
-            </div>
-          </div>
-
+  
           <div class="ga-chip">
             พบข้อมูลตามเงื่อนไข <strong>{{ number_format($debugCount) }}</strong> แถว
           </div>
@@ -716,72 +876,122 @@
         <div class="table-responsive">
           <table class="table ga-table table-hover align-middle mb-0 text-nowrap">
             <thead>
-              <tr>
-                <th>เลขครัวเรือน</th>
-                <th>ปี</th>
-                <th>ครั้ง</th>
-                <th>สมุดเกษตร</th>
-                <th>เลขเกษตร</th>
-                <th>บ้านเลขที่</th>
-                <th>หมู่ที่</th>
-                <th>หมู่บ้าน</th>
-                <th>ตำบล</th>
-                <th>อำเภอ</th>
-                <th>จังหวัด</th>
-                <th>ไปรษณีย์</th>
-                <th>คำนำหน้า</th>
-                <th>ชื่อ</th>
-                <th>เลขบัตร</th>
-                <th>โทร</th>
-              </tr>
 
-              <tr class="filter-row">
-                <th><input name="HC" value="{{ $HC }}" class="form-control form-control-sm" placeholder="เลขครัวเรือน"></th>
+<tr>
+    <th>เลขครัวเรือน</th>
+    <th>ปี</th>
+    <th>เลขบัตรประชาชน</th>
+    <th>บ้านเลขที่</th>
+    <th>หมู่ที่</th>
+    <th>หมู่บ้าน</th>
+    <th>ตำบล</th>
+    <th>อำเภอ</th>
+    <th>ชื่อ</th>
+    <th>โทร</th>
+    <th>รายละเอียด</th>
+</tr>
 
-                <th>
-                  <select name="survey_year" class="form-select form-select-sm">
-                    <option value="">ทั้งหมด</option>
-                    @foreach($yearList as $y)
-                      <option value="{{ $y }}" @selected((string)$survey_year === (string)$y)>{{ $y }}</option>
-                    @endforeach
-                  </select>
-                </th>
+<tr class="filter-row">
 
-                <th><input name="survey_no" value="{{ $survey_no }}" class="form-control form-control-sm" placeholder="ครั้ง"></th>
+    <th>
+        <input name="HC"
+               value="{{ $HC }}"
+               class="form-control form-control-sm"
+               placeholder="เลขครัวเรือน">
+    </th>
 
-                <th>
-                  <select name="AGRI" class="form-select form-select-sm">
-                    <option value="">ทั้งหมด</option>
-                    <option value="1" @selected($AGRI=='1' || $AGRI=='มี')>มี</option>
-                    <option value="0" @selected($AGRI=='0' || $AGRI=='ไม่มี')>ไม่มี</option>
-                  </select>
-                </th>
+    <th>
+        <select name="survey_year" class="form-select form-select-sm">
+            <option value="">ทั้งหมด</option>
 
-                <th><input name="AGRI_NO" value="{{ $AGRI_NO }}" class="form-control form-control-sm" placeholder="เลขเกษตร"></th>
-                <th><input name="MBNO" value="{{ $MBNO }}" class="form-control form-control-sm" placeholder="บ้านเลขที่"></th>
-                <th><input name="MB" value="{{ $MB }}" class="form-control form-control-sm" placeholder="หมู่ที่"></th>
-                <th><input name="MM" value="{{ $MM }}" class="form-control form-control-sm" placeholder="หมู่บ้าน"></th>
+            @foreach($yearList as $y)
+                <option value="{{ $y }}"
+                    @selected((string)$survey_year === (string)$y)>
+                    {{ $y }}
+                </option>
+            @endforeach
+        </select>
+    </th>
 
-                <th><input name="tambon_name_thai" value="{{ $tambon_name_thai }}" class="form-control form-control-sm" placeholder="ตำบล"></th>
-                <th><input name="district_name_thai" value="{{ $district_name_thai }}" class="form-control form-control-sm" placeholder="อำเภอ"></th>
-                <th><input name="province_name_thai" value="{{ $province_name_thai }}" class="form-control form-control-sm" placeholder="จังหวัด"></th>
-                <th><input name="POSTCODE" value="{{ $POSTCODE }}" class="form-control form-control-sm" placeholder="ไปรษณีย์"></th>
+    <th>
+        <input name="popid"
+               value="{{ $popid }}"
+               class="form-control form-control-sm"
+               placeholder="เลขบัตร">
+    </th>
 
-                <th>
-                  <select name="PREFIX" class="form-select form-select-sm">
-                    <option value="">ทั้งหมด</option>
-                    @foreach($prefixMap as $k => $label)
-                      <option value="{{ $k }}" @selected((string)$PREFIX === (string)$k)>{{ $k }} - {{ $label }}</option>
-                    @endforeach
-                  </select>
-                </th>
+    <th>
+        <input name="MBNO"
+               value="{{ $MBNO }}"
+               class="form-control form-control-sm"
+               placeholder="บ้านเลขที่">
+    </th>
 
-                <th><input name="PERSON" value="{{ $PERSON }}" class="form-control form-control-sm" placeholder="ชื่อ"></th>
-                <th><input name="popid" value="{{ $popid }}" class="form-control form-control-sm" placeholder="เลขบัตร"></th>
-                <th><input name="TEL" value="{{ $TEL }}" class="form-control form-control-sm" placeholder="โทร"></th>
-              </tr>
-            </thead>
+    <th>
+        <input name="MB"
+               value="{{ $MB }}"
+               class="form-control form-control-sm"
+               placeholder="หมู่ที่">
+    </th>
 
+    <th>
+        <input name="MM"
+               value="{{ $MM }}"
+               class="form-control form-control-sm"
+               placeholder="หมู่บ้าน">
+    </th>
+
+    <th>
+    <select name="tambon_name_thai"
+            class="form-select form-select-sm">
+
+        <option value="">ตำบล</option>
+
+        @foreach($subdistrictList ?? [] as $sd)
+            <option value="{{ $sd }}"
+                @selected($tambon_name_thai == $sd)>
+                {{ $sd }}
+            </option>
+        @endforeach
+
+    </select>
+</th>
+
+<th>
+    <select name="district_name_thai"
+            class="form-select form-select-sm">
+
+        <option value="">อำเภอ</option>
+
+        @foreach($districtList ?? [] as $d)
+            <option value="{{ $d }}"
+                @selected($district_name_thai == $d)>
+                {{ $d }}
+            </option>
+        @endforeach
+
+    </select>
+</th>
+
+    <th>
+        <input name="PERSON"
+               value="{{ $PERSON }}"
+               class="form-control form-control-sm"
+               placeholder="ชื่อ">
+    </th>
+
+    <th>
+        <input name="TEL"
+               value="{{ $TEL }}"
+               class="form-control form-control-sm"
+               placeholder="โทร">
+    </th>
+
+    <th></th>
+
+</tr>
+
+</thead>
             <tbody>
             @forelse($surveys as $row)
               @php
@@ -792,53 +1002,92 @@
                 $prefixLabel = $prefixMap[$prefixVal] ?? ($prefixVal ?: '-');
               @endphp
 
-              <tr>
-                <td class="fw-semibold">{{ data_get($row,'HC') ?: '-' }}</td>
-                <td>{{ data_get($row,'survey_year') ?: '-' }}</td>
-                <td>{{ data_get($row,'survey_no') ?: '-' }}</td>
+              
+               <tr>
 
-                <td>
-                  @if($hasAgri)
-                    <span class="ga-badge-soft ga-badge-green">มี</span>
-                  @else
-                    <span class="ga-badge-soft ga-badge-red">ไม่มี</span>
-                  @endif
-                </td>
+    <td class="fw-semibold">
+        {{ data_get($row,'HC') ?: '-' }}
+    </td>
 
-                <td>{{ $hasAgri ? (data_get($row,'AGRI_NO') ?: '-') : '-' }}</td>
-                <td>{{ data_get($row,'MBNO') ?: '-' }}</td>
-                <td>{{ data_get($row,'MB') ?: '-' }}</td>
-                <td>{{ data_get($row,'MM') ?: '-' }}</td>
+    <td>
+        {{ data_get($row,'survey_year') ?: '-' }}
+    </td>
 
-                <td>
-                  {{ data_get($row,'tambon_name_thai') ?: '-' }}
-                  <div class="subcode">{{ data_get($row,'TMP') ?: '-' }}</div>
-                </td>
+    <td class="font-monospace">
+        {{ data_get($row,'popid') ?: '-' }}
+    </td>
 
-                <td>
-                  {{ data_get($row,'district_name_thai') ?: '-' }}
-                  <div class="subcode">{{ data_get($row,'AMP') ?: '-' }}</div>
-                </td>
+    <td>
+        {{ data_get($row,'MBNO') ?: '-' }}
+    </td>
 
-                <td>
-                  {{ data_get($row,'province_name_thai') ?: '-' }}
-                  <div class="subcode">{{ data_get($row,'JUN') ?: '-' }}</div>
-                </td>
+    <td>
+        {{ data_get($row,'MB') ?: '-' }}
+    </td>
 
-                <td>{{ data_get($row,'POSTCODE') ?: '-' }}</td>
+    <td>
+        {{ data_get($row,'MM') ?: '-' }}
+    </td>
 
-                <td>
-                  {{ $prefixLabel }}
-                  <div class="subcode">{{ $prefixVal ?: '-' }}</div>
-                </td>
+    <td>
+        {{ data_get($row,'tambon_name_thai') ?: '-' }}
+    </td>
 
-                <td>{{ data_get($row,'PERSON') ?: '-' }}</td>
-                <td class="font-monospace">{{ data_get($row,'popid') ?: '-' }}</td>
-                <td>{{ data_get($row,'TEL') ?: '-' }}</td>
-              </tr>
+    <td>
+        {{ data_get($row,'district_name_thai') ?: '-' }}
+    </td>
+
+    <td>
+        {{ data_get($row,'PERSON') ?: '-' }}
+    </td>
+
+    <td>
+        {{ data_get($row,'TEL') ?: '-' }}
+    </td>
+
+    <td class="text-end pe-3" style="width:1%;white-space:nowrap;">
+
+    <button type="button"
+            class="btn btn-sm fw-semibold d-inline-flex align-items-center gap-1"
+            style="
+                background:linear-gradient(135deg,#0ea5a4 0%,#2d74da 100%);
+                color:#fff;
+                border:none;
+                border-radius:14px;
+                padding:.5rem .9rem;
+                box-shadow:0 8px 18px rgba(45,116,218,.18);
+            "
+            data-bs-toggle="modal"
+            data-bs-target="#householdDetailModal"
+
+            data-hc="{{ data_get($row,'HC') }}"
+            data-year="{{ data_get($row,'survey_year') }}"
+            data-survey-no="{{ data_get($row,'survey_no') }}"
+            data-agri="{{ $hasAgri ? 'มี' : 'ไม่มี' }}"
+            data-agri-no="{{ data_get($row,'AGRI_NO') }}"
+            data-mbno="{{ data_get($row,'MBNO') }}"
+            data-mb="{{ data_get($row,'MB') }}"
+            data-mm="{{ data_get($row,'MM') }}"
+            data-tambon="{{ data_get($row,'tambon_name_thai') }}"
+            data-district="{{ data_get($row,'district_name_thai') }}"
+            data-province="{{ data_get($row,'province_name_thai') }}"
+            data-postcode="{{ data_get($row,'POSTCODE') }}"
+            data-prefix="{{ $prefixLabel }}"
+            data-person="{{ data_get($row,'PERSON') }}"
+            data-popid="{{ data_get($row,'popid') }}"
+            data-tel="{{ data_get($row,'TEL') }}">
+
+        <i class="bi bi-eye"></i>
+        <span>ดูรายละเอียด</span>
+
+    </button>
+
+</td>
+
+</tr>
             @empty
               <tr>
-                <td colspan="16" class="text-center ga-empty">ไม่มีข้อมูล</td>
+                <td colspan="17" class="text-center ga-empty">ไม่มีข้อมูล</td>
               </tr>
             @endforelse
             </tbody>
@@ -855,6 +1104,117 @@
 
   </div>
 </div>
+<div class="modal fade" id="householdDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:18px; overflow:hidden;">
+
+      <div class="modal-header text-white border-0"
+           style="background:linear-gradient(135deg,#0B5B6B,#0B7F6F);">
+        <div>
+          <h6 class="modal-title fw-bold mb-1">
+            <i class="bi bi-house-door-fill me-2"></i>
+            รายละเอียดข้อมูลครัวเรือน
+          </h6>
+          <div style="font-size:12px; opacity:.85;">
+            ข้อมูลจากฐานข้อมูลครัวเรือนจังหวัดพัทลุง
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="background:#f4f8fb; padding:18px;">
+
+        <div class="detail-section">
+          <div class="detail-section-title">
+            <i class="bi bi-card-checklist"></i> ข้อมูลหลัก
+          </div>
+
+          <table class="table detail-table mb-0">
+            <tbody>
+              <tr>
+                <th>เลขครัวเรือน</th>
+                <td id="d_hc">-</td>
+                <th>ปีที่สำรวจ</th>
+                <td id="d_year">-</td>
+              </tr>
+              <tr>
+                <th>ครั้งที่สำรวจ</th>
+                <td id="d_surveyNo">-</td>
+                <th>สมุดเกษตร</th>
+                <td id="d_agri">-</td>
+              </tr>
+              <tr>
+                <th>เลขเกษตร</th>
+                <td id="d_agriNo">-</td>
+                <th>รหัสไปรษณีย์</th>
+                <td id="d_postcode">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="detail-section mt-3">
+          <div class="detail-section-title">
+            <i class="bi bi-geo-alt-fill"></i> ที่อยู่
+          </div>
+
+          <table class="table detail-table mb-0">
+            <tbody>
+              <tr>
+                <th>บ้านเลขที่</th>
+                <td id="d_mbno">-</td>
+                <th>หมู่ที่</th>
+                <td id="d_mb">-</td>
+              </tr>
+              <tr>
+                <th>หมู่บ้าน</th>
+                <td id="d_mm">-</td>
+                <th>ตำบล</th>
+                <td id="d_tambon">-</td>
+              </tr>
+              <tr>
+                <th>อำเภอ</th>
+                <td id="d_district">-</td>
+                <th>จังหวัด</th>
+                <td id="d_province">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="detail-section mt-3">
+          <div class="detail-section-title">
+            <i class="bi bi-person-vcard-fill"></i> ข้อมูลบุคคล/ติดต่อ
+          </div>
+
+          <table class="table detail-table mb-0">
+            <tbody>
+              <tr>
+                
+                <th>ชื่อผู้ให้ข้อมูล</th>
+                <td id="d_person">-</td>
+              </tr>
+              <tr>
+                <th>เลขบัตรประชาชน</th>
+                <td id="d_popid" class="font-monospace">-</td>
+                <th>เบอร์โทรศัพท์</th>
+                <td id="d_tel" class="font-monospace">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="modal-footer border-0 bg-white">
+        <button class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+          ปิด
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
 
 <div id="loadingOverlay" class="loading-overlay">
   <div class="loading-modal">
@@ -867,6 +1227,8 @@
 
 <script>
 function showLoading() {
+  
+
   const overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.style.display = 'flex';
 }
@@ -911,23 +1273,72 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }
 
-  document.querySelectorAll('a[href]').forEach(link => {
+ document.querySelectorAll('a[href]').forEach(link => {
+  link.addEventListener('click', function(){
     if (
-      link.href &&
-      !link.href.startsWith('javascript:') &&
-      !link.hasAttribute('target') &&
-      !link.dataset.bsToggle
+      link.classList.contains('dropdown-item') ||
+      link.href.includes('/export') ||
+      link.dataset.noLoading === '1'
     ) {
-      link.addEventListener('click', function(){
-        showLoading();
-      });
+      return;
     }
-  });
 
+    showLoading();
+  });
+});
+const detailModal = document.getElementById('householdDetailModal');
+
+if (detailModal) {
+  detailModal.addEventListener('show.bs.modal', function (event) {
+    const btn = event.relatedTarget;
+
+    [
+      'hc','year','surveyNo','agri','agriNo','mbno','mb','mm',
+      'tambon','district','province','postcode','prefix','person','popid','tel'
+    ].forEach(key => {
+      const el = document.getElementById('d_' + key);
+      if (el) el.textContent = btn.dataset[key] || '-';
+    });
+  });
+}
   window.addEventListener('pageshow', function(){
     hideLoading();
   });
+
 });
+const householdDetailModal = document.getElementById('householdDetailModal');
+
+if (householdDetailModal) {
+
+    householdDetailModal.addEventListener('show.bs.modal', function (event) {
+
+        const btn = event.relatedTarget;
+
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value || '-';
+        };
+
+        setText('d_hc', btn.dataset.hc);
+        setText('d_year', btn.dataset.year);
+        setText('d_surveyNo', btn.dataset.surveyNo);
+        setText('d_agri', btn.dataset.agri);
+        setText('d_agriNo', btn.dataset.agriNo);
+        setText('d_mbno', btn.dataset.mbno);
+        setText('d_mb', btn.dataset.mb);
+        setText('d_mm', btn.dataset.mm);
+        setText('d_tambon', btn.dataset.tambon);
+        setText('d_district', btn.dataset.district);
+        setText('d_province', btn.dataset.province);
+        setText('d_postcode', btn.dataset.postcode);
+        setText('d_prefix', btn.dataset.prefix);
+        setText('d_person', btn.dataset.person);
+        setText('d_popid', btn.dataset.popid);
+        setText('d_tel', btn.dataset.tel);
+
+    });
+
+}
 </script>
 
 </body>

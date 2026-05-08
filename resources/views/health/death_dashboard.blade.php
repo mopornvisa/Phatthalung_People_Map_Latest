@@ -752,30 +752,30 @@ body{
 
    <div class="filter-action">
 
-    <button type="submit" class="btn btn-main">
-        <i class="bi bi-search me-1"></i>
-        <span>ค้นหาข้อมูล</span>
-    </button>
+            <button type="submit" class="btn btn-main">
+                <i class="bi bi-search me-1"></i>
+                <span>ค้นหาข้อมูล</span>
+            </button>
 
-    <a href="{{ route('health.death_dashboard.export', request()->query()) }}" class="btn btn-soft export-btn">
-        <i class="bi bi-file-earmark-excel-fill"></i>
-        <span>Export Excel</span>
-    </a>
+            <a href="{{ route('health.death_dashboard.export', request()->query()) }}" class="btn btn-soft export-btn">
+                <i class="bi bi-file-earmark-excel-fill"></i>
+                <span>Export Excel</span>
+            </a>
 
-    <a href="{{ route('death_summary.manage') }}" class="btn btn-soft">
-        <i class="bi bi-pencil-square"></i>
-        <span>จัดการข้อมูล</span>
-    </a>
+            <a href="{{ route('death_summary.manage') }}" class="btn btn-soft">
+                <i class="bi bi-pencil-square"></i>
+                <span>จัดการข้อมูล</span>
+            </a>
 
-    <button type="button" class="btn btn-soft" data-bs-toggle="modal" data-bs-target="#importExcelModal">
-        <i class="bi bi-cloud-arrow-up-fill"></i>
-        <span>Import Excel</span>
-    </button>
+            <button type="button" class="btn btn-soft" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                <i class="bi bi-cloud-arrow-up-fill"></i>
+                <span>Import Excel</span>
+            </button>
 
-    <a href="{{ route('health.death_dashboard') }}" class="btn btn-soft">
-        <i class="bi bi-arrow-clockwise me-1"></i>
-        <span>ล้างข้อมูล</span>
-    </a>
+            <a href="{{ route('health.death_dashboard') }}" class="btn btn-soft">
+                <i class="bi bi-arrow-clockwise me-1"></i>
+                <span>ล้างข้อมูล</span>
+            </a>
 
 </div>
 </div>
@@ -1055,9 +1055,11 @@ body{
     </a>
 
     <div style="font-size:12px; color:#64748b; margin-top:4px;">
-        อัปเดตข้อมูลล่าสุด :
-        {{ \Carbon\Carbon::now('Asia/Bangkok')->format('d/m/Y H:i') }} น.
-    </div>
+    อัปเดตข้อมูลล่าสุด :
+    {{ !empty($lastUpdate)
+        ? \Carbon\Carbon::parse($lastUpdate)->timezone('Asia/Bangkok')->format('d/m/Y H:i')
+        : '-' }} น.
+</div>
 
 </div>
 
@@ -1070,7 +1072,9 @@ body{
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:24px; border:0; overflow:hidden;">
 
-            <div class="modal-header" style="background:linear-gradient(135deg,#0f766e,#2563eb); color:#fff;">
+            {{-- Header --}}
+            <div class="modal-header"
+                 style="background:linear-gradient(135deg,#0f766e,#2563eb); color:#fff;">
                 <h5 class="modal-title fw-bold">
                     <i class="bi bi-cloud-arrow-up-fill me-2"></i>
                     นำเข้าข้อมูลการตายจาก Excel
@@ -1082,22 +1086,58 @@ body{
                 @csrf
 
                 <div class="modal-body p-4">
-                    <label class="form-label fw-semibold">เลือกไฟล์ Excel</label>
-                    <input type="file" name="excel_file" class="form-control" accept=".xlsx,.xls,.csv" required>
 
-                    <div class="mt-3 small text-muted">
-                       หัวตาราง Excel ต้องเรียงเป็น 8 ช่อง:<br>
-ปี,เดือน,ชื่อจังหวัด,ชื่ออำเภอ,ชื่อเพศ,กลุ่มอายุ,สาเหตุการตาย,จำนวนผู้ตาย
+                    {{-- ⚠️ กติกา --}}
+                    <div class="mb-3 p-3 rounded-4"
+                         style="background:#fef9c3;border:1px solid #fde68a;font-size:13px;line-height:1.8;">
+                        <strong>⚠️ ข้อกำหนดสำคัญ</strong><br>
+                        • หัวตารางต้องตรงเป๊ะ ห้ามพิมพ์ผิด<br>
+                        • ต้องมี 8 คอลัมน์เท่านั้น<br>
+                        • ห้ามสลับลำดับคอลัมน์<br>
+                        • ถ้าไม่ตรง ระบบจะ “ไม่บันทึกข้อมูล”
                     </div>
-                    <div class="mt-2">
-    ตัวอย่าง:<br>
-    2569, 1, พัทลุง, เมืองพัทลุง, ชาย, 60+, โรคหัวใจ, 25
-</div>
+
+                    {{-- 📋 Header --}}
+                    <div class="mb-3 p-3 rounded-4"
+                         style="background:#f0fdf4;border:1px solid #bbf7d0;font-size:13px;">
+                        <strong>📋 หัวตารางที่ถูกต้อง</strong><br>
+                        <div class="mt-2" style="font-family:monospace;">
+                            ปี | เดือน | ชื่อจังหวัด | ชื่ออำเภอ | ชื่อเพศ | กลุ่มอายุ | สาเหตุการตาย | จำนวนผู้ตาย
+                        </div>
+                    </div>
+
+                    {{-- 📊 Example --}}
+                    <div class="mb-3 p-3 rounded-4"
+                         style="background:#f8fafc;border:1px solid #e2e8f0;font-size:13px;">
+                        <strong>📊 ตัวอย่างข้อมูล</strong><br>
+                        <div class="mt-2" style="font-family:monospace;">
+                            2569 | 1 | พัทลุง | เมืองพัทลุง | ชาย | 60+ | โรคหัวใจ | 25
+                        </div>
+                    </div>
+
+                    {{-- 📌 Hint --}}
+                    <div class="mb-3 text-muted" style="font-size:12px;line-height:1.8;">
+                        ✔ กลุ่มอายุ: 0-5, 6-24, 25-59, 60+<br>
+                        ✔ จำนวนผู้ตายต้องเป็นตัวเลข<br>
+                        ✔ รองรับไฟล์ .xlsx, .xls, .csv
+                    </div>
+
+                    {{-- Upload --}}
+                    <label class="form-label fw-semibold">เลือกไฟล์ Excel</label>
+                    <input type="file"
+                           name="excel_file"
+                           class="form-control"
+                           accept=".xlsx,.xls,.csv"
+                           required>
+
                 </div>
 
+                {{-- Footer --}}
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">ยกเลิก</button>
-                    <button type="submit" class="btn btn-success">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="btn btn-success px-4">
                         <i class="bi bi-upload me-1"></i>
                         นำเข้า Excel
                     </button>
@@ -1295,6 +1335,26 @@ $(function(){
             }
         });
     }
+
+    
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success') || session('success_import'))
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    Swal.fire({
+        icon: 'success',
+        title: 'สำเร็จ',
+        text: '{{ session('success') ?? session('success_import') }}',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#16a34a',
+        backdrop: 'rgba(15,23,42,0.6)',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+    });
+});
+</script>
+@endif
 </body>
 </html>

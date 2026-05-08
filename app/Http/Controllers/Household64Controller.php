@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\Household64Export;
 
 class Household64Controller extends Controller
 {
@@ -231,6 +233,7 @@ class Household64Controller extends Controller
         if ($AMP !== '' && in_array('AMP', $colsS, true)) $q->where('s.AMP', 'like', "%{$AMP}%");
         if ($JUN !== '' && in_array('JUN', $colsS, true)) $q->where('s.JUN', 'like', "%{$JUN}%");
         if ($POSTCODE !== '' && in_array('POSTCODE', $colsS, true)) $q->where('s.POSTCODE', 'like', "%{$POSTCODE}%");
+        
 
         if ($PREFIX !== '' && $prefixCol) {
             $mapTextToCode = [
@@ -305,6 +308,44 @@ class Household64Controller extends Controller
         // ======================
         // 10) sort + paginate + debugCount
         // ======================
+       $districtList = collect();
+$subdistrictList = collect();
+
+if ($hasDistrict && $dKey && $dName && in_array('AMP', $colsS, true)) {
+    $districtList = $conn->table("dbo.$tableName as s")
+        ->leftJoin('dbo.district as d', function ($join) use ($dKey) {
+            $join->on(DB::raw("[s].[AMP]"), '=', DB::raw("[d].[$dKey]"));
+        })
+        ->whereRaw("[d].[$dName] IS NOT NULL")
+        ->whereRaw("LTRIM(RTRIM([d].[$dName])) <> N''")
+        ->selectRaw("LTRIM(RTRIM([d].[$dName])) as district_name_thai")
+        ->distinct()
+        ->orderBy('district_name_thai')
+        ->pluck('district_name_thai');
+}
+
+if ($hasTambon && $tKey && $tName && in_array('TMP', $colsS, true)) {
+    $subQ = $conn->table("dbo.$tableName as s")
+        ->leftJoin('dbo.tambon as t', function ($join) use ($tKey) {
+            $join->on(DB::raw("LEFT([s].[TMP],6)"), '=', DB::raw("[t].[$tKey]"));
+        });
+
+    if ($district_name_thai !== '' && $hasDistrict && $dKey && $dName && in_array('AMP', $colsS, true)) {
+        $subQ->leftJoin('dbo.district as d', function ($join) use ($dKey) {
+            $join->on(DB::raw("[s].[AMP]"), '=', DB::raw("[d].[$dKey]"));
+        });
+
+        $subQ->whereRaw("LTRIM(RTRIM([d].[$dName])) = ?", [$district_name_thai]);
+    }
+
+    $subdistrictList = $subQ
+        ->whereRaw("[t].[$tName] IS NOT NULL")
+        ->whereRaw("LTRIM(RTRIM([t].[$tName])) <> N''")
+        ->selectRaw("LTRIM(RTRIM([t].[$tName])) as tambon_name_thai")
+        ->distinct()
+        ->orderBy('tambon_name_thai')
+        ->pluck('tambon_name_thai');
+}
         if (in_array('SURVEY_YEAR', $colsS, true)) {
             $q->orderByDesc('s.survey_year');
         }
@@ -317,6 +358,8 @@ class Household64Controller extends Controller
         $surveys    = $q->paginate(25)->withQueryString();
 
         return view('household_64', [
+            'districtList'    => $districtList,
+'subdistrictList' => $subdistrictList,
             'surveys'     => $surveys,
             'tableName'   => $tableName,
             'debugCount'  => $debugCount,
@@ -373,4 +416,17 @@ class Household64Controller extends Controller
         if (count($exists) === 1) return DB::raw($exists[0] . " as [$alias]");
         return DB::raw("COALESCE(" . implode(',', $exists) . ") as [$alias]");
     }
+    public function export(Request $request)
+{
+    $year = trim((string)$request->get('survey_year', ''));
+
+    $filename = $year !== ''
+        ? "ข้อมูลครัวเรือน_{$year}.xlsx"
+        : "ข้อมูลครัวเรือน.xlsx";
+
+    return Excel::download(
+        new Household64Export($request),
+        $filename
+    );
+}
 }

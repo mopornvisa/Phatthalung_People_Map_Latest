@@ -40,6 +40,10 @@ class WelfareController extends Controller
 
             'counts'          => $data['counts'],
             'rows'            => $data['rows'],
+            'welfareChartLabels' => $data['welfareChartLabels'],
+'welfareChartData'   => $data['welfareChartData'],
+'typeChartLabels'    => $data['typeChartLabels'],
+'typeChartData'      => $data['typeChartData'],
         ]);
     }
 
@@ -51,9 +55,35 @@ class WelfareController extends Controller
 
         $data = $this->getWelfareBaseData($request, true);
 
-        $filename = 'welfare_export_' . now()->format('Ymd_His') . '.xlsx';
+        $fileName = 'รายงานข้อมูลสวัสดิการ';
 
-        return Excel::download(new WelfareExport($data['exportQuery']), $filename);
+if ($request->filled('survey_year')) {
+    $fileName .= '_ปี'.$request->survey_year;
+}
+
+if ($request->filled('district')) {
+    $fileName .= '_อำเภอ'.$request->district;
+}
+
+if ($request->filled('subdistrict')) {
+    $fileName .= '_ตำบล'.$request->subdistrict;
+}
+
+$fileName .= '.xlsx';
+
+     return Excel::download(
+    new WelfareExport(
+        $data['exportQuery'],
+        [
+            'survey_year' => $data['survey_year'],
+            'district' => $data['district'],
+            'subdistrict' => $data['subdistrict'],
+            'welfare' => $data['welfare'],
+            'welfare_type' => $data['welfare_type'],
+        ]
+    ),
+    $fileName
+);
     }
 
     private function getWelfareBaseData(Request $request, bool $forExport = false): array
@@ -145,7 +175,8 @@ class WelfareController extends Controller
         // ======================
         // mapping survey_profile64
         // ======================
-        $P_COL_HOUSE    = $pickProfCol(['HC1'], 'HC1');
+       $COL_HOUSE_PROFILE = $pickProfCol(['HC1', 'HC'], null);
+$COL_HOUSE_SURVEY  = $pickMainCol(['HC', 'HC1'], null);
         $P_COL_TEL      = $pickProfCol(['TEL'], null);
         $P_COL_LATX     = $pickProfCol(['latx'], null);
         $P_COL_LNGY     = $pickProfCol(['lngy'], null);
@@ -195,8 +226,10 @@ class WelfareController extends Controller
         // ======================
         // welfare cols
         // ======================
-        $allowedCols = ['a7_1','a7_2','a7_3','a7_4','a7_5','a7_6'];
-        $picked      = array_values(array_intersect($welfare_type, $allowedCols));
+       $allowedCols = ['a7_1','a7_2','a7_3','a7_4','a7_5','a7_6'];
+$picked      = array_values(array_intersect($welfare_type, $allowedCols));
+
+$isUnknownOnly = in_array('unknown', $welfare_type, true);
 
         $a70Ref   = $colRef('u', 'a7_0');
         $a70ExprT = $a70Ref ? $trim($a70Ref) : "NULL";
@@ -217,19 +250,22 @@ class WelfareController extends Controller
         // ======================
         $baseQuery = function() use (
             $conn, $mainTable, $profileTable,
-            $COL_HOUSE, $P_COL_HOUSE
+           $COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE
         ) {
             $q = $conn->table(DB::raw("$mainTable as u"));
 
-            if ($COL_HOUSE && $P_COL_HOUSE) {
-                $q->leftJoin(DB::raw("$profileTable as p"), function($join) use ($COL_HOUSE, $P_COL_HOUSE) {
-                    $join->on(
-                        DB::raw("LTRIM(RTRIM(u.[{$COL_HOUSE}]))"),
-                        '=',
-                        DB::raw("LTRIM(RTRIM(p.[{$P_COL_HOUSE}]))")
-                    );
-                });
-            }
+            if ($COL_HOUSE_SURVEY && $COL_HOUSE_PROFILE) {
+
+    $q->leftJoin(DB::raw("$profileTable as p"), function($join)
+        use ($COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE) {
+
+        $join->on(
+            DB::raw("LTRIM(RTRIM(u.[{$COL_HOUSE_SURVEY}]))"),
+            '=',
+            DB::raw("LTRIM(RTRIM(p.[{$COL_HOUSE_PROFILE}]))")
+        );
+    });
+}
 
             return $q;
         };
@@ -313,7 +349,7 @@ class WelfareController extends Controller
             $province, $district, $subdistrict,
             $survey_year, $house_id, $fname, $lname, $cid,
             $agey, $age_range, $sex,
-            $picked, $welfare, $welfare_match,
+            $picked, $welfare, $welfare_match, $isUnknownOnly,
             $parseAgeRange, $trim, $hasNumericValueCondition,
             $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
             $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
@@ -387,64 +423,85 @@ class WelfareController extends Controller
         if ($COL_TAMBON)   $q->orderBy("u.$COL_TAMBON");
         if ($COL_HOUSE)    $q->orderBy("u.$COL_HOUSE");
 
-        $exportQuery = clone $q;
+     
+// ======================
+// counts
+// ======================
+// ======================
+// counts
+// ======================
+$counts = ['received' => 0, 'not_received' => 0];
 
-        $rows = $forExport
-            ? collect()
-            : $q->paginate(15)->appends($request->query());
+if (!$forExport) {
+    $counts['received'] = (clone $q)->count();
 
-        // ======================
-        // counts เฉพาะหน้าแสดงผล
-        // ======================
-        $counts = ['received' => 0, 'not_received' => 0];
+    $notQ = $baseQuery();
 
-        if (!$forExport) {
-            $countKey = 'welfare_counts_survey_a_'.md5(json_encode([
-                $province,$district,$subdistrict,$survey_year,
-                $house_id,$fname,$lname,$cid,$agey,$age_range,$sex,
-                $picked,$welfare_match
-            ], JSON_UNESCAPED_UNICODE));
+    $this->applyWelfareFilters(
+        $notQ,
+        $province, $district, $subdistrict,
+        $survey_year, $house_id, $fname, $lname, $cid,
+        $agey, $age_range, $sex,
+        [], 'not_received', 'any', false,
+        $parseAgeRange, $trim, $hasNumericValueCondition,
+        $COL_HOUSE_SURVEY, $COL_FNAME, $COL_LNAME,
+        $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
+        $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
+    );
 
-            $counts = Cache::remember($countKey, 300, function () use (
-                $baseQuery,
-                $province,$district,$subdistrict,$survey_year,
-                $house_id,$fname,$lname,$cid,$agey,$age_range,$sex,
-                $picked,$welfare_match,
-                $parseAgeRange,$trim,$hasNumericValueCondition,
-                $COL_HOUSE,$COL_FNAME,$COL_LNAME,$COL_CID,$COL_YEAR,$COL_AGE,$COL_SEX,
-                $a70ExprT,$provinceRef,$districtRef,$tambonRef,$colRef
-            ) {
-                $base = $baseQuery();
+    $counts['not_received'] = $notQ->count();
+}
 
-                $this->applyWelfareFilters(
-                    $base,
-                    $province, $district, $subdistrict,
-                    $survey_year, $house_id, $fname, $lname, $cid,
-                    $agey, $age_range, $sex,
-                    [], '', 'any',
-                    $parseAgeRange, $trim, $hasNumericValueCondition,
-                    $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
-                    $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
-                );
+// สำคัญ: chart ต้องอยู่ก่อน paginate
+$chartRows = (clone $q)->get();
 
-                $receivedBase = (clone $base)->where(function($qq) use ($a70ExprT) {
-                    $qq->whereRaw("$a70ExprT IS NULL")
-                       ->orWhereRaw("$a70ExprT = N''");
-                });
+$typeChartLabels = [];
+$typeChartData = [];
 
-                if (!empty($picked)) {
-                    $cond = $hasNumericValueCondition($picked, $welfare_match);
-                    if ($cond) $receivedBase->whereRaw($cond);
-                }
+$typeMap = [
+    'a7_1' => 'เด็กแรกเกิด',
+    'a7_2' => 'ผู้สูงอายุ',
+    'a7_3' => 'คนพิการ',
+    'a7_4' => 'ประกันสังคม ม.33',
+    'a7_5' => 'ประกันตนเอง ม.40',
+    'a7_6' => 'บัตรสวัสดิการฯ',
+    'unknown' => 'ไม่ระบุ',
+];
 
-                $notReceivedBase = (clone $base)->whereRaw("$a70ExprT = N'0'");
-
-                return [
-                    'received'     => $receivedBase->count(),
-                    'not_received' => $notReceivedBase->count(),
-                ];
-            });
+foreach ($typeMap as $col => $label) {
+    $count = $chartRows->filter(function ($r) use ($col) {
+        if ($col === 'unknown') {
+            return (
+                (trim((string)($r->a7_1 ?? '')) === '' || trim((string)($r->a7_1 ?? '')) === '0') &&
+                (trim((string)($r->a7_2 ?? '')) === '' || trim((string)($r->a7_2 ?? '')) === '0') &&
+                (trim((string)($r->a7_3 ?? '')) === '' || trim((string)($r->a7_3 ?? '')) === '0') &&
+                (trim((string)($r->a7_4 ?? '')) === '' || trim((string)($r->a7_4 ?? '')) === '0') &&
+                (trim((string)($r->a7_5 ?? '')) === '' || trim((string)($r->a7_5 ?? '')) === '0') &&
+                (trim((string)($r->a7_6 ?? '')) === '' || trim((string)($r->a7_6 ?? '')) === '0')
+            );
         }
+
+        $v = trim((string)($r->$col ?? ''));
+        return $v !== '' && $v !== '0';
+    })->count();
+
+    if ($count > 0) {
+        $typeChartLabels[] = $label;
+        $typeChartData[] = $count;
+    }
+}
+
+$welfareChartLabels = ['ได้รับสวัสดิการ', 'ไม่ได้รับสวัสดิการ'];
+$welfareChartData = [
+    (int)($counts['received'] ?? 0),
+    (int)($counts['not_received'] ?? 0),
+];
+
+$exportQuery = clone $q;
+
+$rows = $forExport
+    ? collect()
+    : $q->paginate(15)->appends($request->query());
 
         return [
             'baseQueryParams' => $baseQueryParams,
@@ -472,6 +529,11 @@ class WelfareController extends Controller
             'counts'          => $counts,
             'rows'            => $rows,
             'exportQuery'     => $exportQuery,
+
+            'welfareChartLabels' => $welfareChartLabels,
+'welfareChartData'   => $welfareChartData,
+'typeChartLabels'    => $typeChartLabels,
+'typeChartData'      => $typeChartData,
         ];
     }
 
@@ -480,7 +542,7 @@ class WelfareController extends Controller
         $province, $district, $subdistrict,
         $survey_year, $house_id, $fname, $lname, $cid,
         $agey, $age_range, $sex,
-        $picked, $welfare, $welfare_match,
+        $picked, $welfare, $welfare_match, $isUnknownOnly,
         $parseAgeRange, $trim, $hasNumericValueCondition,
         $COL_HOUSE, $COL_FNAME, $COL_LNAME, $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
         $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
@@ -518,8 +580,8 @@ class WelfareController extends Controller
         }
 
         if ($house_id !== '' && $COL_HOUSE) {
-            $q->whereRaw($colRef('u', $COL_HOUSE)." LIKE ?", ["%{$house_id}%"]);
-        }
+    $q->where("u.$COL_HOUSE", 'like', "%{$house_id}%");
+}
         if ($fname !== '' && $COL_FNAME) {
             $q->whereRaw($colRef('u', $COL_FNAME)." LIKE ?", ["%{$fname}%"]);
         }
@@ -530,20 +592,39 @@ class WelfareController extends Controller
             $q->whereRaw($colRef('u', $COL_CID)." LIKE ?", ["%{$cid}%"]);
         }
 
-        if ($welfare === 'received') {
-            $q->where(function($qq) use ($a70ExprT) {
-                $qq->whereRaw("$a70ExprT IS NULL")
-                   ->orWhereRaw("$a70ExprT = N''");
-            });
+      if ($welfare === 'received') {
 
-            if (!empty($picked)) {
-                $cond = $hasNumericValueCondition($picked, $welfare_match);
-                if ($cond) $q->whereRaw($cond);
-            }
-        } elseif ($welfare === 'not_received') {
-            $q->whereRaw("$a70ExprT = N'0'");
+    $q->where(function($qq) use ($a70ExprT) {
+        $qq->whereRaw("$a70ExprT IS NULL")
+           ->orWhereRaw("$a70ExprT = N''");
+    });
+
+    // กรณีเลือก "ไม่ระบุ"
+    if ($isUnknownOnly) {
+
+        $q->whereRaw("
+            (NULLIF(LTRIM(RTRIM(u.[a7_1])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_1])) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(u.[a7_2])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_2])) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(u.[a7_3])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_3])) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(u.[a7_4])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_4])) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(u.[a7_5])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_5])) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(u.[a7_6])), N'') IS NULL OR LTRIM(RTRIM(u.[a7_6])) = N'0')
+        ");
+
+    }
+    elseif (!empty($picked)) {
+
+        $cond = $hasNumericValueCondition($picked, $welfare_match);
+
+        if ($cond) {
+            $q->whereRaw($cond);
         }
+    }
+}
+elseif ($welfare === 'not_received') {
 
+    $q->whereRaw("$a70ExprT = N'0'");
+}
         return $q;
     }
 }

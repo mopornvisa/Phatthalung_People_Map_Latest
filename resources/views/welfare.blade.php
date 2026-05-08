@@ -8,6 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -436,9 +437,9 @@
     }
 
     .welfare-filter-dropdown{
-      position:relative;
-      width:100%;
-    }
+  position:static !important;
+  width:100%;
+}
 
     .welfare-filter-dropdown .dropdown-toggle{
       display:flex;
@@ -450,12 +451,11 @@
     }
 
     .welfare-filter-dropdown .dropdown-menu{
-      z-index:5000 !important;
-      min-width:380px;
-      max-width:min(90vw, 380px);
-      border-radius:18px !important;
-    }
-
+  z-index:5000 !important;
+  min-width:300px !important;
+  max-width:320px !important;
+  border-radius:16px !important;
+}
     .badge{
       font-weight:500;
     }
@@ -588,7 +588,32 @@
         transform: translateY(0);
       }
     }
+.ga-chart-card{
+  background:linear-gradient(135deg,#ffffff,#f8fffc);
+  border:1px solid #dcecf2;
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 10px 24px rgba(2,6,23,.06);
+  height:100%;
+}
 
+.ga-chart-title{
+  font-size:14px;
+  font-weight:700;
+  color:#0f172a;
+  margin-bottom:4px;
+}
+
+.ga-chart-sub{
+  font-size:12px;
+  color:#64748b;
+  margin-bottom:12px;
+}
+
+.chart-box{
+  height:280px;
+  position:relative;
+}
     @media (max-width: 992px){
       .ga-filter-actions{
         flex-direction:column;
@@ -722,6 +747,7 @@
   ]);
 
   $totalRows = method_exists($rows,'total') ? (int)$rows->total() : count($rows);
+  
 @endphp
 
 <div class="page-wrap">
@@ -875,7 +901,43 @@
         </div>
       </div>
     </div>
+<div class="row g-3 mb-3">
 
+  <div class="col-lg-4">
+    <div class="ga-chart-card">
+      <div class="ga-chart-title">
+        <i class="bi bi-pie-chart-fill text-success me-1"></i>
+        สถานะสวัสดิการ
+      </div>
+
+      <div class="ga-chart-sub">
+        เปรียบเทียบผู้ได้รับและไม่ได้รับสวัสดิการ
+      </div>
+
+      <div class="chart-box">
+        <canvas id="welfareStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="ga-chart-card">
+      <div class="ga-chart-title">
+        <i class="bi bi-bar-chart-fill text-primary me-1"></i>
+        ประเภทสวัสดิการ
+      </div>
+
+      <div class="ga-chart-sub">
+        แสดงจำนวนตามประเภทสวัสดิการจากข้อมูลปัจจุบัน
+      </div>
+
+      <div class="chart-box">
+        <canvas id="welfareTypeChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
     <div class="ga-note">
       <i class="bi bi-info-circle me-1"></i>
       ตารางด้านล่างรองรับการกรองตามปี รหัสบ้าน ชื่อ นามสกุล อายุ เพศ และประเภทสวัสดิการ พร้อมดูรายละเอียดพิกัดและข้อมูลบ้านของแต่ละรายการ
@@ -1104,9 +1166,16 @@
                 </th>
 
                 <th><div class="filter-cell"></div></th>
+<th><div class="filter-cell"></div></th>
               </tr>
             </thead>
+@php
+$welfareChartLabels = $welfareChartLabels ?? [];
+$welfareChartData   = $welfareChartData ?? [];
 
+$typeChartLabels = $typeChartLabels ?? [];
+$typeChartData   = $typeChartData ?? [];
+@endphp
             <tbody>
               @forelse($rows as $r)
                 @php
@@ -1461,7 +1530,7 @@
           return {
             ...defaultBsPopperConfig,
             placement: 'bottom-start',
-            strategy: 'fixed',
+           
             modifiers: [
               ...(defaultBsPopperConfig.modifiers || []),
               {
@@ -1479,7 +1548,7 @@
                 name: 'flip',
                 options: {
                   boundary: 'viewport',
-                  fallbackPlacements: ['top-start', 'right-start']
+                  fallbackPlacements: ['bottom-start']
                 }
               }
             ]
@@ -1669,23 +1738,93 @@
       });
     });
 
-    document.querySelectorAll('a[href]').forEach(link => {
-      if (
-        link.href &&
-        !link.href.startsWith('javascript:') &&
-        !link.hasAttribute('target') &&
-        !link.closest('.modal') &&
-        !link.dataset.bsToggle
-      ) {
-        link.addEventListener('click', function(){
-          showLoading();
-        });
-      }
-    });
+document.querySelectorAll('a[href]').forEach(link => {
+  if (
+    link.href &&
+    !link.href.startsWith('javascript:') &&
+    !link.hasAttribute('target') &&
+    !link.dataset.bsToggle
+  ) {
+    link.addEventListener('click', function(){
 
+      if (link.dataset.noLoading === '1' || link.href.includes('/export')) {
+        return;
+      }
+
+      showLoading();
+    });
+  }
+});
     window.addEventListener('pageshow', function(){
       hideLoading();
     });
+    const welfareStatusLabels = @json($welfareChartLabels);
+const welfareStatusData = @json($welfareChartData);
+
+new Chart(document.getElementById('welfareStatusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: welfareStatusLabels,
+        datasets: [{
+            data: welfareStatusData,
+            backgroundColor: [
+                '#22c55e',
+                '#94a3b8'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '68%',
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+const welfareTypeLabels = @json($typeChartLabels);
+const welfareTypeData = @json($typeChartData);
+
+new Chart(document.getElementById('welfareTypeChart'), {
+    type: 'bar',
+    data: {
+        labels: welfareTypeLabels,
+        datasets: [{
+            data: welfareTypeData,
+            backgroundColor: [
+                '#0ea5a4',
+                '#2d74da',
+                '#22c55e',
+                '#f59e0b',
+                '#ec4899',
+                '#8b5cf6'
+            ],
+            borderRadius: 12,
+            borderSkipped: false
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display:false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero:true,
+                ticks:{
+                    precision:0
+                }
+            }
+        }
+    }
+});
   });
 </script>
 

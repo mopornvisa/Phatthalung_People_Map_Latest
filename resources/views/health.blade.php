@@ -736,7 +736,8 @@
         <div class="col-md-3">
           <label class="ga-filter-label">ส่งออกรายงาน</label>
           <a class="ga-btn-export w-100 justify-content-center"
-             href="{{ route('health.export', request()->query()) }}">
+   data-no-loading="1"
+   href="{{ route('health.export', request()->query()) }}">
             <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
           </a>
         </div>
@@ -1328,19 +1329,20 @@
       });
     });
 
-    document.querySelectorAll('a[href]').forEach(link => {
-      if (
-        link.href &&
-        !link.href.startsWith('javascript:') &&
-        !link.hasAttribute('target') &&
-        !link.closest('.modal') &&
-        !link.dataset.bsToggle
-      ) {
-        link.addEventListener('click', function(){
-          showLoading();
-        });
-      }
+   document.querySelectorAll('a[href]').forEach(link => {
+  if (
+    link.href &&
+    !link.href.startsWith('javascript:') &&
+    !link.hasAttribute('target') &&
+    !link.closest('.modal') &&
+    !link.dataset.bsToggle &&
+    !link.dataset.noLoading
+  ) {
+    link.addEventListener('click', function(){
+      showLoading();
     });
+  }
+});
 
     window.addEventListener('pageshow', function(){
       hideLoading();

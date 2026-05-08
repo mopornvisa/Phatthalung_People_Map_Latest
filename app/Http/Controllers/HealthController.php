@@ -297,11 +297,172 @@ class HealthController extends Controller
         ));
     }
 
-    public function export(Request $request)
-    {
-        $year = trim((string) $request->get('survey_year', ''));
-        $filename = $year !== '' ? "health_{$year}.xlsx" : 'health.xlsx';
+   public function export(Request $request)
+{
+    $year = trim((string) $request->get('survey_year', ''));
+    $filename = $year !== '' 
+        ? "รายงานข้อมูลสุขภาพ_{$year}.xlsx"
+        : 'รายงานข้อมูลสุขภาพ.xlsx';
 
-        return Excel::download(new HealthExport($request->all()), $filename);
+    $rows = DB::connection('sqlsrv')
+        ->table(DB::raw('[dbo].[survey_a] as u'))
+        ->leftJoin(DB::raw('[dbo].[survey_profile64] as p'), 'u.HC', '=', 'p.HC1')
+        ->selectRaw("
+            u.HC as house_Id,
+            u.a2_2 as human_Member_fname,
+            u.a2_3 as human_Member_lname,
+            u.a3_1 as human_Age_y,
+            u.survey_year as survey_Year,
+
+            CASE TRY_CONVERT(int, u.a4)
+                WHEN 1 THEN N'ชาย'
+                WHEN 2 THEN N'หญิง'
+                ELSE N''
+            END as human_Sex,
+
+            CASE TRY_CONVERT(int, u.a6)
+                WHEN 1 THEN N'ปกติ'
+                WHEN 2 THEN N'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)'
+                WHEN 3 THEN N'พิการพึ่งตนเองได้'
+                WHEN 4 THEN N'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้'
+                ELSE N''
+            END as human_Health,
+
+            u.district_name_thai as survey_District,
+            u.tambon_name_thai as survey_Subdistrict,
+
+            u.popid as human_Member_cid,
+
+            p.MBNO as house_Number,
+p.MB as village_No,
+p.MM as village_Name,
+p.POSTCODE as survey_Postcode,
+
+p.TEL as survey_Informer_phone,
+p.latx as latitude,
+p.lngy as longitude
+        ");
+
+    // ======================
+    // FILTER
+    // ======================
+
+    if ($request->filled('survey_year')) {
+        $rows->where('u.survey_year', $request->survey_year);
     }
+
+    if ($request->filled('district')) {
+        $rows->whereRaw(
+            "LTRIM(RTRIM(u.district_name_thai)) = ?",
+            [$request->district]
+        );
+    }
+
+    if ($request->filled('subdistrict')) {
+        $rows->whereRaw(
+            "LTRIM(RTRIM(u.tambon_name_thai)) = ?",
+            [$request->subdistrict]
+        );
+    }
+
+    if ($request->filled('house_id')) {
+        $rows->where('u.HC', 'like', '%' . $request->house_id . '%');
+    }
+
+    if ($request->filled('fname')) {
+        $rows->where('u.a2_2', 'like', '%' . $request->fname . '%');
+    }
+
+    if ($request->filled('lname')) {
+        $rows->where('u.a2_3', 'like', '%' . $request->lname . '%');
+    }
+
+    if ($request->filled('cid')) {
+        $rows->where('u.popid', 'like', '%' . $request->cid . '%');
+    }
+
+    if ($request->filled('sex')) {
+
+        if ($request->sex === 'ชาย') {
+            $rows->whereRaw("TRY_CONVERT(int, u.a4) = 1");
+        }
+
+        if ($request->sex === 'หญิง') {
+            $rows->whereRaw("TRY_CONVERT(int, u.a4) = 2");
+        }
+    }
+
+    if ($request->filled('agey')) {
+        $rows->whereRaw(
+            "TRY_CONVERT(int, u.a3_1) = ?",
+            [(int)$request->agey]
+        );
+    }
+
+    if ($request->filled('age_range')) {
+
+        $ageRange = $request->age_range;
+
+        if (preg_match('/^(\d+)-(\d+)$/', $ageRange, $m)) {
+
+            $rows->whereBetween(
+                DB::raw("TRY_CONVERT(int, u.a3_1)"),
+                [(int)$m[1], (int)$m[2]]
+            );
+        }
+
+        elseif (preg_match('/^(\d+)\+$/', $ageRange, $m)) {
+
+            $rows->whereRaw(
+                "TRY_CONVERT(int, u.a3_1) >= ?",
+                [(int)$m[1]]
+            );
+        }
+    }
+
+    if ($request->filled('health')) {
+
+        if ($request->health === '__NULL__') {
+
+            $rows->whereRaw("
+                (
+                    CASE TRY_CONVERT(int, u.a6)
+                        WHEN 1 THEN N'ปกติ'
+                        WHEN 2 THEN N'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)'
+                        WHEN 3 THEN N'พิการพึ่งตนเองได้'
+                        WHEN 4 THEN N'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้'
+                        ELSE N''
+                    END = N''
+                )
+            ");
+
+        } else {
+
+            $rows->whereRaw("
+                CASE TRY_CONVERT(int, u.a6)
+                    WHEN 1 THEN N'ปกติ'
+                    WHEN 2 THEN N'ป่วยเรื้อรังที่ไม่ติดเตียง (เช่น หัวใจ เบาหวาน)'
+                    WHEN 3 THEN N'พิการพึ่งตนเองได้'
+                    WHEN 4 THEN N'ผู้ป่วยติดเตียง/พิการพึ่งตัวเองไม่ได้'
+                    ELSE N''
+                END = ?
+            ", [$request->health]);
+        }
+    }
+
+    $rows = $rows
+        ->orderByDesc('u.survey_year')
+        ->get();
+
+  
+
+$exportRows = $rows instanceof \Illuminate\Pagination\LengthAwarePaginator
+    ? collect($rows->items())
+    : collect($rows);
+
+return Excel::download(
+    new HealthExport($exportRows),
+    $filename
+);
+} 
 }
