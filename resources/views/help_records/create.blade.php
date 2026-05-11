@@ -41,7 +41,7 @@
       @endif
 
       {{-- FORM --}}
-      <form method="POST" action="{{ route('help.store',$houseId) }}">
+      <form method="POST" action="{{ route('help_records.store',$houseId) }}">
         @csrf
 
         {{-- ✅ ปีสำรวจ ส่ง hidden ไปเสมอ (ห้ามซ้ำชื่อกับปีช่วยเหลือ) --}}

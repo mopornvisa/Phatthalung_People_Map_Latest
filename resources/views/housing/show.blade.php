@@ -359,7 +359,7 @@
         </div>
 
         <div class="d-grid gap-2 mt-3">
-          <a href="{{ route('help.create', ['houseId'=>$houseId, 'survey_year'=>$surveyYear]) }}" 
+          <a href="{{ route('help_records.create', ['houseId'=>$houseId, 'survey_year'=>$surveyYear]) }}" 
              class="btn btn-success rounded-pill text-white"
              style="background:#0B7F6F;border-color:#0B7F6F;">
             <i class="bi bi-plus-circle me-1"></i> เพิ่มบันทึกการช่วยเหลือ

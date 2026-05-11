@@ -33,6 +33,8 @@ use App\Http\Controllers\DeathDashboardController;
 use App\Http\Controllers\DeathSummaryManageController;
 use App\Http\Controllers\EducationDashboardController;
 use App\Http\Controllers\EconomyController; 
+use App\Http\Controllers\ForestResourceController;
+
 
 
 
@@ -120,9 +122,14 @@ Route::get('/housing/cases', [HousingPhysicalController::class, 'cases'])->name(
 Route::get('/housing/house/{houseId}', [HousingPhysicalController::class, 'show'])->name('housing.show');
 
 // Help
-Route::get('/housing/house/{houseId}/help/create', [HelpRecordController::class, 'create'])->name('help.create');
-Route::post('/housing/house/{houseId}/help', [HelpRecordController::class, 'store'])->name('help.store');
-Route::get('/help-records', [HelpRecordController::class, 'index'])->name('help_records.index');
+Route::get('/housing/house/{houseId}/help/create', [HelpRecordController::class, 'create'])
+    ->name('help_records.create');
+
+Route::post('/housing/house/{houseId}/help', [HelpRecordController::class, 'store'])
+    ->name('help_records.store');
+
+Route::get('/help-records', [HelpRecordController::class, 'index'])
+    ->name('help_records.index');
 
 // ======================
 // Auth
@@ -287,3 +294,23 @@ Route::get('/health/export', [HealthController::class, 'export'])
 
 Route::get('/welfare/export', [WelfareController::class, 'export'])
     ->name('welfare.export');
+Route::get('/forest-resources', [ForestResourceController::class, 'index'])
+    ->name('forest.resources.index');
+
+Route::get('/forest-resources/manage', [ForestResourceController::class, 'manage'])
+    ->name('forest.resources.manage');
+
+Route::post('/forest-resources/store', [ForestResourceController::class, 'store'])
+    ->name('forest.resources.store');
+
+Route::post('/forest-resources/import', [ForestResourceController::class, 'import'])
+    ->name('forest.resources.import');
+
+Route::put('/forest-resources/{id}', [ForestResourceController::class, 'update'])
+    ->name('forest.resources.update');
+
+Route::delete('/forest-resources/{id}', [ForestResourceController::class, 'destroy'])
+    ->name('forest.resources.destroy');
+
+Route::post('/forest-resources/bulk-destroy', [ForestResourceController::class, 'bulkDestroy'])
+    ->name('forest.resources.bulk_destroy');

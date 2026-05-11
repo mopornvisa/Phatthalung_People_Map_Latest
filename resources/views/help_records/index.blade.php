@@ -33,6 +33,17 @@
                     <strong>เลขครัวเรือน:</strong> {{ $h->HC1 }}
                     <br>
                     <strong>ชื่อ:</strong> {{ $h->NAME ?? '-' }} {{ $h->LNAME ?? '' }}
+                    <div class="small mt-1">
+    บ้านเลขที่ {{ $h->MBNO ?? '-' }}
+    หมู่ {{ $h->MB ?? '-' }}
+    {{ $h->MM ?? '' }}
+
+    ต.{{ $h->tambon_name_thai ?? '-' }}
+    อ.{{ $h->district_name_thai ?? '-' }}
+    จ.{{ $h->province_name_thai ?? '-' }}
+
+    {{ $h->POSTCODE ?? '' }}
+</div>
                 </div>
 
                 <div class="card-body">
@@ -86,6 +97,9 @@
                 </div>
             </div>
         @endforeach
+        <div class="mt-3">
+            {{ $households->links() }}
+        </div>
     @endif
 </div>
 </body>

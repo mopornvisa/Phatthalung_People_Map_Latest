@@ -195,13 +195,36 @@ data-bs-toggle="dropdown">
                     ด้านสวัสดิการ
                 </a>
             </li>
-<li>
-    <a class="dropdown-item" href="{{ route('household_64') }}">
-        <i class="bi bi-house-heart-fill me-2"></i>
-        ด้านที่อยู่อาศัย
-    </a>
-</li>
+<li class="dropdown-submenu position-relative">
 
+    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">
+        <span>
+            <i class="bi bi-house-heart-fill me-2"></i>
+            ด้านที่อยู่อาศัยและสาธารณูปโภค
+        </span>
+
+        <i class="bi bi-chevron-right small"></i>
+    </a>
+
+    <ul class="dropdown-menu submenu shadow">
+
+        <li>
+            <a class="dropdown-item" href="{{ route('housing.dashboard') }}">
+                <i class="bi bi-house-check-fill me-2"></i>
+                ระบบข้อมูลที่อยู่อาศัย
+            </a>
+        </li>
+
+        <li>
+            <a class="dropdown-item" href="{{ route('household_64') }}">
+                <i class="bi bi-people-fill me-2"></i>
+                ข้อมูลครัวเรือน
+            </a>
+        </li>
+
+    </ul>
+
+</li>
         </ul>
     </li>
 
@@ -226,12 +249,28 @@ data-bs-toggle="dropdown">
         </li>
 
     </ul>
-</li>
-    <li>
-    <div class="dropdown-item">
-        <i class="bi bi-tree-fill me-2"></i>
-        เมืองสิ่งแวดล้อมยั่งยืน
-    </div>
+<li class="dropdown-submenu position-relative">
+
+    <a class="dropdown-item d-flex justify-content-between align-items-center" href="#">
+        <span>
+            <i class="bi bi-tree-fill me-2"></i>
+            เมืองสิ่งแวดล้อมยั่งยืน
+        </span>
+
+        <i class="bi bi-chevron-right small"></i>
+    </a>
+
+    <ul class="dropdown-menu submenu shadow">
+
+        <li>
+            <a class="dropdown-item" href="{{ route('forest.resources.index') }}">
+                <i class="bi bi-tree-fill me-2"></i>
+                ข้อมูลทรัพยากรป่าไม้
+            </a>
+        </li>
+
+    </ul>
+
 </li>
 
     <!-- เมืองของพลเมือง -->

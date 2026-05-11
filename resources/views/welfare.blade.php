@@ -436,9 +436,16 @@
       padding-left:32px !important;
     }
 
-    .welfare-filter-dropdown{
-  position:static !important;
+   .welfare-filter-dropdown{
+  position:relative !important;
   width:100%;
+}
+
+.welfare-filter-dropdown .dropdown-menu{
+  z-index:99999 !important;
+  min-width:320px !important;
+  max-width:360px !important;
+  border-radius:16px !important;
 }
 
     .welfare-filter-dropdown .dropdown-toggle{
@@ -449,13 +456,33 @@
       white-space:nowrap;
       font-size:13px;
     }
-
-    .welfare-filter-dropdown .dropdown-menu{
-  z-index:5000 !important;
-  min-width:300px !important;
-  max-width:320px !important;
-  border-radius:16px !important;
+body.welfare-dd-open .ga-table-panel{
+  overflow:visible !important;
 }
+
+body.welfare-dd-open .table-responsive{
+  overflow:visible !important;
+}
+
+body.welfare-dd-open .ga-table{
+  overflow:visible !important;
+}
+
+.welfare-filter-dropdown{
+  position:relative !important;
+  width:100%;
+}
+
+.welfare-filter-dropdown .dropdown-menu{
+  z-index:999999 !important;
+  min-width:330px !important;
+  max-width:360px !important;
+  border-radius:16px !important;
+  transform:none !important;
+  top:44px !important;
+  left:0 !important;
+}
+    
     .badge{
       font-weight:500;
     }
@@ -1058,11 +1085,12 @@
                   <div class="filter-cell">
                     <div class="dropdown welfare-filter-dropdown">
                       <button class="btn btn-sm dropdown-toggle w-100"
-                              type="button"
-                              data-bs-toggle="dropdown"
-                              data-bs-auto-close="outside"
-                              aria-expanded="false"
-                              style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
+        type="button"
+        data-bs-toggle="dropdown"
+        data-bs-auto-close="outside"
+        data-bs-display="static"
+        aria-expanded="false"
+        style="background:#fff;border:1px solid #E2E8F0;text-align:left;">
                         <span>
                           <i class="bi bi-funnel-fill text-success me-1"></i>
                           ตัวกรองข้อมูลสวัสดิการ
@@ -1520,43 +1548,46 @@ $typeChartData   = $typeChartData ?? [];
 
 <script>
   function initWelfareDropdown() {
-    document.querySelectorAll('.welfare-filter-dropdown > [data-bs-toggle="dropdown"]').forEach((el) => {
-      if (el.dataset.ddInit === '1') return;
-      el.dataset.ddInit = '1';
+  document.querySelectorAll('.welfare-filter-dropdown > [data-bs-toggle="dropdown"]').forEach((el) => {
+    if (el.dataset.ddInit === '1') return;
+    el.dataset.ddInit = '1';
 
-      new bootstrap.Dropdown(el, {
-        autoClose: 'outside',
-        popperConfig(defaultBsPopperConfig) {
-          return {
-            ...defaultBsPopperConfig,
-            placement: 'bottom-start',
-           
-            modifiers: [
-              ...(defaultBsPopperConfig.modifiers || []),
-              {
-                name: 'offset',
-                options: { offset: [0, 8] }
-              },
-              {
-                name: 'preventOverflow',
-                options: {
-                  boundary: 'viewport',
-                  padding: 8
-                }
-              },
-              {
-                name: 'flip',
-                options: {
-                  boundary: 'viewport',
-                  fallbackPlacements: ['bottom-start']
-                }
+    new bootstrap.Dropdown(el, {
+      autoClose: 'outside',
+      boundary: 'viewport',
+      popperConfig(defaultBsPopperConfig) {
+        return {
+          ...defaultBsPopperConfig,
+          strategy: 'fixed',
+          placement: 'bottom-start',
+          modifiers: [
+            ...(defaultBsPopperConfig.modifiers || []),
+            {
+              name: 'offset',
+              options: { offset: [0, 8] }
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: document.body,
+                rootBoundary: 'viewport',
+                padding: 12
               }
-            ]
-          };
-        }
-      });
+            },
+            {
+              name: 'flip',
+              options: {
+                boundary: document.body,
+                rootBoundary: 'viewport',
+                fallbackPlacements: ['top-start', 'bottom-start']
+              }
+            }
+          ]
+        };
+      }
     });
-  }
+  });
+}
 
   function handleUnknownToggle(changed){
     const unknown = document.querySelector('input[name="welfare_type[]"][value="unknown"]');
@@ -1715,6 +1746,15 @@ $typeChartData   = $typeChartData ?? [];
 
   document.addEventListener('DOMContentLoaded', function () {
     initWelfareDropdown();
+    document.querySelectorAll('.welfare-filter-dropdown').forEach(dd => {
+  dd.addEventListener('show.bs.dropdown', function () {
+    document.body.classList.add('welfare-dd-open');
+  });
+
+  dd.addEventListener('hidden.bs.dropdown', function () {
+    document.body.classList.remove('welfare-dd-open');
+  });
+});
     toggleWelfareTypeSection();
 
     const filterForm = document.getElementById('filterForm');
@@ -1761,16 +1801,16 @@ document.querySelectorAll('a[href]').forEach(link => {
     const welfareStatusLabels = @json($welfareChartLabels);
 const welfareStatusData = @json($welfareChartData);
 
+const welfareStatusColors = welfareStatusLabels.map(label => {
+    return label.includes('ไม่ได้รับ') ? '#94a3b8' : '#22c55e';
+});
 new Chart(document.getElementById('welfareStatusChart'), {
     type: 'doughnut',
     data: {
         labels: welfareStatusLabels,
         datasets: [{
             data: welfareStatusData,
-            backgroundColor: [
-                '#22c55e',
-                '#94a3b8'
-            ],
+            backgroundColor: welfareStatusColors,
             borderWidth: 0
         }]
     },

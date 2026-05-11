@@ -425,35 +425,44 @@ $isUnknownOnly = in_array('unknown', $welfare_type, true);
 
      
 // ======================
-// counts
+// counts + charts
 // ======================
-// ======================
-// counts
-// ======================
-$counts = ['received' => 0, 'not_received' => 0];
+$chartRows = (!$forExport) ? (clone $q)->get() : collect();
 
-if (!$forExport) {
-    $counts['received'] = (clone $q)->count();
+$isNotReceived = function ($r) {
+    return trim((string)($r->a7_0 ?? '')) === '0';
+};
 
-    $notQ = $baseQuery();
+$receivedCount = $chartRows->filter(fn($r) => !$isNotReceived($r))->count();
+$notReceivedCount = $chartRows->filter(fn($r) => $isNotReceived($r))->count();
 
-    $this->applyWelfareFilters(
-        $notQ,
-        $province, $district, $subdistrict,
-        $survey_year, $house_id, $fname, $lname, $cid,
-        $agey, $age_range, $sex,
-        [], 'not_received', 'any', false,
-        $parseAgeRange, $trim, $hasNumericValueCondition,
-        $COL_HOUSE_SURVEY, $COL_FNAME, $COL_LNAME,
-        $COL_CID, $COL_YEAR, $COL_AGE, $COL_SEX,
-        $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
-    );
+if ($welfare === 'received') {
+    $counts = [
+        'received' => $receivedCount,
+        'not_received' => 0,
+    ];
 
-    $counts['not_received'] = $notQ->count();
+    $welfareChartLabels = ['ได้รับสวัสดิการ'];
+    $welfareChartData = [$receivedCount];
+
+} elseif ($welfare === 'not_received') {
+    $counts = [
+        'received' => 0,
+        'not_received' => $notReceivedCount,
+    ];
+
+    $welfareChartLabels = ['ไม่ได้รับสวัสดิการ'];
+    $welfareChartData = [$notReceivedCount];
+
+} else {
+    $counts = [
+        'received' => $receivedCount,
+        'not_received' => $notReceivedCount,
+    ];
+
+    $welfareChartLabels = ['ได้รับสวัสดิการ', 'ไม่ได้รับสวัสดิการ'];
+    $welfareChartData = [$receivedCount, $notReceivedCount];
 }
-
-// สำคัญ: chart ต้องอยู่ก่อน paginate
-$chartRows = (clone $q)->get();
 
 $typeChartLabels = [];
 $typeChartData = [];
@@ -490,13 +499,6 @@ foreach ($typeMap as $col => $label) {
         $typeChartData[] = $count;
     }
 }
-
-$welfareChartLabels = ['ได้รับสวัสดิการ', 'ไม่ได้รับสวัสดิการ'];
-$welfareChartData = [
-    (int)($counts['received'] ?? 0),
-    (int)($counts['not_received'] ?? 0),
-];
-
 $exportQuery = clone $q;
 
 $rows = $forExport
