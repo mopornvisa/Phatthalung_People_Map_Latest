@@ -1,125 +1,385 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ลงทะเบียนผู้ใช้งานระบบ | Phatthalung People Map</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
- <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>ลงทะเบียน | Phatthalung People Map</title>
 
-  <link rel="stylesheet" href="{{ asset('css/style.css') }}">
-ั
-<div class="container">
-  <div class="row align-items-center justify-content-center g-4">
-    <!-- กล่องลงทะเบียน -->
-    <div class="col-md-10 col-lg-8">
-      <div
-        class="card border-0 shadow-lg rounded-5 p-2 p-md-3 text-center mx-auto"
-        style="max-width:500px;background:rgba(255,255,255,0.95);backdrop-filter:blur(6px);padding-top:1.25rem!important;padding-bottom:1.25rem!important;"
-      >
-        <!-- โลโก้ -->
-        <img
-  src="{{ asset('images/phatthalung-logo.png') }}"
-  alt="Phatthalung People Map Logo"
-  class="img-fluid mb-2 mx-auto d-block"
-  style="
-    max-width:150px;
-    filter:drop-shadow(0 3px 8px rgba(0,0,0,0.15));
-    transition:all 0.3s ease;
-  "
-  onmouseover="this.style.transform='scale(1.1) translateY(-4px)'; this.style.filter='drop-shadow(0 6px 15px rgba(0,0,0,0.25))';"
-  onmouseout="this.style.transform='scale(1) translateY(0)'; this.style.filter='drop-shadow(0 3px 8px rgba(0,0,0,0.15))';"
-/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-        <h5 class="fw-bold mb-2" style="color:#0B5B6B;">Phatthalung People Map</h5>
-        <p class="text-muted small mb-3">กรุณากรอกข้อมูลเพื่อลงทะเบียนเข้าใช้งานระบบ:</p>
+<style>
+body{
+    font-family:'Prompt',sans-serif;
+    min-height:100vh;
+    background:
+        linear-gradient(rgba(5,43,40,.62),rgba(5,43,40,.62)),
+        url("{{ asset('images/phatthalung1.jpg') }}");
+    background-size:cover;
+    background-position:center;
+}
 
-        <form method="POST" action="{{ url('/register') }}">
-          @csrf
-          <div class="row g-2">
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">ชื่อผู้ใช้</label>
-              <input type="text" name="username" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="กรอกชื่อผู้ใช้" required>
-            </div>
+.register-card{
+    width:100%;
+    max-width:620px;
+    background:rgba(255,255,255,.95);
+    border:1px solid rgba(255,255,255,.75);
+    border-radius:30px;
+    padding:24px;
+    box-shadow:0 22px 55px rgba(15,23,42,.24);
+    backdrop-filter:blur(14px);
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">รหัสผ่าน</label>
-              <input type="password" name="password" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="กรอกรหัสผ่าน" required>
-            </div>
+.logo-box{
+    width:82px;
+    height:82px;
+    margin:auto;
+    border-radius:24px;
+    background:linear-gradient(135deg,#ecfffb,#ffffff);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 10px 24px rgba(11,127,111,.16);
+    margin-bottom:14px;
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">ชื่อ</label>
-              <input type="text" name="first_name" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="ชื่อ" required>
-            </div>
+.logo-box img{
+    width:62px;
+    height:62px;
+    object-fit:contain;
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">นามสกุล</label>
-              <input type="text" name="last_name" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="นามสกุล" required>
-            </div>
+.main-title{
+    color:#0B5B6B;
+    font-size:22px;
+    font-weight:800;
+    margin-bottom:2px;
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">เลขบัตรประชาชน</label>
-              <input type="text" name="citizen_id" maxlength="13" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="เลขบัตร 13 หลัก" required>
-            </div>
+.sub-title{
+    color:#64748b;
+    font-size:12px;
+    margin-bottom:20px;
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">เบอร์โทรศัพท์</label>
-              <input type="tel" name="phone" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="เช่น 0812345678" required>
-            </div>
+.form-label{
+    font-size:12px;
+    font-weight:700;
+    color:#475569;
+    margin-bottom:5px;
+}
 
-            <div class="col-md-6 text-start">
-              <label class="form-label small text-secondary">อีเมล</label>
-              <input type="email" name="email" class="form-control form-control-sm rounded-3 shadow-sm" placeholder="example@email.com" required>
-            </div>
+.form-control,
+.form-select{
+    height:44px;
+    border-radius:14px;
+    border:1px solid #d8e8ef;
+    font-size:13px;
+    background:#fff;
+}
 
-            <div class="col-md-6 text-start">
-  <label class="form-label small text-secondary">ประเภทผู้ใช้</label>
-  <select name="user_type" class="form-select form-select-sm rounded-3 shadow-sm" required>
-      <option value="">-- เลือกประเภทผู้ใช้ --</option>
-      <option value="1">หน่วยงานภาครัฐ</option>
-      <option value="2">ดูแลระบบ</option>
-      <option value="3">ผู้ช่วยวิจัย/นักวิจัย/OM</option>
-  </select>
-</div>
+.btn-register{
+    height:46px;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg,#0B7F6F,#0B5B6B);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    box-shadow:0 10px 24px rgba(11,127,111,.20);
+}
 
-          </div>
+.btn-register:hover{
+    color:#fff;
+    transform:translateY(-1px);
+}
 
-          <button
-            type="submit"
-            class="btn w-100 fw-semibold py-2 mt-3 rounded-pill shadow-sm"
-            style="background-color:#0B7F6F;border:none;color:#fff;"
-            onmouseover="this.style.backgroundColor='#09685C'"
-            onmouseout="this.style.backgroundColor='#0B7F6F'"
-          >
-            ลงทะเบียน
-          </button>
-        </form>
+.eye-btn{
+    position:absolute;
+    right:17px;
+    top:50%;
+    transform:translateY(-50%);
+    cursor:pointer;
+    color:#64748b;
+    font-size:18px;
+}
 
-        <div class="text-center mt-2">
-          <a href="{{ url('/') }}" class="small text-muted text-decoration-none">
-            ← ย้อนกลับสู่หน้าหลัก
-          </a>
+.soft-link{
+    color:#0B5B6B;
+    font-weight:700;
+    text-decoration:none;
+}
+
+.soft-link:hover{
+    color:#0B7F6F;
+}
+
+.back-link{
+    color:#64748b;
+    text-decoration:none;
+    font-size:13px;
+}
+
+.back-link:hover{
+    color:#0B7F6F;
+}
+
+@media(max-width:768px){
+
+    .register-card{
+        padding:28px 22px;
+        border-radius:28px;
+    }
+
+}
+</style>
+</head>
+
+<body class="d-flex align-items-center justify-content-center p-3">
+
+<div class="register-card">
+
+    <div class="text-center">
+
+        <div class="logo-box">
+            <img src="{{ asset('images/phatthalung-logo.png') }}">
         </div>
-      </div>
+
+        <div class="main-title">
+            ลงทะเบียนผู้ใช้งาน
+        </div>
+
+        <div class="sub-title">
+            Phatthalung People Map • ระบบฐานข้อมูลพัทลุงโมเดล
+        </div>
+
     </div>
-  </div>
+
+    <form method="POST" action="{{ url('/register') }}">
+        @csrf
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-person-circle me-1"></i>
+                    ชื่อผู้ใช้
+                </label>
+
+                <input type="text"
+                       name="username"
+                       value="{{ old('username') }}"
+                       class="form-control"
+                       placeholder="กรอกชื่อผู้ใช้"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    รหัสผ่าน
+                </label>
+
+                <div class="position-relative">
+                    <input type="password"
+                           name="password"
+                           id="password"
+                           class="form-control pe-5"
+                           placeholder="กรอกรหัสผ่าน"
+                           required>
+
+                    <span onclick="togglePassword()" class="eye-btn">
+                        <i class="bi bi-eye" id="eyeIcon"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-person-fill me-1"></i>
+                    ชื่อ
+                </label>
+
+                <input type="text"
+                       name="first_name"
+                       value="{{ old('first_name') }}"
+                       class="form-control"
+                       placeholder="ชื่อ"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-person-vcard-fill me-1"></i>
+                    นามสกุล
+                </label>
+
+                <input type="text"
+                       name="last_name"
+                       value="{{ old('last_name') }}"
+                       class="form-control"
+                       placeholder="นามสกุล"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-credit-card-2-front-fill me-1"></i>
+                    เลขบัตรประชาชน
+                </label>
+
+                <input type="text"
+                       name="citizen_id"
+                       value="{{ old('citizen_id') }}"
+                       maxlength="13"
+                       class="form-control"
+                       placeholder="เลขบัตรประชาชน 13 หลัก"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-telephone-fill me-1"></i>
+                    เบอร์โทรศัพท์
+                </label>
+
+                <input type="tel"
+                       name="phone"
+                       value="{{ old('phone') }}"
+                       class="form-control"
+                       placeholder="0812345678"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-envelope-fill me-1"></i>
+                    อีเมล
+                </label>
+
+                <input type="email"
+                       name="email"
+                       value="{{ old('email') }}"
+                       class="form-control"
+                       placeholder="example@email.com"
+                       required>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">
+                    <i class="bi bi-buildings-fill me-1"></i>
+                    หน่วยงาน / ประเภทผู้ใช้
+                </label>
+
+                <select name="agency_id" class="form-select" required>
+
+                    <option value="">
+                        -- เลือกประเภท/หน่วยงาน --
+                    </option>
+
+                    <option value="บุคคลทั่วไป">บุคคลทั่วไป</option>
+
+                    <option value="องค์การบริหารส่วนจังหวัดพัทลุง">
+                        องค์การบริหารส่วนจังหวัดพัทลุง
+                    </option>
+
+                    <option value="สำนักงานสาธารณสุขจังหวัดพัทลุง">
+                        สำนักงานสาธารณสุขจังหวัดพัทลุง
+                    </option>
+
+                    <option value="มหาวิทยาลัยทักษิณ">
+                        มหาวิทยาลัยทักษิณ
+                    </option>
+
+                    <option value="หน่วยงานภาครัฐอื่น ๆ">
+                        หน่วยงานภาครัฐอื่น ๆ
+                    </option>
+
+                    <option value="ดูแลระบบ">
+                        ดูแลระบบ
+                    </option>
+
+                </select>
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn btn-register w-100 mt-4">
+            <i class="bi bi-person-plus-fill me-2"></i>
+            ลงทะเบียนเข้าใช้งานระบบ
+        </button>
+
+    </form>
+
+    <div class="text-center mt-4">
+        <span class="text-muted small">มีบัญชีอยู่แล้ว?</span>
+
+        <a href="{{ route('login.form') }}" class="soft-link small">
+            เข้าสู่ระบบ
+        </a>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="{{ url('/') }}" class="back-link">
+            <i class="bi bi-arrow-left me-1"></i>
+            กลับหน้าหลัก
+        </a>
+    </div>
+
 </div>
-@if(session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if($errors->any())
+<script>
+Swal.fire({
+    icon:'warning',
+    title:'ข้อมูลไม่ถูกต้อง',
+    html:`{!! implode('<br>', $errors->all()) !!}`,
+    confirmButtonColor:'#0B7F6F',
+    confirmButtonText:'ตกลง'
+});
+</script>
 @endif
 
 @if(session('error'))
-    <div class="alert alert-danger">
-        {{ session('error') }}
-    </div>
+<script>
+Swal.fire({
+    icon:'error',
+    title:'เกิดข้อผิดพลาด',
+    text:'{{ session('error') }}',
+    confirmButtonColor:'#dc3545',
+    confirmButtonText:'ตกลง'
+});
+</script>
 @endif
 
+<script>
+function togglePassword(){
 
+    const password = document.getElementById('password');
+    const eyeIcon = document.getElementById('eyeIcon');
 
-<!-- Bootstrap Script -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    if(password.type === 'password'){
+
+        password.type = 'text';
+
+        eyeIcon.classList.remove('bi-eye');
+        eyeIcon.classList.add('bi-eye-slash');
+
+    }else{
+
+        password.type = 'password';
+
+        eyeIcon.classList.remove('bi-eye-slash');
+        eyeIcon.classList.add('bi-eye');
+
+    }
+}
+</script>
+
 </body>
 </html>

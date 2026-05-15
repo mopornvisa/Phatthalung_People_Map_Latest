@@ -340,12 +340,53 @@ data-bs-toggle="dropdown">
 </a>
 
 <ul class="dropdown-menu dropdown-menu-end">
+
+@if(session('login_type') == 'admin')
+
 <li>
-<a class="dropdown-item text-danger" href="{{ url('/logout') }}">
-<i class="bi bi-box-arrow-right me-2"></i>
-ออกจากระบบ
+<a class="dropdown-item"
+   href="{{ route('admin.dashboard') }}">
+
+<i class="bi bi-speedometer2 me-2"></i>
+Admin Dashboard
+
 </a>
 </li>
+
+<li>
+<a class="dropdown-item"
+   href="{{ route('admin.users.index') }}">
+
+<i class="bi bi-shield-lock-fill me-2"></i>
+จัดการสิทธิ์ผู้ใช้งาน
+
+</a>
+</li>
+
+<li>
+<a class="dropdown-item"
+   href="{{ route('system.logs.index') }}">
+
+<i class="bi bi-clock-history me-2"></i>
+System Logs
+
+</a>
+</li>
+
+<li><hr class="dropdown-divider"></li>
+
+@endif
+
+<li>
+<a class="dropdown-item text-danger"
+   href="{{ route('logout') }}">
+
+<i class="bi bi-box-arrow-right me-2"></i>
+ออกจากระบบ
+
+</a>
+</li>
+
 </ul>
 </li>
 
@@ -382,3 +423,99 @@ data-bs-toggle="dropdown">
 </div>
 </div>
 </nav>
+@if(!session('login_user'))
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+
+    const protectedPaths = [
+        '/dashboard',
+        '/health/status',
+        '/welfare',
+        '/housing',
+        '/household_64',
+        '/economy',
+        '/education',
+        '/forest-resources'
+    ];
+
+    document.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', function(e){
+
+            const href = this.getAttribute('href');
+
+            if(!href || href === '#' || href.includes('/login') || href.includes('/register') || href.includes('/logout')){
+                return;
+            }
+
+            let url;
+
+            try{
+                url = new URL(href, window.location.origin);
+            }catch(err){
+                return;
+            }
+
+            const isProtected = protectedPaths.some(path => {
+                return url.pathname.startsWith(path);
+            });
+
+            if(isProtected){
+                e.preventDefault();
+
+                Swal.fire({
+                    html: `
+                        <div style="padding:4px 4px 0;">
+                            <div style="
+                                width:86px;height:86px;margin:0 auto 14px;
+                                border-radius:26px;
+                                background:linear-gradient(135deg,#0B7F6F,#0B5B6B);
+                                color:white;display:flex;align-items:center;justify-content:center;
+                                font-size:40px;box-shadow:0 16px 32px rgba(11,127,111,.25);
+                            ">
+                                <i class="bi bi-shield-lock-fill"></i>
+                            </div>
+
+                            <h3 style="color:#0B5B6B;font-weight:800;margin-bottom:6px;font-size:26px;">
+                                เข้าสู่ระบบก่อนใช้งาน
+                            </h3>
+
+                            <p style="color:#64748b;line-height:1.7;margin-bottom:4px;margin-top:-2px;font-size:13px;">
+                                เพื่อความปลอดภัยของข้อมูล<br>
+                                กรุณาเข้าสู่ระบบหรือลงทะเบียนก่อนเข้าใช้งานระบบ
+                            </p>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="bi bi-box-arrow-in-right me-1"></i> เข้าสู่ระบบ',
+                    cancelButtonText: '<i class="bi bi-person-plus me-1"></i> ลงทะเบียน',
+                    confirmButtonColor: '#0B7F6F',
+                    cancelButtonColor: '#0B5B6B',
+                    reverseButtons: true,
+                    width: 430,
+                    padding: '28px 30px 24px',
+                    background: 'rgba(255,255,255,.97)',
+                    backdrop: 'rgba(15,23,42,.45)',
+                    customClass: {
+                        popup: 'rounded-5 shadow-lg',
+                        confirmButton: 'rounded-pill px-4 py-2 fw-bold',
+                        cancelButton: 'rounded-pill px-4 py-2 fw-bold'
+                    }
+                }).then((result) => {
+                    if(result.isConfirmed){
+                        window.location.href = '{{ route("login.form") }}';
+                    }else if(result.dismiss === Swal.DismissReason.cancel){
+                        window.location.href = '{{ route("register.form") }}';
+                    }
+                });
+            }
+
+        });
+    });
+
+});
+</script>
+
+@endif

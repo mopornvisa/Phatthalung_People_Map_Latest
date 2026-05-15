@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
@@ -32,285 +33,406 @@ use App\Http\Controllers\LcIncidenceAllController;
 use App\Http\Controllers\DeathDashboardController;
 use App\Http\Controllers\DeathSummaryManageController;
 use App\Http\Controllers\EducationDashboardController;
-use App\Http\Controllers\EconomyController; 
+use App\Http\Controllers\EconomyController;
 use App\Http\Controllers\ForestResourceController;
+use App\Http\Controllers\AdminUserController;
+use App\Http\Controllers\SystemLogController;
+use App\Http\Controllers\AdminDashboardController;
 
+/*
+|--------------------------------------------------------------------------
+| Home / Main
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', fn() => view('home'))->name('home');
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard');
+
+Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])
+    ->name('sqlsrv.test');
+
+Route::get('/test', fn() => redirect()->route('health.index'))
+    ->name('test.redirect');
+
+Route::get('/test-speed', fn() => 'ok');
+
+/*
+|--------------------------------------------------------------------------
+| Auth
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/register', fn() => view('register'))
+    ->name('register.form');
+
+Route::post('/register', [RegisterController::class, 'store'])
+    ->name('register.store');
+
+Route::get('/login', [LoginController::class, 'showLoginForm'])
+    ->name('login.form');
+
+Route::post('/login', [LoginController::class, 'login'])
+    ->name('login.store');
+
+Route::get('/logout', [LoginController::class, 'logout'])
+    ->name('logout');
 
 
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Household
 |--------------------------------------------------------------------------
 */
 
-// หน้าแรกใหม่
-Route::get('/', function () {
-    return view('home');
-})->name('home');
 
-// Dashboard
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::prefix('household_64')->group(function () {
+    Route::get('/', [Household64Controller::class, 'index'])
+        ->name('household_64');
 
-// SQL Server test
-Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])->name('sqlsrv.test');
+    Route::get('/export', [Household64Controller::class, 'export'])
+        ->name('household_64.export');
+});
 
-// ======================
-// Household
-// ======================
-Route::get('/household_64', [Household64Controller::class, 'index'])
-    ->name('household_64');
-Route::get('/household_64/export', [Household64Controller::class, 'export'])->name('household_64.export');
+/*
+|--------------------------------------------------------------------------
+| Welfare
+|--------------------------------------------------------------------------
+*/
 
-// ======================
-// Welfare
-// ======================
-Route::get('/welfare', [WelfareController::class, 'index'])->name('welfare.index');
-Route::get('/welfare/export', [WelfareController::class, 'export'])->name('welfare.export');
+Route::prefix('welfare')->group(function () {
+    Route::get('/', [WelfareController::class, 'index'])
+        ->name('welfare.index');
 
-// ======================
-// Health
-// ======================
+    Route::get('/export', [WelfareController::class, 'export'])
+        ->name('welfare.export');
+});
 
-// หน้า health หลัก
-Route::get('/health', [HealthController::class, 'index'])->name('health.index');
+/*
+|--------------------------------------------------------------------------
+| Housing / Help Records
+|--------------------------------------------------------------------------
+*/
 
-// export
-Route::get('/health/export', [HealthController::class, 'export'])->name('health.export');
+Route::prefix('housing')->group(function () {
+    Route::get('/', [HousingPhysicalController::class, 'dashboard'])
+        ->name('housing.dashboard');
 
-// 👉 health_status
-Route::get('/health-status', function () {
-    return view('health.health_status');
-})->name('health_status');
+    Route::get('/map', [HousingPhysicalController::class, 'map'])
+        ->name('housing.map');
 
-// 👉 cardio menu
-Route::get('/health/cardio-menu', function () {
-    return view('health.cardio-menu');
-})->name('health.cardio.menu');
+    Route::get('/cases', [HousingPhysicalController::class, 'cases'])
+        ->name('housing.cases');
 
-// ======================
-// Cardio
-// ======================
-Route::get('/health/cardio-incidence', [CardioIncidenceController::class, 'index'])
-    ->name('health.cardio_incidence');
+    Route::get('/house/{houseId}', [HousingPhysicalController::class, 'show'])
+        ->name('housing.show');
 
-Route::get('/health/cardio-incidence-all', [HealthCardioIncidenceAllController::class, 'index'])
-    ->name('health.cardio-incidence-all');
+    Route::get('/house/{houseId}/help/create', [HelpRecordController::class, 'create'])
+        ->name('help_records.create');
 
-Route::get('/health/cardio-incidence-all/export', [HealthCardioIncidenceAllController::class, 'export'])
-    ->name('health.cardio-incidence-all.export');
-
-Route::get('/health/cardio-mortality', [HealthCardioMortalityController::class, 'index'])
-    ->name('health.cardio-mortality');
-
-Route::get('/health/cardio-mortality/export', [HealthCardioMortalityController::class, 'export'])
-    ->name('health.cardio-mortality.export');
-
-// ======================
-// Other Health
-// ======================
-Route::get('/health/mortality-cause', fn() => 'หน้าสาเหตุการป่วย/ตาย')->name('health.mortality_cause');
-Route::get('/health/occupation-environment', fn() => 'หน้าโรคจากอาชีพ')->name('health.occupation_environment');
-Route::get('/health/air-pollution', fn() => 'หน้าโรคจากมลพิษ')->name('health.air_pollution');
-
-// ======================
-// Housing
-// ======================
-Route::get('/housing', [HousingPhysicalController::class, 'dashboard'])->name('housing.dashboard');
-Route::get('/housing/map', [HousingPhysicalController::class, 'map'])->name('housing.map');
-Route::get('/housing/cases', [HousingPhysicalController::class, 'cases'])->name('housing.cases');
-Route::get('/housing/house/{houseId}', [HousingPhysicalController::class, 'show'])->name('housing.show');
-
-// Help
-Route::get('/housing/house/{houseId}/help/create', [HelpRecordController::class, 'create'])
-    ->name('help_records.create');
-
-Route::post('/housing/house/{houseId}/help', [HelpRecordController::class, 'store'])
-    ->name('help_records.store');
+    Route::post('/house/{houseId}/help', [HelpRecordController::class, 'store'])
+        ->name('help_records.store');
+});
 
 Route::get('/help-records', [HelpRecordController::class, 'index'])
     ->name('help_records.index');
 
-// ======================
-// Auth
-// ======================
-Route::get('/register', fn() => view('register'))->name('register.form');
-Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+/*
+|--------------------------------------------------------------------------
+| Health Main
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login.form');
-Route::post('/login', [LoginController::class, 'login'])->name('login.store');
+Route::prefix('health')->group(function () {
+    Route::get('/', [HealthController::class, 'index'])
+        ->name('health.index');
 
-// test
-Route::get('/test', fn() => redirect()->route('health.index'))->name('test.redirect');
+    Route::get('/export', [HealthController::class, 'export'])
+        ->name('health.export');
 
-// export ncd
-Route::get('/health/ncd-major/export', [CardioIncidenceController::class, 'export'])
-    ->name('cardio.export');
+    Route::get('/status', fn() => view('health.health_status'))
+        ->name('health_status');
 
-    Route::get('/health/ht-incidence-100k', [HtIncidence100kController::class, 'index'])
-    ->name('ht.incidence100k');
+    Route::get('/cardio-menu', fn() => view('health.cardio-menu'))
+        ->name('health.cardio.menu');
 
-Route::get('/health/ht-incidence-100k/export', [HtIncidence100kController::class, 'export'])
-    ->name('ht.incidence.100k.export');
-    Route::get('/test-speed', function () {
-    return 'ok';
+    Route::get('/mortality-cause', fn() => 'หน้าสาเหตุการป่วย/ตาย')
+        ->name('health.mortality_cause');
+
+    Route::get('/occupation-environment', fn() => 'หน้าโรคจากอาชีพ')
+        ->name('health.occupation_environment');
+
+    Route::get('/air-pollution', fn() => 'หน้าโรคจากมลพิษ')
+        ->name('health.air_pollution');
+
+    Route::get('/ncd-major/export', [CardioIncidenceController::class, 'export'])
+        ->name('cardio.export');
 });
 
+/*
+|--------------------------------------------------------------------------
+| Health - Cardio
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/health/dm-incidence-100k', [DmIncidence100kController::class, 'index'])
-    ->name('dm.incidence.100k');
+Route::prefix('health')->group(function () {
+    Route::get('/cardio-incidence', [CardioIncidenceController::class, 'index'])
+        ->name('health.cardio_incidence');
 
-Route::get('/health/dm-incidence-100k/export', [DmIncidence100kController::class, 'export'])
-    ->name('dm.incidence.100k.export');
+    Route::get('/cardio-incidence-all', [HealthCardioIncidenceAllController::class, 'index'])
+        ->name('health.cardio-incidence-all');
 
-Route::get('/health/copd-incidence-100k', [CopdIncidence100kController::class, 'index'])
-    ->name('copd.incidence.100k');
+    Route::get('/cardio-incidence-all/export', [HealthCardioIncidenceAllController::class, 'export'])
+        ->name('health.cardio-incidence-all.export');
 
-Route::get('/health/copd-incidence-100k/export', [CopdIncidence100kController::class, 'export'])
-    ->name('copd.incidence.100k.export');
+    Route::get('/cardio-mortality', [HealthCardioMortalityController::class, 'index'])
+        ->name('health.cardio-mortality');
 
-Route::get('/health/as-incidence-100k', [AsthmaIncidence100kController::class, 'index'])
-    ->name('as.incidence.100k');
+    Route::get('/cardio-mortality/export', [HealthCardioMortalityController::class, 'export'])
+        ->name('health.cardio-mortality.export');
 
-Route::get('/health/as-incidence-100k/export', [AsthmaIncidence100kController::class, 'export'])
-    ->name('as.incidence.100k.export'); 
+    Route::get('/cardio-compare', [CardioCompareController::class, 'index'])
+        ->name('health.cardio_compare');
 
-Route::get('/health/cardio-compare', [CardioCompareController::class, 'index'])
-    ->name('health.cardio_compare');
+    Route::get('/cardio-compare/export', [CardioCompareController::class, 'export'])
+        ->name('health.cardio_compare.export');
+});
 
-Route::get('/health/cardio-compare/export', [CardioCompareController::class, 'export'])
-    ->name('health.cardio_compare.export');
+/*
+|--------------------------------------------------------------------------
+| Health - Incidence 100k
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/health/ht-incidence-all', [HtIncidenceAllController::class, 'index'])
-    ->name('health.ht-incidence-all');
+Route::prefix('health')->group(function () {
+    Route::get('/ht-incidence-100k', [HtIncidence100kController::class, 'index'])
+        ->name('ht.incidence100k');
 
-Route::get('/health/ht-incidence-all/export', [HtIncidenceAllController::class, 'export'])
-    ->name('health.ht-incidence-all.export');
+    Route::get('/ht-incidence-100k/export', [HtIncidence100kController::class, 'export'])
+        ->name('ht.incidence.100k.export');
 
+    Route::get('/dm-incidence-100k', [DmIncidence100kController::class, 'index'])
+        ->name('dm.incidence.100k');
 
-Route::get('/health/ht-mortality', [HtMortalityController::class, 'index'])
-    ->name('health.ht-mortality');
+    Route::get('/dm-incidence-100k/export', [DmIncidence100kController::class, 'export'])
+        ->name('dm.incidence.100k.export');
 
-Route::get('/health/ht-mortality/export', [HtMortalityController::class, 'export'])
-    ->name('health.ht-mortality.export');
+    Route::get('/copd-incidence-100k', [CopdIncidence100kController::class, 'index'])
+        ->name('copd.incidence.100k');
 
-Route::get('/health/stroke-incidence-all', [StrokeIncidenceAllController::class, 'index'])
-    ->name('health.stroke-incidence-all');
+    Route::get('/copd-incidence-100k/export', [CopdIncidence100kController::class, 'export'])
+        ->name('copd.incidence.100k.export');
 
-Route::get('/health/stroke-incidence-all/export', [StrokeIncidenceAllController::class, 'export'])
-    ->name('health.stroke-incidence-all.export');
+    Route::get('/as-incidence-100k', [AsthmaIncidence100kController::class, 'index'])
+        ->name('as.incidence.100k');
 
-Route::get('/health/dm-incidence-all', [DmIncidenceAllController::class, 'index'])
-    ->name('health.dm-incidence-all');
+    Route::get('/as-incidence-100k/export', [AsthmaIncidence100kController::class, 'export'])
+        ->name('as.incidence.100k.export');
+});
 
-Route::get('/health/dm-incidence-all/export', [DmIncidenceAllController::class, 'export'])
-    ->name('health.dm-incidence-all.export');
+/*
+|--------------------------------------------------------------------------
+| Health - Other Disease Dashboards
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/health/dm-mortality', [DmMortalityController::class, 'index'])
-    ->name('health.dm-mortality');
+Route::prefix('health')->group(function () {
+    Route::get('/ht-incidence-all', [HtIncidenceAllController::class, 'index'])
+        ->name('health.ht-incidence-all');
 
-Route::get('/health/dm-mortality/export', [DmMortalityController::class, 'export'])
-    ->name('health.dm-mortality.export');
+    Route::get('/ht-incidence-all/export', [HtIncidenceAllController::class, 'export'])
+        ->name('health.ht-incidence-all.export');
 
-Route::get('/health/copd-incidence-all', [CopdIncidenceAllController::class, 'index'])
-    ->name('health.copd-incidence-all');
+    Route::get('/ht-mortality', [HtMortalityController::class, 'index'])
+        ->name('health.ht-mortality');
 
-Route::get('/health/copd-incidence-all/export', [CopdIncidenceAllController::class, 'export'])
-    ->name('health.copd-incidence-all.export');
+    Route::get('/ht-mortality/export', [HtMortalityController::class, 'export'])
+        ->name('health.ht-mortality.export');
 
-Route::get('/health/copd-mortality', [CopdMortalityController::class, 'index'])
-    ->name('health.copd-mortality');
+    Route::get('/stroke-incidence-all', [StrokeIncidenceAllController::class, 'index'])
+        ->name('health.stroke-incidence-all');
 
-Route::get('/health/copd-mortality/export', [CopdMortalityController::class, 'export'])
-    ->name('health.copd-mortality.export');
+    Route::get('/stroke-incidence-all/export', [StrokeIncidenceAllController::class, 'export'])
+        ->name('health.stroke-incidence-all.export');
 
-Route::get('/health/bc-incidence-all', [BcIncidenceAllController::class, 'index'])
-    ->name('health.bc-incidence-all');
+    Route::get('/dm-incidence-all', [DmIncidenceAllController::class, 'index'])
+        ->name('health.dm-incidence-all');
 
-Route::get('/health/bc-incidence-all/export', [BcIncidenceAllController::class, 'export'])
-    ->name('health.bc-incidence-all.export');
+    Route::get('/dm-incidence-all/export', [DmIncidenceAllController::class, 'export'])
+        ->name('health.dm-incidence-all.export');
 
-Route::get('/health/cc-incidence-all', [CcIncidenceAllController::class, 'index'])
-    ->name('health.cc-incidence-all');
+    Route::get('/dm-mortality', [DmMortalityController::class, 'index'])
+        ->name('health.dm-mortality');
 
-Route::get('/health/cc-incidence-all/export', [CcIncidenceAllController::class, 'export'])
-    ->name('health.cc-incidence-all.export');
+    Route::get('/dm-mortality/export', [DmMortalityController::class, 'export'])
+        ->name('health.dm-mortality.export');
 
-Route::get('/health/emph-incidence-all', [EmphIncidenceAllController::class, 'index'])
-    ->name('health.emph-incidence-all');
+    Route::get('/copd-incidence-all', [CopdIncidenceAllController::class, 'index'])
+        ->name('health.copd-incidence-all');
 
-Route::get('/health/emph-incidence-all/export', [EmphIncidenceAllController::class, 'export'])
-    ->name('health.emph-incidence-all.export');
+    Route::get('/copd-incidence-all/export', [CopdIncidenceAllController::class, 'export'])
+        ->name('health.copd-incidence-all.export');
 
+    Route::get('/copd-mortality', [CopdMortalityController::class, 'index'])
+        ->name('health.copd-mortality');
 
-Route::get('/health/lc-incidence-all', [LcIncidenceAllController::class, 'index'])
-    ->name('health.lc-incidence-all');
+    Route::get('/copd-mortality/export', [CopdMortalityController::class, 'export'])
+        ->name('health.copd-mortality.export');
 
-Route::get('/health/lc-incidence-all/export', [LcIncidenceAllController::class, 'export'])
-    ->name('health.lc-incidence-all.export');
+    Route::get('/bc-incidence-all', [BcIncidenceAllController::class, 'index'])
+        ->name('health.bc-incidence-all');
 
-Route::get('/health/death-dashboard', [DeathDashboardController::class, 'index'])
-    ->name('health.death_dashboard');
+    Route::get('/bc-incidence-all/export', [BcIncidenceAllController::class, 'export'])
+        ->name('health.bc-incidence-all.export');
 
-Route::get('/health/death-dashboard/export', [DeathDashboardController::class, 'export'])
-    ->name('health.death_dashboard.export');
+    Route::get('/cc-incidence-all', [CcIncidenceAllController::class, 'index'])
+        ->name('health.cc-incidence-all');
 
-    
+    Route::get('/cc-incidence-all/export', [CcIncidenceAllController::class, 'export'])
+        ->name('health.cc-incidence-all.export');
 
-Route::get('/death-summary-manage', [DeathSummaryManageController::class, 'index'])
-    ->name('death_summary.manage');
+    Route::get('/emph-incidence-all', [EmphIncidenceAllController::class, 'index'])
+        ->name('health.emph-incidence-all');
 
-Route::post('/death-summary-manage/import', [DeathSummaryManageController::class, 'import'])
-    ->name('death_summary.import');
+    Route::get('/emph-incidence-all/export', [EmphIncidenceAllController::class, 'export'])
+        ->name('health.emph-incidence-all.export');
 
-Route::post('/death-summary-manage/store', [DeathSummaryManageController::class, 'store'])
-    ->name('death_summary.store');
+    Route::get('/lc-incidence-all', [LcIncidenceAllController::class, 'index'])
+        ->name('health.lc-incidence-all');
 
-Route::put('/death-summary-manage/{id}', [DeathSummaryManageController::class, 'update'])
-    ->name('death_summary.update');
+    Route::get('/lc-incidence-all/export', [LcIncidenceAllController::class, 'export'])
+        ->name('health.lc-incidence-all.export');
+});
 
-Route::delete('/death-summary-manage/{id}', [DeathSummaryManageController::class, 'destroy'])
-    ->name('death_summary.destroy');
+/*
+|--------------------------------------------------------------------------
+| Death Dashboard / Death Summary Manage
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('health')->group(function () {
+    Route::get('/death-dashboard', [DeathDashboardController::class, 'index'])
+        ->name('health.death_dashboard');
+
+    Route::get('/death-dashboard/export', [DeathDashboardController::class, 'export'])
+        ->name('health.death_dashboard.export');
+});
+
+Route::prefix('death-summary-manage')->group(function () {
+    Route::get('/', [DeathSummaryManageController::class, 'index'])
+        ->name('death_summary.manage');
+
+    Route::post('/import', [DeathSummaryManageController::class, 'import'])
+        ->name('death_summary.import');
+
+    Route::post('/store', [DeathSummaryManageController::class, 'store'])
+        ->name('death_summary.store');
+
+    Route::put('/{id}', [DeathSummaryManageController::class, 'update'])
+        ->name('death_summary.update');
+
+    Route::delete('/{id}', [DeathSummaryManageController::class, 'destroy'])
+        ->name('death_summary.destroy');
+});
+
 Route::get('/death-summary/template', [DeathSummaryManageController::class, 'downloadTemplate'])
     ->name('death_summary.template');
+
 Route::post('/death-summary/bulk-destroy', [DeathSummaryManageController::class, 'bulkDestroy'])
     ->name('death_summary.bulk_destroy');
 
+/*
+|--------------------------------------------------------------------------
+| Education
+|--------------------------------------------------------------------------
+*/
 
+Route::prefix('education')->group(function () {
+    Route::get('/', [EducationDashboardController::class, 'index'])
+        ->name('education.dashboard');
 
-Route::get('/education', [EducationDashboardController::class, 'index'])
-    ->name('education.dashboard');
-Route::get('/education/export', [EducationDashboardController::class, 'export'])
-    ->name('education.export');
+    Route::get('/export', [EducationDashboardController::class, 'export'])
+        ->name('education.export');
+});
 
-Route::get('/economy', [EconomyController::class, 'index'])->name('economy.index');
-Route::get('/economy', [EconomyController::class, 'index'])
-    ->name('economy.index');
-Route::get('/economy/export', [EconomyController::class, 'export'])
-    ->name('economy.export');
+/*
+|--------------------------------------------------------------------------
+| Economy
+|--------------------------------------------------------------------------
+*/
 
-Route::get('/health/export', [HealthController::class, 'export'])
-    ->name('health.export');
+Route::prefix('economy')->group(function () {
+    Route::get('/', [EconomyController::class, 'index'])
+        ->name('economy.index');
 
-Route::get('/welfare/export', [WelfareController::class, 'export'])
-    ->name('welfare.export');
-Route::get('/forest-resources', [ForestResourceController::class, 'index'])
-    ->name('forest.resources.index');
+    Route::get('/export', [EconomyController::class, 'export'])
+        ->name('economy.export');
+});
 
-Route::get('/forest-resources/manage', [ForestResourceController::class, 'manage'])
-    ->name('forest.resources.manage');
+/*
+|--------------------------------------------------------------------------
+| Forest Resources
+|--------------------------------------------------------------------------
+*/
 
-Route::post('/forest-resources/store', [ForestResourceController::class, 'store'])
-    ->name('forest.resources.store');
+Route::prefix('forest-resources')->group(function () {
+    Route::get('/', [ForestResourceController::class, 'index'])
+        ->name('forest.resources.index');
 
-Route::post('/forest-resources/import', [ForestResourceController::class, 'import'])
-    ->name('forest.resources.import');
+    Route::get('/manage', [ForestResourceController::class, 'manage'])
+        ->name('forest.resources.manage');
 
-Route::put('/forest-resources/{id}', [ForestResourceController::class, 'update'])
-    ->name('forest.resources.update');
+    Route::post('/store', [ForestResourceController::class, 'store'])
+        ->name('forest.resources.store');
 
-Route::delete('/forest-resources/{id}', [ForestResourceController::class, 'destroy'])
-    ->name('forest.resources.destroy');
+    Route::post('/import', [ForestResourceController::class, 'import'])
+        ->name('forest.resources.import');
 
-Route::post('/forest-resources/bulk-destroy', [ForestResourceController::class, 'bulkDestroy'])
-    ->name('forest.resources.bulk_destroy');
+    Route::put('/{id}', [ForestResourceController::class, 'update'])
+        ->name('forest.resources.update');
+
+    Route::delete('/{id}', [ForestResourceController::class, 'destroy'])
+        ->name('forest.resources.destroy');
+
+    Route::post('/bulk-destroy', [ForestResourceController::class, 'bulkDestroy'])
+        ->name('forest.resources.bulk_destroy');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Users
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin/users')->group(function () {
+    Route::get('/', [AdminUserController::class, 'index'])
+        ->name('admin.users.index');
+
+    Route::post('/{id}/approve', [AdminUserController::class, 'approve'])
+        ->name('admin.users.approve');
+
+    Route::post('/{id}/pending', [AdminUserController::class, 'pending'])
+        ->name('admin.users.pending');
+
+    Route::get('/{id}/edit', [AdminUserController::class, 'edit'])
+        ->name('admin.users.edit');
+
+    Route::put('/{id}/update', [AdminUserController::class, 'update'])
+        ->name('admin.users.update');
+
+    Route::delete('/{id}', [AdminUserController::class, 'destroy'])
+        ->name('admin.users.destroy');
+});
+Route::middleware(['admin'])->prefix('system-logs')->group(function () {
+
+    Route::get('/',
+        [SystemLogController::class, 'index'])
+        ->name('system.logs.index');
+
+});
+Route::middleware(['admin'])->get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+    ->name('admin.dashboard');
+    Route::middleware(['admin'])->get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+    ->name('admin.dashboard');

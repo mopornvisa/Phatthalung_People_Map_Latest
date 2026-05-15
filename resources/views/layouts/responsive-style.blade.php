@@ -1,6 +1,6 @@
 <style>
   :root{
-    --app-max-width: 1440px;
+    --app-max-width: 1440px; 
     --sidebar-width: 320px;
     --primary:#0B7F6F;
     --primary-dark:#0B5B6B;
