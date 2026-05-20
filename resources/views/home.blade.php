@@ -360,5 +360,31 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+@if(session('success'))
+<script>
+Swal.fire({
+    icon: 'success',
+    title: 'สำเร็จ',
+    text: '{{ session('success') }}',
+    confirmButtonColor: '#0B7F6F',
+    confirmButtonText: 'ตกลง'
+});
+</script>
+@endif
+
+@if(session('error'))
+<script>
+Swal.fire({
+    icon: 'error',
+    title: 'เกิดข้อผิดพลาด',
+    text: '{{ session('error') }}',
+    confirmButtonColor: '#dc3545',
+    confirmButtonText: 'ตกลง'
+});
+</script>
+@endif
 </body>
 </html>

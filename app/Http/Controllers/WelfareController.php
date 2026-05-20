@@ -44,6 +44,8 @@ class WelfareController extends Controller
 'welfareChartData'   => $data['welfareChartData'],
 'typeChartLabels'    => $data['typeChartLabels'],
 'typeChartData'      => $data['typeChartData'],
+'typeChartReceivedData'    => $data['typeChartReceivedData'],
+'typeChartNotReceivedData' => $data['typeChartNotReceivedData'],
         ]);
     }
 
@@ -154,7 +156,7 @@ $fileName .= '.xlsx';
         // ======================
         // mapping survey_a
         // ======================
-        $COL_HOUSE    = $pickMainCol(['HC'], 'HC');
+        $COL_HOUSE = $pickMainCol(['HC'], null);
         $COL_ORDER    = $pickMainCol(['a1'], null);
         $COL_FNAME    = $pickMainCol(['a2_2'], null);
         $COL_LNAME    = $pickMainCol(['a2_3'], null);
@@ -176,7 +178,7 @@ $fileName .= '.xlsx';
         // mapping survey_profile64
         // ======================
        $COL_HOUSE_PROFILE = $pickProfCol(['HC1', 'HC'], null);
-$COL_HOUSE_SURVEY  = $pickMainCol(['HC', 'HC1'], null);
+$COL_HOUSE_SURVEY  = $pickMainCol(['HC'], null);
         $P_COL_TEL      = $pickProfCol(['TEL'], null);
         $P_COL_LATX     = $pickProfCol(['latx'], null);
         $P_COL_LNGY     = $pickProfCol(['lngy'], null);
@@ -214,14 +216,31 @@ $COL_HOUSE_SURVEY  = $pickMainCol(['HC', 'HC1'], null);
         $sex         = trim((string) $request->get('sex', ''));
 
         if ($welfare !== 'received') $welfare_type = [];
+$parseAgeRange = function(string $ageRange): array {
 
-        $parseAgeRange = function(string $ageRange): array {
-            $ageRange = trim($ageRange);
-            if ($ageRange === '') return [null, null];
-            if (preg_match('/^(\d+)\-(\d+)$/', $ageRange, $m)) return [(int)$m[1], (int)$m[2]];
-            if (preg_match('/^(\d+)\+$/', $ageRange, $m)) return [(int)$m[1], null];
-            return [null, null];
-        };
+    $ageRange = trim($ageRange);
+
+    if ($ageRange === '') {
+        return [null, null];
+    }
+
+    // ไม่ระบุอายุ = 0
+    if ($ageRange === '0') {
+        return [0, 0];
+    }
+
+    if (preg_match('/^(\d+)\-(\d+)$/', $ageRange, $m)) {
+        return [(int)$m[1], (int)$m[2]];
+    }
+
+    if (preg_match('/^(\d+)\+$/', $ageRange, $m)) {
+        return [(int)$m[1], null];
+    }
+
+    return [null, null];
+};
+      
+          
 
         // ======================
         // welfare cols
@@ -250,22 +269,40 @@ $isUnknownOnly = in_array('unknown', $welfare_type, true);
         // ======================
         $baseQuery = function() use (
             $conn, $mainTable, $profileTable,
-           $COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE
+            $COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE
         ) {
             $q = $conn->table(DB::raw("$mainTable as u"));
 
+            // สำคัญ: survey_profile64 อาจมีรหัสบ้านซ้ำหลายแถว
+            // ถ้า join ตรง ๆ จะทำให้คนใน survey_a ซ้ำและโหลดช้า
+            // เลยเลือก profile แค่ 1 แถวต่อรหัสบ้านก่อน
             if ($COL_HOUSE_SURVEY && $COL_HOUSE_PROFILE) {
 
-    $q->leftJoin(DB::raw("$profileTable as p"), function($join)
-        use ($COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE) {
+                $profileOne = "
+                    (
+                        SELECT *
+                        FROM (
+                            SELECT p.*,
+                                   ROW_NUMBER() OVER (
+                                       PARTITION BY LTRIM(RTRIM(p.[{$COL_HOUSE_PROFILE}]))
+                                       ORDER BY p.[{$COL_HOUSE_PROFILE}]
+                                   ) as rn
+                            FROM {$profileTable} p
+                        ) pp
+                        WHERE pp.rn = 1
+                    ) as p
+                ";
 
-        $join->on(
-            DB::raw("LTRIM(RTRIM(u.[{$COL_HOUSE_SURVEY}]))"),
-            '=',
-            DB::raw("LTRIM(RTRIM(p.[{$COL_HOUSE_PROFILE}]))")
-        );
-    });
-}
+                $q->leftJoin(DB::raw($profileOne), function($join)
+                    use ($COL_HOUSE_SURVEY, $COL_HOUSE_PROFILE) {
+
+                    $join->on(
+                        DB::raw("LTRIM(RTRIM(u.[{$COL_HOUSE_SURVEY}]))"),
+                        '=',
+                        DB::raw("LTRIM(RTRIM(p.[{$COL_HOUSE_PROFILE}]))")
+                    );
+                });
+            }
 
             return $q;
         };
@@ -355,6 +392,10 @@ $isUnknownOnly = in_array('unknown', $welfare_type, true);
             $a70ExprT, $provinceRef, $districtRef, $tambonRef, $colRef
         );
 
+        // ใช้ query ตัวนี้สำหรับนับ KPI/กราฟ แบบนับคนไม่ซ้ำที่ SQL เลย
+        // ห้ามใช้ get()->unique() กับข้อมูลแสนกว่าแถว เพราะจะโหลดช้ามาก
+        $countBaseQ = clone $q;
+
         $selects = [];
 
         if ($COL_HOUSE)    $selects[] = "u.[{$COL_HOUSE}] as HC";
@@ -415,26 +456,60 @@ $isUnknownOnly = in_array('unknown', $welfare_type, true);
             }
         }
 
-        $q->selectRaw(implode(",\n", $selects));
+       $q->selectRaw(implode(",\n", $selects));
 
-        if ($COL_YEAR)     $q->orderBy("u.$COL_YEAR");
-        if ($COL_PROVINCE) $q->orderBy("u.$COL_PROVINCE");
-        if ($COL_DISTRICT) $q->orderBy("u.$COL_DISTRICT");
-        if ($COL_TAMBON)   $q->orderBy("u.$COL_TAMBON");
-        if ($COL_HOUSE)    $q->orderBy("u.$COL_HOUSE");
-
-     
+if ($COL_YEAR)     $q->orderByRaw("u.[{$COL_YEAR}] asc");
+if ($COL_PROVINCE) $q->orderByRaw("u.[{$COL_PROVINCE}] asc");
+if ($COL_DISTRICT) $q->orderByRaw("u.[{$COL_DISTRICT}] asc");
+if ($COL_TAMBON)   $q->orderByRaw("u.[{$COL_TAMBON}] asc");
+if ($COL_HOUSE)    $q->orderByRaw("u.[{$COL_HOUSE}] asc");
 // ======================
 // counts + charts
 // ======================
-$chartRows = (!$forExport) ? (clone $q)->get() : collect();
 
-$isNotReceived = function ($r) {
-    return trim((string)($r->a7_0 ?? '')) === '0';
+// key สำหรับนับ "คนไม่ซ้ำ"
+// ถ้ามี popid ใช้ popid, ถ้า popid ว่าง ใช้ HC-a1 แทน
+$personKey = "COALESCE(
+    NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(100), u.[popid]))), N''),
+    CONCAT(
+        LTRIM(RTRIM(CONVERT(nvarchar(100), u.[HC]))),
+        N'-',
+        LTRIM(RTRIM(CONVERT(nvarchar(100), u.[a1]))),
+        N'-',
+        LTRIM(RTRIM(CONVERT(nvarchar(100), u.[survey_year])))
+    )
+)";
+
+$a70CountExpr = "LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_0])))";
+
+$countDistinctPeople = function ($query) use ($personKey) {
+    return (int) $query
+        ->distinct()
+        ->count(DB::raw($personKey));
 };
 
-$receivedCount = $chartRows->filter(fn($r) => !$isNotReceived($r))->count();
-$notReceivedCount = $chartRows->filter(fn($r) => $isNotReceived($r))->count();
+if ($forExport) {
+    $receivedCount = 0;
+    $notReceivedCount = 0;
+} elseif ($welfare === 'received') {
+    $receivedCount = $countDistinctPeople(clone $countBaseQ);
+    $notReceivedCount = 0;
+} elseif ($welfare === 'not_received') {
+    $receivedCount = 0;
+    $notReceivedCount = $countDistinctPeople(clone $countBaseQ);
+} else {
+    $receivedCount = $countDistinctPeople(
+        (clone $countBaseQ)->where(function($qq) use ($a70CountExpr) {
+            $qq->whereRaw("$a70CountExpr IS NULL")
+               ->orWhereRaw("$a70CountExpr = N''")
+               ->orWhereRaw("$a70CountExpr <> N'0'");
+        })
+    );
+
+    $notReceivedCount = $countDistinctPeople(
+        (clone $countBaseQ)->whereRaw("$a70CountExpr = N'0'")
+    );
+}
 
 if ($welfare === 'received') {
     $counts = [
@@ -466,41 +541,82 @@ if ($welfare === 'received') {
 
 $typeChartLabels = [];
 $typeChartData = [];
+$typeChartReceivedData = [];
+$typeChartNotReceivedData = [];
 
-$typeMap = [
-    'a7_1' => 'เด็กแรกเกิด',
-    'a7_2' => 'ผู้สูงอายุ',
-    'a7_3' => 'คนพิการ',
-    'a7_4' => 'ประกันสังคม ม.33',
-    'a7_5' => 'ประกันตนเอง ม.40',
-    'a7_6' => 'บัตรสวัสดิการฯ',
-    'unknown' => 'ไม่ระบุ',
-];
+// ======================
+// กราฟประเภทแบบ "จัดกลุ่มหลัก"
+// 1 คน นับได้แค่ 1 กลุ่มเท่านั้น
+// ทำให้ยอดรวมทุกประเภท = จำนวนสมาชิกไม่ซ้ำทั้งหมด
+// ลำดับความสำคัญ:
+// ไม่ได้รับ > เด็กแรกเกิด > ผู้สูงอายุ > คนพิการ > ม.33 > ม.40 > บัตรสวัสดิการ > ไม่ระบุ
+// ======================
+if (!$forExport) {
 
-foreach ($typeMap as $col => $label) {
-    $count = $chartRows->filter(function ($r) use ($col) {
-        if ($col === 'unknown') {
-            return (
-                (trim((string)($r->a7_1 ?? '')) === '' || trim((string)($r->a7_1 ?? '')) === '0') &&
-                (trim((string)($r->a7_2 ?? '')) === '' || trim((string)($r->a7_2 ?? '')) === '0') &&
-                (trim((string)($r->a7_3 ?? '')) === '' || trim((string)($r->a7_3 ?? '')) === '0') &&
-                (trim((string)($r->a7_4 ?? '')) === '' || trim((string)($r->a7_4 ?? '')) === '0') &&
-                (trim((string)($r->a7_5 ?? '')) === '' || trim((string)($r->a7_5 ?? '')) === '0') &&
-                (trim((string)($r->a7_6 ?? '')) === '' || trim((string)($r->a7_6 ?? '')) === '0')
-            );
-        }
+    // กราฟประเภทสวัสดิการต้องใช้ $countBaseQ
+    // เพื่อให้กราฟเปลี่ยนตามตัวกรองที่กรอกไว้ทั้งหมด
+    $typeRules = [
+        'เด็กแรกเกิด' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_1]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_1]))) <> N'0'
+        ",
+        'เบี้ยผู้สูงอายุ/คนชรา' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_2]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_2]))) <> N'0'
+        ",
+        'เบี้ยคนพิการ' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_3]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_3]))) <> N'0'
+        ",
+        'ประกันสังคม (ม.33)' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_4]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_4]))) <> N'0'
+        ",
+        'ประกันตนเอง (ม.40)' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_5]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_5]))) <> N'0'
+        ",
+        'บัตรสวัสดิการแห่งรัฐ' => "
+            NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_6]))), N'') IS NOT NULL
+            AND LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_6]))) <> N'0'
+        ",
+        'ไม่ระบุ' => "
+            (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_1]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_1]))) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_2]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_2]))) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_3]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_3]))) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_4]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_4]))) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_5]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_5]))) = N'0')
+            AND (NULLIF(LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_6]))), N'') IS NULL OR LTRIM(RTRIM(CONVERT(nvarchar(50), u.[a7_6]))) = N'0')
+            AND ($a70CountExpr IS NULL OR $a70CountExpr = N'' OR $a70CountExpr <> N'0')
+        ",
+        'ไม่ได้รับสวัสดิการ' => "
+            $a70CountExpr = N'0'
+        ",
+    ];
 
-        $v = trim((string)($r->$col ?? ''));
-        return $v !== '' && $v !== '0';
-    })->count();
+    foreach ($typeRules as $label => $condition) {
+        $count = $countDistinctPeople(
+            (clone $countBaseQ)->whereRaw($condition)
+        );
 
-    if ($count > 0) {
         $typeChartLabels[] = $label;
-        $typeChartData[] = $count;
+$typeChartData[] = $count;
+
+if ($label === 'ไม่ได้รับสวัสดิการ') {
+    $typeChartReceivedData[] = 0;
+    $typeChartNotReceivedData[] = $count;
+} else {
+    $typeChartReceivedData[] = $count;
+    $typeChartNotReceivedData[] = 0;
+}
     }
 }
+
+
 $exportQuery = clone $q;
 
+// แสดงตารางแบบ paginate จาก SQL โดยตรง ไม่ดึงทั้งหมดเข้า PHP
+// ความไม่ซ้ำแก้ที่ join profileOne ด้านบนแล้ว
 $rows = $forExport
     ? collect()
     : $q->paginate(15)->appends($request->query());
@@ -536,6 +652,8 @@ $rows = $forExport
 'welfareChartData'   => $welfareChartData,
 'typeChartLabels'    => $typeChartLabels,
 'typeChartData'      => $typeChartData,
+'typeChartReceivedData'    => $typeChartReceivedData,
+'typeChartNotReceivedData' => $typeChartNotReceivedData,
         ];
     }
 
@@ -581,8 +699,8 @@ $rows = $forExport
             $q->whereRaw($trim($colRef('u', $COL_SEX))." = ?", [$sex]);
         }
 
-        if ($house_id !== '' && $COL_HOUSE) {
-    $q->where("u.$COL_HOUSE", 'like', "%{$house_id}%");
+     if ($house_id !== '' && $COL_HOUSE) {
+    $q->whereRaw("LTRIM(RTRIM(u.[{$COL_HOUSE}])) LIKE ?", ["%{$house_id}%"]);
 }
         if ($fname !== '' && $COL_FNAME) {
             $q->whereRaw($colRef('u', $COL_FNAME)." LIKE ?", ["%{$fname}%"]);
@@ -598,7 +716,8 @@ $rows = $forExport
 
     $q->where(function($qq) use ($a70ExprT) {
         $qq->whereRaw("$a70ExprT IS NULL")
-           ->orWhereRaw("$a70ExprT = N''");
+   ->orWhereRaw("$a70ExprT = N''")
+   ->orWhereRaw("$a70ExprT <> N'0'");
     });
 
     // กรณีเลือก "ไม่ระบุ"

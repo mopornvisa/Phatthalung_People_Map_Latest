@@ -66,7 +66,8 @@ SystemLog::create([
     'ip_address' => $request->ip(),
     'user_agent' => $request->userAgent(),
 ]);
-        return redirect('/');
+        return redirect('/')
+            ->with('success', 'เข้าสู่ระบบสำเร็จ');
     }
 
    public function logout(Request $request)

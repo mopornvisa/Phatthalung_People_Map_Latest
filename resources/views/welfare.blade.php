@@ -745,7 +745,7 @@ body.welfare-dd-open .ga-table{
   $receivedCount = (int)($counts['received'] ?? 0);
   $notReceivedCount = (int)($counts['not_received'] ?? 0);
 
-  $types = [
+$types = [
     'a7_1' => 'เด็กแรกเกิด',
     'a7_2' => 'เบี้ยผู้สูงอายุ/คนชรา',
     'a7_3' => 'เบี้ยคนพิการ',
@@ -753,8 +753,7 @@ body.welfare-dd-open .ga-table{
     'a7_5' => 'ประกันตนเอง (ม.40)',
     'a7_6' => 'บัตรสวัสดิการแห่งรัฐ',
     'unknown' => 'ไม่ระบุ',
-  ];
-
+];
   $typeCount = count($welfare_type);
   $matchLabel = $welfare_match === 'all'
     ? 'AND ได้รับ ครบทุกประเภท'
@@ -773,7 +772,7 @@ body.welfare-dd-open .ga-table{
     'sex'=>$sex,
   ]);
 
-  $totalRows = method_exists($rows,'total') ? (int)$rows->total() : count($rows);
+$totalRows = $counts['received'] + $counts['not_received'];
   
 @endphp
 
@@ -798,7 +797,72 @@ body.welfare-dd-open .ga-table{
       </div>
     </div>
 
-    <div class="ga-filter-card">
+    
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <div class="ga-kpi">
+          <div class="ga-kpi-label">
+            <i class="bi bi-check-circle-fill text-success"></i>
+            ได้รับสวัสดิการ
+          </div>
+          <h3 class="ga-kpi-value">{{ number_format($receivedCount) }}</h3>
+          <div class="ga-kpi-unit">(คน)</div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="ga-kpi">
+          <div class="ga-kpi-label">
+            <i class="bi bi-x-circle-fill text-secondary"></i>
+            ไม่ได้รับสวัสดิการ
+          </div>
+          <h3 class="ga-kpi-value">{{ number_format($notReceivedCount) }}</h3>
+          <div class="ga-kpi-unit">(คน)</div>
+        </div>
+      </div>
+    </div>
+ <div class="row g-3 mb-3">
+
+  <div class="col-lg-4">
+    <div class="ga-chart-card">
+      <div class="ga-chart-title">
+        <i class="bi bi-pie-chart-fill text-success me-1"></i>
+        สถานะสวัสดิการ
+      </div>
+
+      <div class="ga-chart-sub">
+        เปรียบเทียบผู้ได้รับและไม่ได้รับสวัสดิการ
+      </div>
+
+      <div class="chart-box">
+        <canvas id="welfareStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="ga-chart-card">
+      <div class="ga-chart-title">
+        <i class="bi bi-bar-chart-fill text-primary me-1"></i>
+        ประเภทสวัสดิการ
+      </div>
+
+      <div class="ga-chart-sub">
+        แสดงจำนวนตามประเภทสวัสดิการ
+      </div>
+
+      <div class="chart-box">
+        <canvas id="welfareTypeChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+    <div class="ga-note">
+      <i class="bi bi-info-circle me-1"></i>
+      ตารางด้านล่างรองรับการกรองตามปี รหัสบ้าน ชื่อ นามสกุล อายุ เพศ และประเภทสวัสดิการ พร้อมดูรายละเอียดพิกัดและข้อมูลบ้านของแต่ละรายการ
+    </div>
+<div class="ga-filter-card">
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
           <label class="ga-filter-label">อำเภอ</label>
@@ -905,71 +969,6 @@ body.welfare-dd-open .ga-table{
       </div>
     </div>
 
-    <div class="row g-3 mb-3">
-      <div class="col-md-6">
-        <div class="ga-kpi">
-          <div class="ga-kpi-label">
-            <i class="bi bi-check-circle-fill text-success"></i>
-            ได้รับสวัสดิการ
-          </div>
-          <h3 class="ga-kpi-value">{{ number_format($receivedCount) }}</h3>
-          <div class="ga-kpi-unit">(คน)</div>
-        </div>
-      </div>
-
-      <div class="col-md-6">
-        <div class="ga-kpi">
-          <div class="ga-kpi-label">
-            <i class="bi bi-x-circle-fill text-secondary"></i>
-            ไม่ได้รับสวัสดิการ
-          </div>
-          <h3 class="ga-kpi-value">{{ number_format($notReceivedCount) }}</h3>
-          <div class="ga-kpi-unit">(คน)</div>
-        </div>
-      </div>
-    </div>
-<div class="row g-3 mb-3">
-
-  <div class="col-lg-4">
-    <div class="ga-chart-card">
-      <div class="ga-chart-title">
-        <i class="bi bi-pie-chart-fill text-success me-1"></i>
-        สถานะสวัสดิการ
-      </div>
-
-      <div class="ga-chart-sub">
-        เปรียบเทียบผู้ได้รับและไม่ได้รับสวัสดิการ
-      </div>
-
-      <div class="chart-box">
-        <canvas id="welfareStatusChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-lg-8">
-    <div class="ga-chart-card">
-      <div class="ga-chart-title">
-        <i class="bi bi-bar-chart-fill text-primary me-1"></i>
-        ประเภทสวัสดิการ
-      </div>
-
-      <div class="ga-chart-sub">
-        แสดงจำนวนตามประเภทสวัสดิการจากข้อมูลปัจจุบัน
-      </div>
-
-      <div class="chart-box">
-        <canvas id="welfareTypeChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-</div>
-    <div class="ga-note">
-      <i class="bi bi-info-circle me-1"></i>
-      ตารางด้านล่างรองรับการกรองตามปี รหัสบ้าน ชื่อ นามสกุล อายุ เพศ และประเภทสวัสดิการ พร้อมดูรายละเอียดพิกัดและข้อมูลบ้านของแต่ละรายการ
-    </div>
-
     <div class="ga-table-panel">
       <div class="ga-table-head">
         <div>
@@ -1057,18 +1056,48 @@ body.welfare-dd-open .ga-table{
                 </th>
 
                 <th>
-                  <div class="filter-cell">
-                    <select class="form-select form-select-sm" name="age_range">
-                      <option value="">ช่วงอายุ (ทั้งหมด)</option>
-                      <option value="0-15"  @selected($age_range==='0-15')>0 – 15 ปี</option>
-                      <option value="16-28" @selected($age_range==='16-28')>16 – 28 ปี</option>
-                      <option value="29-44" @selected($age_range==='29-44')>29 – 44 ปี</option>
-                      <option value="45-59" @selected($age_range==='45-59')>45 – 59 ปี</option>
-                      <option value="60-78" @selected($age_range==='60-78')>60 – 78 ปี</option>
-                      <option value="79-97" @selected($age_range==='79-97')>79 – 97 ปี</option>
-                      <option value="98+"   @selected($age_range==='98+')>98 ปีขึ้นไป</option>
-                    </select>
-                  </div>
+                 <div class="filter-cell">
+  <select class="form-select form-select-sm" name="age_range">
+
+    <option value="">ช่วงอายุ (ทั้งหมด)</option>
+
+    <option value="0"
+      @selected($age_range==='0')>
+      ไม่ระบุอายุ
+    </option>
+
+    <option value="0-17"
+      @selected($age_range==='0-17')>
+      ต่ำกว่า 18 ปี
+    </option>
+
+    <option value="18+"
+      @selected($age_range==='18+')>
+      18 ปีขึ้นไป
+    </option>
+
+    <option value="18-28"
+      @selected($age_range==='18-28')>
+      18 – 28 ปี
+    </option>
+
+    <option value="29-44"
+      @selected($age_range==='29-44')>
+      29 – 44 ปี
+    </option>
+
+    <option value="45-59"
+      @selected($age_range==='45-59')>
+      45 – 59 ปี
+    </option>
+
+    <option value="60+"
+      @selected($age_range==='60+')>
+      60 ปีขึ้นไป
+    </option>
+
+  </select>
+</div>
                 </th>
 
                 <th>
@@ -1203,6 +1232,8 @@ $welfareChartData   = $welfareChartData ?? [];
 
 $typeChartLabels = $typeChartLabels ?? [];
 $typeChartData   = $typeChartData ?? [];
+$typeChartReceivedData    = $typeChartReceivedData ?? [];
+$typeChartNotReceivedData = $typeChartNotReceivedData ?? [];
 @endphp
             <tbody>
               @forelse($rows as $r)
@@ -1833,34 +1864,32 @@ new Chart(document.getElementById('welfareTypeChart'), {
     type: 'bar',
     data: {
         labels: welfareTypeLabels,
-        datasets: [{
-            data: welfareTypeData,
-            backgroundColor: [
-                '#0ea5a4',
-                '#2d74da',
-                '#22c55e',
-                '#f59e0b',
-                '#ec4899',
-                '#8b5cf6'
-            ],
-            borderRadius: 12,
-            borderSkipped: false
-        }]
+        datasets: [
+            {
+                label: 'จำนวนรายการ',
+                data: welfareTypeData,
+                backgroundColor: '#0B7F6F',
+                borderColor: '#0B5B6B',
+                borderWidth: 1,
+                borderRadius: 12,
+                borderSkipped: false,
+                barThickness: 28
+            }
+        ]
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                display:false
+                display: true,
+                position: 'bottom'
             }
         },
         scales: {
             y: {
-                beginAtZero:true,
-                ticks:{
-                    precision:0
-                }
+                beginAtZero: true,
+                ticks: { precision: 0 }
             }
         }
     }

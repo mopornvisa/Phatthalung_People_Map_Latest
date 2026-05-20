@@ -38,6 +38,7 @@ use App\Http\Controllers\ForestResourceController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\SystemLogController;
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,17 +47,6 @@ use App\Http\Controllers\AdminDashboardController;
 */
 
 Route::get('/', fn() => view('home'))->name('home');
-
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->name('dashboard');
-
-Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])
-    ->name('sqlsrv.test');
-
-Route::get('/test', fn() => redirect()->route('health.index'))
-    ->name('test.redirect');
-
-Route::get('/test-speed', fn() => 'ok');
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +70,18 @@ Route::get('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 
+Route::middleware(['login.required'])->group(function () {
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard');
+
+Route::get('/sqlsrv-test', [SqlsrvTestController::class, 'index'])
+    ->name('sqlsrv.test');
+
+Route::get('/test', fn() => redirect()->route('health.index'))
+    ->name('test.redirect');
+
+Route::get('/test-speed', fn() => 'ok');
 
 /*
 |--------------------------------------------------------------------------
@@ -436,3 +438,9 @@ Route::middleware(['admin'])->get('/admin/dashboard', [AdminDashboardController:
     ->name('admin.dashboard');
     Route::middleware(['admin'])->get('/admin/dashboard', [AdminDashboardController::class, 'index'])
     ->name('admin.dashboard');
+});
+ Route::get('/profile/edit', [ProfileController::class, 'edit'])
+    ->name('profile.edit');
+
+Route::post('/profile/update', [ProfileController::class, 'update'])
+    ->name('profile.update');

@@ -336,7 +336,17 @@ href="{{ route('welfare.index') }}">
 href="#"
 data-bs-toggle="dropdown">
 <i class="bi bi-person-circle me-1"></i>
-{{ session('user_firstname') }}
+
+<span style="
+    max-width:120px;
+    display:inline-block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    vertical-align:middle;
+">
+    {{ session('username') ?? session('login_user') }}
+</span>
 </a>
 
 <ul class="dropdown-menu dropdown-menu-end">
@@ -368,7 +378,7 @@ Admin Dashboard
    href="{{ route('system.logs.index') }}">
 
 <i class="bi bi-clock-history me-2"></i>
-System Logs
+ประวัติการใช้งานระบบ
 
 </a>
 </li>
@@ -376,6 +386,17 @@ System Logs
 <li><hr class="dropdown-divider"></li>
 
 @endif
+<li>
+<a class="dropdown-item"
+   href="{{ route('profile.edit') }}">
+
+<i class="bi bi-person-lines-fill me-2"></i>
+แก้ไขข้อมูลส่วนตัว
+
+</a>
+</li>
+
+<li><hr class="dropdown-divider"></li>
 
 <li>
 <a class="dropdown-item text-danger"
@@ -386,6 +407,7 @@ System Logs
 
 </a>
 </li>
+
 
 </ul>
 </li>
@@ -430,16 +452,16 @@ data-bs-toggle="dropdown">
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 
-    const protectedPaths = [
-        '/dashboard',
-        '/health/status',
-        '/welfare',
-        '/housing',
-        '/household_64',
-        '/economy',
-        '/education',
-        '/forest-resources'
-    ];
+   const protectedPaths = [
+    '{{ route("dashboard") }}',
+    '{{ route("health_status") }}',
+    '{{ route("welfare.index") }}',
+    '{{ route("housing.dashboard") }}',
+    '{{ route("household_64") }}',
+    '{{ route("economy.index") }}',
+    '{{ route("education.dashboard") }}',
+    '{{ route("forest.resources.index") }}'
+];
 
     document.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', function(e){
@@ -459,9 +481,8 @@ document.addEventListener('DOMContentLoaded', function(){
             }
 
             const isProtected = protectedPaths.some(path => {
-                return url.pathname.startsWith(path);
-            });
-
+    return href.startsWith(path);
+});
             if(isProtected){
                 e.preventDefault();
 
